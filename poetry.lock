@@ -86,23 +86,19 @@ version = "7.1.2"
 
 [[package]]
 category = "main"
-description = ""
+description = "A library of utilities for discord.py bots."
 name = "commanderbot-lib"
 optional = false
-python-versions = "^3.8"
+python-versions = ">=3.8,<4.0"
 version = "0.1.0"
 
 [package.dependencies]
-"discord.py" = "^1.4.1"
+"discord.py" = ">=1.4.1,<2.0.0"
 
 [package.extras]
-log-colors = ["colorama (^0.4.3)", "colorlog (^4.2.1)"]
-yaml = ["pyyaml (^5.3.1)"]
+log-colors = ["colorama (>=0.4.3,<0.5.0)", "colorlog (>=4.2.1,<5.0.0)"]
+yaml = ["pyyaml (>=5.3.1,<6.0.0)"]
 
-[package.source]
-reference = "0ee4cb55f711535bfab953b9c3bfd348a4f0be4a"
-type = "git"
-url = "https://github.com/CommanderBot-Dev/commanderbot-lib.git"
 [[package]]
 category = "main"
 description = "A Python wrapper for the Discord API"
@@ -195,7 +191,7 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [metadata]
-content-hash = "7ef8505e951cdfbc8504f0df49d34f91bd57190a2cb6187aa0b11e56b046824e"
+content-hash = "3688f8752fc58ffa3701ad474dd88cfffe021d02fb438cdd0afd1a4473edbdac"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -237,7 +233,10 @@ click = [
     {file = "click-7.1.2-py2.py3-none-any.whl", hash = "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"},
     {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
 ]
-commanderbot-lib = []
+commanderbot-lib = [
+    {file = "commanderbot-lib-0.1.0.tar.gz", hash = "sha256:e789c6fa6f64d62f24ef0969f244ca5f2442df0c8ab9c1cbbe49d7d26fcc4b31"},
+    {file = "commanderbot_lib-0.1.0-py3-none-any.whl", hash = "sha256:0cdbb4218f04bb61174d84a1a500ec726d9ad5ed207153c374cb391266aa8a5a"},
+]
 "discord.py" = [
     {file = "discord.py-1.4.1-py3-none-any.whl", hash = "sha256:98ea3096a3585c9c379209926f530808f5fcf4930928d8cfb579d2562d119570"},
     {file = "discord.py-1.4.1.tar.gz", hash = "sha256:f9decb3bfa94613d922376288617e6a6f969260923643e2897f4540c34793442"},
