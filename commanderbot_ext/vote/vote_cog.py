@@ -2,7 +2,6 @@ import re
 
 import discord
 from commanderbot_lib.logging import Logger, get_clogger
-from discord import emoji
 from discord.ext.commands import Bot, Cog, Context, command
 
 
@@ -43,7 +42,7 @@ class VoteCog(Cog):
     @command(name="vote")
     async def cmd_vote(self, ctx: discord.Message):
         # If no emojis were specified, then use the default ones, then iterate over them (reaction cap is 20)
-        for emoji in self.get_emojis(ctx.message, ctx) or ("👍", "👎")[:20]:
+        for emoji in (self.get_emojis(ctx.message, ctx) or ("👍", "👎"))[:20]:
             try:
                 # Attempt to react with the emoji specified
                 await ctx.message.add_reaction(emoji)
