@@ -47,8 +47,6 @@ class VoteCog(Cog):
                 # Attempt to react with the emoji specified
                 await ctx.message.add_reaction(emoji)
 
-            # If any error occurred, then don't bother adding the reaction
-            except Exception as error:
-                self._log.info(
-                    f"Couldn't add reaction {emoji} to message {ctx.message.id}\nError is as follows:")
-                self._log.info(error)
+            # If any error occurred, then don't bother adding the reaction and log the error
+            except:
+                self._log.exception(f"Couldn't add reaction {emoji} to message {ctx.message.id}")
