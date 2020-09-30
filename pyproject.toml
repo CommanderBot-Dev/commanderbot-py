@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "commanderbot-ext"
-version = "0.2.1-alpha.3"
+version = "0.3.0"
 description = "A collection of cogs and extensions for discord.py bots."
 authors = ["Arcensoth <arcensoth@gmail.com>"]
 license = "MIT"
