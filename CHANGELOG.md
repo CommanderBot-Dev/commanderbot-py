@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Added `vote` command
 
+### Changed
+
+- Updated to discord.py version 1.5.0
 
 ## [0.2.0] - 2020-09-24
 
