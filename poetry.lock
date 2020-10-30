@@ -90,7 +90,7 @@ description = "A library of utilities for discord.py bots."
 name = "commanderbot-lib"
 optional = false
 python-versions = ">=3.8,<4.0"
-version = "0.2.0"
+version = "0.3.0"
 
 [package.dependencies]
 "discord.py" = ">=1.5.0,<2.0.0"
@@ -191,7 +191,7 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [metadata]
-content-hash = "7cc2351b07832f4b7da107ee3a77f3b35f7920005595f2b6a58a7e85c0321360"
+content-hash = "1e515342ff61f3a61dd0cbf9f0938e33d256cb3d388f37d1396b48411f900787"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -235,8 +235,8 @@ click = [
     {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
 ]
 commanderbot-lib = [
-    {file = "commanderbot-lib-0.2.0.tar.gz", hash = "sha256:2367a9b2aa59411f08dc689899308e53e2951b06a76122306018228915f4f8cd"},
-    {file = "commanderbot_lib-0.2.0-py3-none-any.whl", hash = "sha256:2f73b549546fd123a11399749f0622afc0101e0ff80f253e27f34a6e9bf9132c"},
+    {file = "commanderbot-lib-0.3.0.tar.gz", hash = "sha256:f8040a372256b33b65b1f810b0a7ec1c46c1d549e02b2c801c4fd54b94f520e5"},
+    {file = "commanderbot_lib-0.3.0-py3-none-any.whl", hash = "sha256:c0f055a9d8a2dce8c94e1eb046fa4878ec391e28c2b342a395713f2f17bef68b"},
 ]
 "discord.py" = [
     {file = "discord.py-1.5.1-py3-none-any.whl", hash = "sha256:2367359e31f6527f8a936751fc20b09d7495dd6a76b28c8fb13d4ca6c55b7563"},
