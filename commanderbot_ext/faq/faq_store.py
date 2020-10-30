@@ -1,13 +1,17 @@
 from typing import Iterable, Optional
 
+from commanderbot_ext.faq import faq_migrations as migrations
 from commanderbot_ext.faq.faq_cache import FaqCache, FaqEntry, FaqGuildData
 from commanderbot_ext.faq.faq_options import FaqOptions
-from commanderbot_lib.database.abc.dict_database import DictDatabase
-from commanderbot_lib.store.abc.cached_store import CachedStore
+from commanderbot_lib.database.abc.versioned_file_database import (
+    DataMigration,
+    VersionedFileDatabase,
+)
+from commanderbot_lib.store.abc.versioned_cached_store import VersionedCachedStore
 from discord import Guild
 
 
-class FaqStore(CachedStore[FaqOptions, DictDatabase, FaqCache]):
+class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]):
     # @implements CachedStore
     async def _build_cache(self, data: dict) -> FaqCache:
         return await FaqCache.deserialize(data)
@@ -15,6 +19,21 @@ class FaqStore(CachedStore[FaqOptions, DictDatabase, FaqCache]):
     # @implements CachedStore
     async def serialize(self) -> dict:
         return self._cache.serialize()
+
+    # @implements VersionedCachedStore
+    def _collect_migrations(
+        self,
+        database: VersionedFileDatabase,
+        actual_version: int,
+        expected_version: int,
+    ) -> Iterable[DataMigration]:
+        if actual_version < 1:
+            yield migrations.m_1a_init_empty_aliases
+
+    # @implements VersionedCachedStore
+    @property
+    def data_version(self) -> int:
+        return 1
 
     def get_guild_data(self, guild: Guild) -> Optional[FaqGuildData]:
         return self._cache.guilds.get(guild.id)
