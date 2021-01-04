@@ -6,7 +6,6 @@ from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
 from discord import Message
 from discord.ext.commands import Bot, Cog, Context, group
-from discord.ext.commands.help import HelpCommand
 
 
 # TODO Try to cut-down on the amount of boilerplate by sub-classing `Cog`. #refactor
@@ -15,7 +14,7 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
         self.bot: Bot = bot
         self.options: FaqOptions = FaqOptions(**options)
         self._log: Logger = get_clogger(self)
-        self._state: FaqState = None
+        self._state: Optional[FaqState] = None
 
     @property
     def state(self) -> FaqState:
