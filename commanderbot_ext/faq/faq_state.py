@@ -18,10 +18,22 @@ class FaqState(CogState[FaqOptions, FaqStore, FaqGuildState]):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.show_faq(ctx, name)
 
-    async def add_faq(self, ctx: Context, name: str, message: Message):
+    async def show_faq_details(self, ctx: Context, name: str):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.add_faq(ctx, name, message)
+            await guild_state.show_faq_details(ctx, name)
+
+    async def add_faq(self, ctx: Context, name: str, message: Message, content: str):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.add_faq(ctx, name, message, content)
 
     async def remove_faq(self, ctx: Context, name: str):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.remove_faq(ctx, name)
+
+    async def add_alias(self, ctx: Context, faq_name: str, alias: str):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.add_alias(ctx, faq_name, alias)
+
+    async def remove_alias(self, ctx: Context, faq_name: str, alias: str):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.remove_alias(ctx, faq_name, alias)
