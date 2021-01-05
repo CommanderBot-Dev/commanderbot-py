@@ -38,6 +38,10 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
     def get_guild_data(self, guild: Guild) -> Optional[FaqGuildData]:
         return self._cache.guilds.get(guild.id)
 
+    def count_guild_faqs(self, guild: Guild) -> Optional[int]:
+        if guild_data := self.get_guild_data(guild):
+            return len(guild_data.entries)
+
     async def iter_guild_faqs(self, guild: Guild) -> Optional[Iterable[FaqEntry]]:
         if guild_data := self.get_guild_data(guild):
             return guild_data.entries.values()

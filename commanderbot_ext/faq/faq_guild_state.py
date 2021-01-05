@@ -9,6 +9,10 @@ from discord.ext.commands import Context
 
 
 class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
+    @property
+    def count_faqs(self) -> int:
+        return self.store.count_guild_faqs(self.guild) or 0
+
     async def list_faqs(self, ctx: Context):
         if entries := await self.store.iter_guild_faqs(self.guild):
             # Sort entries by hits -> name.

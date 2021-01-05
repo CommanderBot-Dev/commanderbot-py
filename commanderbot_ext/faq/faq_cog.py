@@ -30,6 +30,10 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
             self._state = FaqState(self.bot, self, self.options)
             await self._state.async_init()
         await self.state.on_ready()
+        # Print a brief log of how many FAQs are loaded.
+        total_faqs = self.state.count_total_faqs
+        total_guilds = len(list(self.state.available_guild_states))
+        self._log.info(f"Loaded {total_faqs} total FAQs across {total_guilds} guilds.")
 
     @Cog.listener()
     async def on_message(self, message: Message):
