@@ -42,16 +42,15 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         if guild_data := self.get_guild_data(guild):
             return guild_data.entries.values()
 
-    async def get_guild_faq(
-        self, guild: Guild, faq_name: str, hit: bool = False
-    ) -> Optional[FaqEntry]:
+    async def get_guild_faq(self, guild: Guild, faq_name: str) -> Optional[FaqEntry]:
         if guild_data := self.get_guild_data(guild):
             entry = guild_data.entries.get(faq_name)
-            if hit and entry:
-                entry.hits += 1
-                # TODO This should be flushed on unload; not every access! #optimize
-                await self.dirty()
             return entry
+
+    async def hit_entry(self, entry: FaqEntry):
+        entry.hits += 1
+        # TODO This should be flushed on unload; not every access! #optimize
+        await self.dirty()
 
     async def add_guild_faq(self, guild: Guild, faq_entry: FaqEntry):
         guild_data = self.get_guild_data(guild)

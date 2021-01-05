@@ -20,7 +20,8 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
             await ctx.send(f"No FAQs available")
 
     async def show_faq(self, ctx: Context, name: str):
-        if entry := await self.store.get_guild_faq(self.guild, name, hit=True):
+        if entry := await self.store.get_guild_faq(self.guild, name):
+            await self.store.hit_entry(entry)
             await ctx.send(entry.content)
         else:
             await ctx.send(f"No such FAQ `{name}`")
