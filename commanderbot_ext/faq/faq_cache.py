@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, Set
 
 from commanderbot_lib.types import GuildID
 
@@ -10,7 +10,7 @@ class FaqEntry:
     name: str
     content: str
     message_link: str
-    aliases: List[str]
+    aliases: Set[str]
     added_on: datetime
     last_modified_on: datetime
     hits: int
@@ -52,7 +52,7 @@ class FaqEntry:
             name=name,
             content=content,
             message_link=message_link,
-            aliases=aliases,
+            aliases=set(aliases),
             added_on=added_on,
             last_modified_on=last_modified_on,
             hits=hits,
@@ -62,7 +62,7 @@ class FaqEntry:
         return {
             "content": self.content,
             "message_link": self.message_link,
-            "aliases": self.aliases,
+            "aliases": list(self.aliases),
             "added_on": self.added_on.isoformat(),
             "last_modified_on": self.last_modified_on.isoformat(),
             "hits": self.hits,
