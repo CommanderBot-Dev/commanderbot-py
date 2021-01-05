@@ -10,10 +10,6 @@ class FaqState(CogState[FaqOptions, FaqStore, FaqGuildState]):
     store_class = FaqStore
     guild_state_class = FaqGuildState
 
-    @property
-    def count_total_faqs(self) -> int:
-        return sum(guild_state.count_faqs for guild_state in self.available_guild_states)
-
     async def list_faqs(self, ctx: Context):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.list_faqs(ctx)
