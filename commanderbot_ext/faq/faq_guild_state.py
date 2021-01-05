@@ -11,7 +11,8 @@ from discord.ext.commands import Context
 class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
     async def list_faqs(self, ctx: Context):
         if entries := await self.store.iter_guild_faqs(self.guild):
-            sorted_entries = sorted(entries, key=lambda entry: entry.name)
+            # Sort entries by hits -> name.
+            sorted_entries = sorted(entries, key=lambda entry: (entry.hits, entry.name))
             faq_names = (entry.name for entry in sorted_entries)
             text = "`" + "` `".join(faq_names) + "`"
             await ctx.send(text)
