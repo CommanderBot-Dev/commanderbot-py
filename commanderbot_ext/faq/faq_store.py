@@ -47,11 +47,6 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
             entry = guild_data.entries.get(faq_name)
             return entry
 
-    async def hit_entry(self, entry: FaqEntry):
-        entry.hits += 1
-        # TODO This should be flushed on unload; not every access! #optimize
-        await self.dirty()
-
     async def add_guild_faq(self, guild: Guild, faq_entry: FaqEntry):
         guild_data = self.get_guild_data(guild)
         if guild_data is None:
@@ -65,3 +60,19 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
             removed_entry = guild_data.entries.pop(faq_name, None)
             await self.dirty()
             return removed_entry
+
+    async def increment_entry_hits(self, entry: FaqEntry):
+        entry.hits += 1
+        # TODO This should be flushed on unload; not every access! #optimize
+        await self.dirty()
+
+    async def add_alias_to_entry(self, entry: FaqEntry, alias: str):
+        # Adding a duplicate alias will have no effect, thanks to the power of sets.
+        entry.aliases.add(alias)
+        await self.dirty()
+
+    async def remove_alias_from_entry(self, entry: FaqEntry, alias: str):
+        # Silently ignore aliases that are not present.
+        if alias in entry.aliases:
+            entry.aliases.remove(alias)
+            await self.dirty()

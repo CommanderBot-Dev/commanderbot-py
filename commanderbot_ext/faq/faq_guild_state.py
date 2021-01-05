@@ -21,7 +21,7 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
 
     async def show_faq(self, ctx: Context, name: str):
         if entry := await self.store.get_guild_faq(self.guild, name):
-            await self.store.hit_entry(entry)
+            await self.store.increment_entry_hits(entry)
             await ctx.send(entry.content)
         else:
             await ctx.send(f"No such FAQ `{name}`")
@@ -70,12 +70,18 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
             await ctx.send(f"No such FAQ `{name}`")
 
     async def add_alias(self, ctx: Context, faq_name: str, alias: str):
-        # IMPL
-        await ctx.send(f"Added alias `{alias}` to FAQ `{faq_name}`")
+        if entry := await self.store.get_guild_faq(self.guild, faq_name):
+            await self.store.add_alias_to_entry(entry, alias)
+            await ctx.send(f"Added alias `{alias}` to FAQ `{faq_name}`")
+        else:
+            await ctx.send(f"No such FAQ `{faq_name}`")
 
     async def remove_alias(self, ctx: Context, faq_name: str, alias: str):
-        # IMPL
-        await ctx.send(f"Removed alias `{alias}` from FAQ `{faq_name}`")
+        if entry := await self.store.get_guild_faq(self.guild, faq_name):
+            await self.store.remove_alias_from_entry(entry, alias)
+            await ctx.send(f"Removed alias `{alias}` from FAQ `{faq_name}`")
+        else:
+            await ctx.send(f"No such FAQ `{faq_name}`")
 
     # @overrides CogGuildState
     async def on_message(self, message: Message):
