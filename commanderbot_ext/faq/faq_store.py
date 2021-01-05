@@ -55,13 +55,13 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
             if faq_alias in faq_entry.aliases:
                 return faq_entry
 
-    async def get_guild_faq(self, guild: Guild, faq_name: str) -> Optional[FaqEntry]:
+    async def get_guild_faq(self, guild: Guild, faq_query: str) -> Optional[FaqEntry]:
         if guild_data := self.get_guild_data(guild):
             # First try to get the FAQ entry by name.
-            entry = await self.get_guild_faq_by_name(guild_data, faq_name)
+            entry = await self.get_guild_faq_by_name(guild_data, faq_query)
             # If that doesn't work, try to get it by alias.
             if entry is None:
-                entry = await self.get_guild_faq_by_alias(guild_data, faq_name)
+                entry = await self.get_guild_faq_by_alias(guild_data, faq_query)
             # Return whatever we get, even if nothing comes up.
             return entry
 

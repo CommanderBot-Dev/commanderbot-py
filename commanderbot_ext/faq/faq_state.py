@@ -14,21 +14,21 @@ class FaqState(CogState[FaqOptions, FaqStore, FaqGuildState]):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.list_faqs(ctx)
 
-    async def show_faq(self, ctx: Context, name: str):
+    async def show_faq(self, ctx: Context, faq_query: str):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.show_faq(ctx, name)
+            await guild_state.show_faq(ctx, faq_query)
 
-    async def show_faq_details(self, ctx: Context, name: str):
+    async def show_faq_details(self, ctx: Context, faq_query: str):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.show_faq_details(ctx, name)
+            await guild_state.show_faq_details(ctx, faq_query)
 
-    async def add_faq(self, ctx: Context, name: str, message: Message, content: str):
+    async def add_faq(self, ctx: Context, faq_name: str, message: Message, content: str):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.add_faq(ctx, name, message, content)
+            await guild_state.add_faq(ctx, faq_name, message, content)
 
-    async def remove_faq(self, ctx: Context, name: str):
+    async def remove_faq(self, ctx: Context, faq_name: str):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.remove_faq(ctx, name)
+            await guild_state.remove_faq(ctx, faq_name)
 
     async def add_alias(self, ctx: Context, faq_name: str, alias: str):
         if guild_state := await self.get_guild_state(ctx.guild):

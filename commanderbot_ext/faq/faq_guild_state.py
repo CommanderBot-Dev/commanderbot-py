@@ -19,40 +19,40 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
         else:
             await ctx.send(f"No FAQs available")
 
-    async def show_faq(self, ctx: Context, name: str):
-        if entry := await self.store.get_guild_faq(self.guild, name):
+    async def show_faq(self, ctx: Context, faq_query: str):
+        if entry := await self.store.get_guild_faq(self.guild, faq_query):
             await self.store.increment_faq_hits(entry)
             await ctx.send(entry.content)
         else:
-            await ctx.send(f"No such FAQ `{name}`")
+            await ctx.send(f"No FAQ matching `{faq_query}`")
 
-    async def show_faq_details(self, ctx: Context, name: str):
-        if entry := await self.store.get_guild_faq(self.guild, name):
-            aliases_str = ", ".join(entry.aliases)
-            added_on_str = entry.added_on.isoformat()
-            last_modified_on_str = entry.last_modified_on.isoformat()
+    async def show_faq_details(self, ctx: Context, faq_query: str):
+        if faq_entry := await self.store.get_guild_faq(self.guild, faq_query):
+            aliases_str = ", ".join(faq_entry.aliases)
+            added_on_str = faq_entry.added_on.isoformat()
+            last_modified_on_str = faq_entry.last_modified_on.isoformat()
             lines = [
-                f"<{entry.message_link}>",
+                f"<{faq_entry.message_link}>",
                 "```",
-                f"Name:             {entry.name}",
+                f"Name:             {faq_entry.name}",
                 f"Aliases:          {aliases_str}",
                 f"Added on:         {added_on_str}",
                 f"Last modified on: {last_modified_on_str}",
-                f"Hits:             {entry.hits}",
+                f"Hits:             {faq_entry.hits}",
                 "```",
             ]
             content = "\n".join(lines)
             await ctx.send(content)
         else:
-            await ctx.send(f"No such FAQ `{name}`")
+            await ctx.send(f"No FAQ matching `{faq_query}`")
 
-    async def add_faq(self, ctx: Context, name: str, message: Message, content: str):
-        if await self.store.get_guild_faq(self.guild, name):
-            await ctx.send(f"FAQ `{name}` already exists")
+    async def add_faq(self, ctx: Context, faq_name: str, message: Message, content: str):
+        if await self.store.get_guild_faq_by_name(self.guild, faq_name):
+            await ctx.send(f"FAQ named `{faq_name}` already exists")
         else:
             now = datetime.utcnow()
             faq_entry = FaqEntry(
-                name=name,
+                name=faq_name,
                 content=content,
                 message_link=message.jump_url,
                 aliases=[],
@@ -61,31 +61,31 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
                 hits=0,
             )
             await self.store.add_guild_faq(self.guild, faq_entry)
-            await ctx.send(f"Added FAQ `{name}`")
+            await ctx.send(f"Added FAQ named `{faq_name}`")
 
-    async def remove_faq(self, ctx: Context, name: str):
-        if removed_entry := await self.store.remove_guild_faq(self.guild, name):
-            await ctx.send(f"Removed FAQ `{removed_entry.name}`")
+    async def remove_faq(self, ctx: Context, faq_name: str):
+        if removed_faq_entry := await self.store.remove_guild_faq(self.guild, faq_name):
+            await ctx.send(f"Removed FAQ `{removed_faq_entry.name}`")
         else:
-            await ctx.send(f"No such FAQ `{name}`")
+            await ctx.send(f"No FAQ named `{faq_name}`")
 
-    async def add_alias(self, ctx: Context, faq_name: str, alias: str):
-        if entry := await self.store.get_guild_faq(self.guild, faq_name):
-            if await self.store.add_alias_to_faq(entry, alias):
-                await ctx.send(f"Added alias `{alias}` to FAQ `{faq_name}`")
+    async def add_alias(self, ctx: Context, faq_name: str, faq_alias: str):
+        if faq_entry := await self.store.get_guild_faq(self.guild, faq_name):
+            if await self.store.add_alias_to_faq(faq_entry, faq_alias):
+                await ctx.send(f"Added alias `{faq_alias}` to FAQ `{faq_name}`")
             else:
-                await ctx.send(f"FAQ `{faq_name}` already has alias `{alias}`")
+                await ctx.send(f"FAQ `{faq_name}` already has alias `{faq_alias}`")
         else:
-            await ctx.send(f"No such FAQ `{faq_name}`")
+            await ctx.send(f"No FAQ named `{faq_name}`")
 
-    async def remove_alias(self, ctx: Context, faq_name: str, alias: str):
-        if entry := await self.store.get_guild_faq(self.guild, faq_name):
-            if await self.store.remove_alias_from_faq(entry, alias):
-                await ctx.send(f"Removed alias `{alias}` from FAQ `{faq_name}`")
+    async def remove_alias(self, ctx: Context, faq_name: str, faq_alias: str):
+        if faq_entry := await self.store.get_guild_faq(self.guild, faq_name):
+            if await self.store.remove_alias_from_faq(faq_entry, faq_alias):
+                await ctx.send(f"Removed alias `{faq_alias}` from FAQ `{faq_name}`")
             else:
-                await ctx.send(f"FAQ `{faq_name}` does not have alias {alias}")
+                await ctx.send(f"FAQ `{faq_name}` does not have alias {faq_alias}")
         else:
-            await ctx.send(f"No such FAQ `{faq_name}`")
+            await ctx.send(f"No FAQ named `{faq_name}`")
 
     # @overrides CogGuildState
     async def on_message(self, message: Message):
@@ -95,5 +95,5 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
             if isinstance(content, str):
                 if content.startswith(prefix) and len(content) > len(prefix):
                     ctx = Context(message=message, prefix=prefix)
-                    name = content[len(prefix) :]
-                    await self.show_faq(ctx, name)
+                    faq_query = content[len(prefix) :]
+                    await self.show_faq(ctx, faq_query)

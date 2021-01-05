@@ -47,12 +47,12 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
         await self.state.list_faqs(ctx)
 
     @cmd_faq.command(name="show")
-    async def cmd_faq_show(self, ctx: Context, faq_name: str):
-        await self.state.show_faq(ctx, faq_name)
+    async def cmd_faq_show(self, ctx: Context, faq_query: str):
+        await self.state.show_faq(ctx, faq_query)
 
     @cmd_faq.command(name="details")
-    async def cmd_faq_details(self, ctx: Context, faq_name: str):
-        await self.state.show_faq_details(ctx, faq_name)
+    async def cmd_faq_details(self, ctx: Context, faq_query: str):
+        await self.state.show_faq_details(ctx, faq_query)
 
     @cmd_faq.group(name="add")
     @checks.is_administrator()
