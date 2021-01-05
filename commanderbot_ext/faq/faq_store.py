@@ -46,28 +46,25 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         if guild_data := self.get_guild_data(guild):
             return guild_data.entries.values()
 
-    async def get_guild_faq_by_name(
-        self, guild_data: FaqGuildData, faq_name: str
-    ) -> Optional[FaqEntry]:
-        return guild_data.entries.get(faq_name)
+    async def get_guild_faq_by_name(self, guild: Guild, faq_name: str) -> Optional[FaqEntry]:
+        if guild_data := self.get_guild_data(guild):
+            return guild_data.entries.get(faq_name)
 
-    async def get_guild_faq_by_alias(
-        self, guild_data: FaqGuildData, faq_alias: str
-    ) -> Optional[FaqEntry]:
-        # TODO Optimize look-up by re-building a map every time aliases are changed. #optimize
-        for faq_entry in guild_data.entries.values():
-            if faq_alias in faq_entry.aliases:
-                return faq_entry
+    async def get_guild_faq_by_alias(self, guild: Guild, faq_alias: str) -> Optional[FaqEntry]:
+        if guild_data := self.get_guild_data(guild):
+            # TODO Optimize look-up by re-building a map every time aliases are changed. #optimize
+            for faq_entry in guild_data.entries.values():
+                if faq_alias in faq_entry.aliases:
+                    return faq_entry
 
     async def get_guild_faq(self, guild: Guild, faq_query: str) -> Optional[FaqEntry]:
-        if guild_data := self.get_guild_data(guild):
-            # First try to get the FAQ entry by name.
-            entry = await self.get_guild_faq_by_name(guild_data, faq_query)
-            # If that doesn't work, try to get it by alias.
-            if entry is None:
-                entry = await self.get_guild_faq_by_alias(guild_data, faq_query)
-            # Return whatever we get, even if nothing comes up.
-            return entry
+        # First try to get the FAQ entry by name.
+        entry = await self.get_guild_faq_by_name(guild, faq_query)
+        # If that doesn't work, try to get it by alias.
+        if entry is None:
+            entry = await self.get_guild_faq_by_alias(guild, faq_query)
+        # Return whatever we get, even if nothing comes up.
+        return entry
 
     async def add_guild_faq(self, guild: Guild, faq_entry: FaqEntry):
         guild_data = self.get_guild_data(guild)

@@ -87,7 +87,7 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
             if await self.store.remove_alias_from_faq(faq_entry, faq_alias):
                 await ctx.send(f"Removed alias `{faq_alias}` from FAQ `{faq_name}`")
             else:
-                await ctx.send(f"FAQ `{faq_name}` does not have alias {faq_alias}")
+                await ctx.send(f"FAQ `{faq_name}` has no alias `{faq_alias}`")
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
