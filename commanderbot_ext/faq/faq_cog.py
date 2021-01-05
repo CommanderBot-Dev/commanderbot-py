@@ -5,7 +5,7 @@ from commanderbot_ext.faq.faq_state import FaqState
 from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
 from discord import Message
-from discord.ext.commands import Bot, Cog, Context, group
+from discord.ext.commands import Bot, Cog, Context, command, group
 
 
 # TODO Try to cut-down on the amount of boilerplate by sub-classing `Cog`. #refactor
@@ -36,6 +36,10 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
         await self.state.on_message(message)
 
     # @@ COMMANDS
+
+    @command(name="faqs")
+    async def cmd_faqs(self, ctx: Context):
+        await self.state.list_faqs(ctx)
 
     @group(name="faq")
     async def cmd_faq(self, ctx: Context):
