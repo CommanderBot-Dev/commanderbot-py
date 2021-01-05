@@ -63,7 +63,6 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
 
     async def increment_faq_hits(self, entry: FaqEntry) -> int:
         entry.hits += 1
-        # TODO This should be flushed on unload; not every access! #optimize
         await self.dirty()
         return entry.hits
 
