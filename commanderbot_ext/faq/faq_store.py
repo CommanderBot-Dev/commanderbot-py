@@ -75,9 +75,9 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
 
     async def remove_guild_faq(self, guild: Guild, faq_name: str) -> Optional[FaqEntry]:
         if guild_data := self.get_guild_data(guild):
-            removed_entry = guild_data.entries.pop(faq_name, None)
-            await self.dirty()
-            return removed_entry
+            if removed_entry := guild_data.entries.pop(faq_name, None):
+                await self.dirty()
+                return removed_entry
 
     async def increment_faq_hits(self, entry: FaqEntry) -> int:
         entry.hits += 1
