@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Dict
+from datetime import datetime
+from typing import Dict, Set
 
 from commanderbot_lib.types import GuildID
 
@@ -9,21 +10,63 @@ class FaqEntry:
     name: str
     content: str
     message_link: str
+    aliases: Set[str]
+    added_on: datetime
+    updated_on: datetime
+    hits: int
 
     @staticmethod
     async def deserialize(data: dict, name: str) -> "FaqEntry":
         if not isinstance(data, dict):
             raise ValueError(f"Invalid FAQ data: {type(data)}")
-        content: str = data.get("content")
-        if not isinstance(content, str):
-            raise ValueError(f"Invalid FAQ content: {type(content)}")
-        message_link = data.get("message_link")
-        if not (message_link is None or isinstance(message_link, str)):
-            raise ValueError(f"Invalid FAQ message link: {type(message_link)}")
-        return FaqEntry(name=name, content=content, message_link=message_link)
+
+        # content
+        content: str = data["content"]
+        assert isinstance(content, str)
+
+        # message_link
+        message_link = data["message_link"]
+        assert message_link is None or isinstance(message_link, str)
+
+        # aliases
+        aliases = data["aliases"]
+        assert isinstance(aliases, list)
+        for alias in aliases:
+            assert isinstance(alias, str)
+
+        # added_on
+        raw_added_on = data["added_on"]
+        assert isinstance(raw_added_on, str)
+        added_on = datetime.fromisoformat(raw_added_on)
+
+        # updated_on
+        raw_updated_on = data["updated_on"]
+        assert isinstance(raw_updated_on, str)
+        updated_on = datetime.fromisoformat(raw_updated_on)
+
+        # hits
+        hits = data["hits"]
+        assert isinstance(hits, int)
+
+        return FaqEntry(
+            name=name,
+            content=content,
+            message_link=message_link,
+            aliases=set(aliases),
+            added_on=added_on,
+            updated_on=updated_on,
+            hits=hits,
+        )
 
     def serialize(self) -> dict:
-        return {"content": self.content, "message_link": self.message_link}
+        return {
+            "content": self.content,
+            "message_link": self.message_link,
+            "aliases": list(self.aliases),
+            "added_on": self.added_on.isoformat(),
+            "updated_on": self.updated_on.isoformat(),
+            "hits": self.hits,
+        }
 
 
 @dataclass
