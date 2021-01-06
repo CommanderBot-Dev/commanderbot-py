@@ -29,7 +29,7 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         expected_version: int,
     ) -> Iterable[DataMigration]:
         if actual_version < 1:
-            yield migrations.m_1a_init_empty_aliases
+            yield migrations.m_1a_init_aliases_dates_hits
 
     # @implements VersionedCachedStore
     @property
