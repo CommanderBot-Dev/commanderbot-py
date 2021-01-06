@@ -9,11 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 - `faq` has been extended and improved:
-  - Allows for aliases to be add/removed from FAQs
-  - Tracks creation/modification dates for each entries
-  - Tracks the number of look-ups/hits for each entry
-  - Sorts the list of FAQs by hits -> name
-  - Includes more sub-commands for managing FAQ entries
+  - FAQs can be created and updated directly from existing messages
+  - FAQs can be assigned any number of aliases
+  - FAQs remember when they were created and last updated
+  - FAQs keep track of how many times they're used (hits)
+  - The list of FAQs is sorted by hits -> name
+  - More sub-commands for managing FAQs directly
 - Updated to commanderbot-lib version 0.5.0
 
 ## [0.3.0] - 2020-09-30
