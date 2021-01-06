@@ -9,5 +9,5 @@ async def m_1a_init_empty_aliases(database: VersionedFileDatabase, data: dict):
         for entry_key, entry_data in guild_data["entries"].items():
             entry_data["aliases"] = []
             entry_data["added_on"] = now
-            entry_data["last_modified_on"] = now
+            entry_data["updated_on"] = now
             entry_data["hits"] = 0

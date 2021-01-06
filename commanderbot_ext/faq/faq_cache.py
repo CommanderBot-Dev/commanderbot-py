@@ -12,7 +12,7 @@ class FaqEntry:
     message_link: str
     aliases: Set[str]
     added_on: datetime
-    last_modified_on: datetime
+    updated_on: datetime
     hits: int
 
     @staticmethod
@@ -39,10 +39,10 @@ class FaqEntry:
         assert isinstance(raw_added_on, str)
         added_on = datetime.fromisoformat(raw_added_on)
 
-        # last_modified_on
-        raw_last_modified_on = data["last_modified_on"]
-        assert isinstance(raw_last_modified_on, str)
-        last_modified_on = datetime.fromisoformat(raw_last_modified_on)
+        # updated_on
+        raw_updated_on = data["updated_on"]
+        assert isinstance(raw_updated_on, str)
+        updated_on = datetime.fromisoformat(raw_updated_on)
 
         # hits
         hits = data["hits"]
@@ -54,7 +54,7 @@ class FaqEntry:
             message_link=message_link,
             aliases=set(aliases),
             added_on=added_on,
-            last_modified_on=last_modified_on,
+            updated_on=updated_on,
             hits=hits,
         )
 
@@ -64,7 +64,7 @@ class FaqEntry:
             "message_link": self.message_link,
             "aliases": list(self.aliases),
             "added_on": self.added_on.isoformat(),
-            "last_modified_on": self.last_modified_on.isoformat(),
+            "updated_on": self.updated_on.isoformat(),
             "hits": self.hits,
         }
 

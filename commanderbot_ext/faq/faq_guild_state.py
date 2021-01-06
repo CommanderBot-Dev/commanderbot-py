@@ -31,15 +31,15 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
         if faq_entry := await self.store.get_guild_faq(self.guild, faq_query):
             aliases_str = ", ".join(faq_entry.aliases)
             added_on_str = faq_entry.added_on.isoformat()
-            last_modified_on_str = faq_entry.last_modified_on.isoformat()
+            updated_on_str = faq_entry.updated_on.isoformat()
             lines = [
                 f"<{faq_entry.message_link}>",
                 "```",
-                f"Name:             {faq_entry.name}",
-                f"Aliases:          {aliases_str}",
-                f"Added on:         {added_on_str}",
-                f"Last modified on: {last_modified_on_str}",
-                f"Hits:             {faq_entry.hits}",
+                f"Name:       {faq_entry.name}",
+                f"Aliases:    {aliases_str}",
+                f"Added on:   {added_on_str}",
+                f"Updated on: {updated_on_str}",
+                f"Hits:       {faq_entry.hits}",
                 "```",
             ]
             content = "\n".join(lines)
@@ -58,7 +58,7 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
                 message_link=message.jump_url,
                 aliases=[],
                 added_on=now,
-                last_modified_on=now,
+                updated_on=now,
                 hits=0,
             )
             await self.store.add_guild_faq(self.guild, faq_entry)

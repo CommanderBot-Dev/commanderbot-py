@@ -79,7 +79,7 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
 
     async def update_faq(self, entry: FaqEntry, message: Message, content: str):
         now = datetime.utcnow()
-        entry.last_modified_on = now
+        entry.updated_on = now
         entry.content = content
         entry.message_link = message.jump_url
         await self.dirty()
