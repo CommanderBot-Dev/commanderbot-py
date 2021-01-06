@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Iterable, Optional
 
 from commanderbot_ext.faq import faq_migrations as migrations
@@ -8,7 +9,7 @@ from commanderbot_lib.database.abc.versioned_file_database import (
     VersionedFileDatabase,
 )
 from commanderbot_lib.store.abc.versioned_cached_store import VersionedCachedStore
-from discord import Guild
+from discord import Guild, Message
 
 
 class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]):
@@ -75,6 +76,13 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
             if removed_entry := guild_data.entries.pop(faq_name, None):
                 await self.dirty()
                 return removed_entry
+
+    async def update_faq(self, entry: FaqEntry, message: Message, content: str):
+        now = datetime.utcnow()
+        entry.last_modified_on = now
+        entry.content = content
+        entry.message_link = message.jump_url
+        await self.dirty()
 
     async def increment_faq_hits(self, entry: FaqEntry) -> int:
         entry.hits += 1

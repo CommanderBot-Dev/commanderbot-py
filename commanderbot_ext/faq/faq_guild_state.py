@@ -70,6 +70,13 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
+    async def update_faq(self, ctx: Context, faq_name: str, message: Message, content: str):
+        if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
+            await self.store.update_faq(faq_entry, message, content)
+            await ctx.send(f"Updated FAQ named `{faq_name}`")
+        else:
+            await ctx.send(f"No FAQ named `{faq_name}`")
+
     async def add_alias(self, ctx: Context, faq_name: str, faq_alias: str):
         if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
             if await self.store.add_alias_to_faq(faq_entry, faq_alias):

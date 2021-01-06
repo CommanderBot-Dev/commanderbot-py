@@ -58,6 +58,8 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
     async def cmd_faq_details(self, ctx: Context, faq_query: str):
         await self.state.show_faq_details(ctx, faq_query)
 
+    # @@ faq add
+
     @cmd_faq.group(name="add")
     @checks.is_administrator()
     async def cmd_faq_add(self, ctx: Context):
@@ -74,10 +76,32 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
     async def cmd_faq_add_content(self, ctx: Context, faq_name: str, *, content: str):
         await self.state.add_faq(ctx, faq_name, ctx.message, content)
 
+    # @@ faq remove
+
     @cmd_faq.command(name="remove")
     @checks.is_administrator()
     async def cmd_faq_remove(self, ctx: Context, faq_name: str):
         await self.state.remove_faq(ctx, faq_name)
+
+    # @@ faq update
+
+    @cmd_faq.group(name="update")
+    @checks.is_administrator()
+    async def cmd_faq_update(self, ctx: Context):
+        if not ctx.invoked_subcommand:
+            await ctx.send_help(self.cmd_faq_update)
+
+    @cmd_faq_update.command(name="message")
+    @checks.is_administrator()
+    async def cmd_faq_update_message(self, ctx: Context, faq_name: str, message: Message):
+        await self.state.update_faq(ctx, faq_name, message, message.content)
+
+    @cmd_faq_update.command(name="content")
+    @checks.is_administrator()
+    async def cmd_faq_update_content(self, ctx: Context, faq_name: str, *, content: str):
+        await self.state.update_faq(ctx, faq_name, ctx.message, content)
+
+    # @@ faq alias
 
     @cmd_faq.group(name="alias")
     @checks.is_administrator()
