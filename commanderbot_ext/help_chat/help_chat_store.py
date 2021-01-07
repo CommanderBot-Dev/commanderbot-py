@@ -38,6 +38,10 @@ class HelpChatStore(VersionedCachedStore[HelpChatOptions, VersionedFileDatabase,
     def get_guild_data(self, guild: Guild) -> Optional[HelpChatGuildData]:
         return self._cache.guilds.get(guild.id)
 
+    def iter_guild_help_channels(self, guild: Guild) -> Optional[Iterable[HelpChannel]]:
+        if guild_data := self.get_guild_data(guild):
+            return guild_data.help_channels
+
     async def get_guild_help_channel(
         self, guild: Guild, channel: TextChannel
     ) -> Optional[HelpChannel]:
@@ -45,10 +49,6 @@ class HelpChatStore(VersionedCachedStore[HelpChatOptions, VersionedFileDatabase,
             for help_channel in guild_data.help_channels:
                 if help_channel.channel_id == channel.id:
                     return help_channel
-
-    async def iter_guild_help_channels(self, guild: Guild) -> Optional[Iterable[HelpChannel]]:
-        if guild_data := self.get_guild_data(guild):
-            return guild_data.help_channels
 
     async def add_guild_help_channel(self, guild: Guild, help_channel: HelpChannel):
         guild_data = self.get_guild_data(guild)

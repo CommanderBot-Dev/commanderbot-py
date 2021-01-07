@@ -1,7 +1,9 @@
+from datetime import datetime
 from typing import Optional
 
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.help_chat_state import HelpChatState
+from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD
 from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
 from discord import Message, TextChannel
@@ -39,6 +41,7 @@ class HelpChatCog(Cog, name="commanderbot_ext.help_chat"):
     # @@ COMMANDS
 
     @group(name="helpchat", aliases=["hc"])
+    @checks.is_administrator()
     async def cmd_helpchat(self, ctx: Context):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_helpchat)
@@ -70,3 +73,21 @@ class HelpChatCog(Cog, name="commanderbot_ext.help_chat"):
     @checks.is_administrator()
     async def cmd_helpchat_channels_remove(self, ctx: Context, channels: Greedy[TextChannel]):
         await self.state.remove_channels(ctx, channels)
+
+    # @@ helpchat nominate
+
+    @cmd_helpchat.command(name="nominations", aliases=["noms"])
+    @checks.is_administrator()
+    async def cmd_helpchat_nominations(
+        self,
+        ctx: Context,
+        after: str,
+        before: Optional[str] = None,
+    ):
+        after_date = datetime.strptime(after, DATE_FMT_YYYY_MM_DD)
+        before_date = (
+            datetime.strptime(before, DATE_FMT_YYYY_MM_DD)
+            if before is not None
+            else datetime.utcnow()
+        )
+        await self.state.build_nominations(ctx, after_date, before_date)

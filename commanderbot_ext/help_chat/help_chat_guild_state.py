@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 
 from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
+from commanderbot_ext.help_chat.help_chat_nom_context import HelpChatNomContext
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.help_chat_store import HelpChatStore
 from commanderbot_lib.guild_state.abc.cog_guild_state import CogGuildState
@@ -11,7 +12,7 @@ from discord.ext.commands import Context
 
 class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
     async def show_channels(self, ctx: Context):
-        if help_channels := await self.store.iter_guild_help_channels(self.guild):
+        if help_channels := self.store.iter_guild_help_channels(self.guild):
             channels = [help_channel.channel(ctx) for help_channel in help_channels]
             sorted_channels = sorted(channels, key=lambda channel: channel.position)
             await ctx.send(
@@ -22,7 +23,7 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
             await ctx.send(f"No help channels registered")
 
     async def list_channels(self, ctx: Context):
-        if help_channels := await self.store.iter_guild_help_channels(self.guild):
+        if help_channels := self.store.iter_guild_help_channels(self.guild):
             lines = []
             for help_channel in help_channels:
                 channel = help_channel.channel(ctx)
@@ -108,3 +109,10 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
                 f"⚠️ These {len(failed_channels)} channels caused errors:"
                 + " ".join(ch.mention for ch in failed_channels)
             )
+
+    async def build_nominations(self, ctx: Context, after: datetime, before: datetime):
+        help_channels: List[HelpChannel] = list(self.store.iter_guild_help_channels(self.guild))
+        nom_context = HelpChatNomContext(
+            ctx, options=self.options, help_channels=help_channels, after=after, before=before
+        )
+        await nom_context.run()
