@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Partial implementation of the new `help_chat` system
 
+## [0.6.0] - 2021-01-08
+
+### Added
+
+- Added `quote` and `quotem` commands
+
+### Changed
+
+- Updated commanderbot-lib and discord.py
+
 ## [0.5.0] - 2021-01-06
 
 ### Changed
