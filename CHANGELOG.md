@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Added `quote` and `quotem` commands
 
+### Changed
+
+- Updated commanderbot-lib and discord.py
+
 ## [0.5.0] - 2021-01-06
 
 ### Changed
