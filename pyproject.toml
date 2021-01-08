@@ -11,8 +11,8 @@ keywords = ['discord', 'bot']
 
 [tool.poetry.dependencies]
 python = "^3.8"
-commanderbot-lib = "^0.1.0"
-"discord.py" = "^1.4.1"
+commanderbot-lib = "^0.5.0"
+"discord.py" = "^1.5.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
