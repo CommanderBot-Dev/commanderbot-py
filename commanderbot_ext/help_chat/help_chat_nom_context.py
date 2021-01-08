@@ -1,11 +1,11 @@
 from datetime import datetime
 from enum import Enum
-from typing import AsyncIterable, Dict, Iterable, List, Optional
+from typing import AsyncIterable, Iterable, List, Optional
 
 from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD
-from discord import Embed, Message, TextChannel
+from discord import AllowedMentions, Embed, Message, TextChannel
 from discord.ext.commands import Context
 
 
@@ -142,26 +142,31 @@ class HelpChatNomContext:
         count_batches = len(batches)
         # Send the first (and possibly only) batch as an embed with some initial response text.
         first_batch = batches[0]
-        # TODO Use a reply to link to the original request. #enhance #use-reply
-        yield await self.ctx.send(
-            content=f"\n{self.ctx.author.mention} Here are the results:",
+        yield await self.ctx.reply(
+            content="The results are in:",
             embed=self.make_summary_batch_embed(1, count_batches, first_batch),
         )
         # Send an additional embed for each remaining batch (if any).
         for i, batch in enumerate(batches[1:]):
-            yield await self.ctx.send(
+            yield await self.ctx.reply(
                 content=None,
                 embed=self.make_summary_batch_embed(i + 2, count_batches, batch),
+                mention_author=False,
             )
 
     async def update(self):
         # Update the progress message, or send a new one if it doesn't already exist.
         progress_text = self.build_progress_text()
         if self._progress_message is not None:
-            await self._progress_message.edit(content=progress_text)
+            await self._progress_message.edit(
+                content=progress_text,
+                allowed_mentions=AllowedMentions(replied_user=False),
+            )
         else:
-            # TODO Use a reply to link to the original request. #enhance #use-reply
-            self._progress_message = await self.ctx.send(progress_text)
+            self._progress_message = await self.ctx.reply(
+                content=progress_text,
+                mention_author=False,
+            )
         # Send the summary messages if we're done and they don't already exist.
         if self.is_finished() and self._summary_messages is None:
             self._summary_messages = []
