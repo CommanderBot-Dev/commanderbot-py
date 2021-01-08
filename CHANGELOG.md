@@ -4,25 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - 2021-01-06
-
-### Changed
-
-- `faq` has been extended and improved:
-  - FAQs can be created and updated directly from existing messages
-  - FAQs can be assigned any number of aliases
-  - FAQs remember when they were created and last updated
-  - FAQs keep track of how many times they're used (hits)
-  - The list of FAQs is sorted by hits -> name
-  - More sub-commands for managing FAQs directly
-
-## [0.4.0] - 2021-01-03
-
-### Changed
-
-- Updated to commanderbot-lib version 0.5.0
-
-## [0.3.0] - 2020-09-30
+## [Unreleased]
 
 ### Added
 
