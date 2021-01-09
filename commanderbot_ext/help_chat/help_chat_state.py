@@ -29,6 +29,18 @@ class HelpChatState(CogState[HelpChatOptions, HelpChatStore, HelpChatGuildState]
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.remove_channels(ctx, channels)
 
-    async def build_nominations(self, ctx: Context, after: datetime, before: datetime):
+    async def set_default_report_split_length(self, ctx: Context, split_length: int):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.build_nominations(ctx, after, before)
+            await guild_state.set_default_report_split_length(ctx, split_length)
+
+    async def set_default_report_max_rows(self, ctx: Context, max_rows: int):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.set_default_report_max_rows(ctx, max_rows)
+
+    async def set_default_report_min_score(self, ctx: Context, min_score: int):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.set_default_report_min_score(ctx, min_score)
+
+    async def build_report(self, ctx: Context, after: datetime, before: datetime):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.build_report(ctx, after, before)

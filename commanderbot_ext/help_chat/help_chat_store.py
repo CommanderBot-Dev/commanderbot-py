@@ -38,6 +38,15 @@ class HelpChatStore(VersionedCachedStore[HelpChatOptions, VersionedFileDatabase,
     def get_guild_data(self, guild: Guild) -> Optional[HelpChatGuildData]:
         return self._cache.guilds.get(guild.id)
 
+    async def get_or_init_guild_data(self, guild: Guild) -> HelpChatGuildData:
+        guild_data = self.get_guild_data(guild)
+        if guild_data is None:
+            guild_data = HelpChatGuildData(guild_id=guild.id, help_channels=[])
+            self._cache.guilds[guild.id] = guild_data
+        return guild_data
+
+    # @@ help_channels
+
     def iter_guild_help_channels(self, guild: Guild) -> Optional[Iterable[HelpChannel]]:
         if guild_data := self.get_guild_data(guild):
             return guild_data.help_channels
@@ -51,10 +60,7 @@ class HelpChatStore(VersionedCachedStore[HelpChatOptions, VersionedFileDatabase,
                     return help_channel
 
     async def add_guild_help_channel(self, guild: Guild, help_channel: HelpChannel):
-        guild_data = self.get_guild_data(guild)
-        if guild_data is None:
-            guild_data = HelpChatGuildData(guild_id=guild.id, help_channels=[])
-            self._cache.guilds[guild.id] = guild_data
+        guild_data = await self.get_or_init_guild_data(guild)
         guild_data.help_channels.append(help_channel)
         await self.dirty()
 
@@ -64,3 +70,36 @@ class HelpChatStore(VersionedCachedStore[HelpChatOptions, VersionedFileDatabase,
         if guild_data := self.get_guild_data(guild):
             guild_data.help_channels.remove(help_channel)
             await self.dirty()
+
+    # @@ default_report_split_length
+
+    def get_guild_default_report_split_length(self, guild: Guild) -> Optional[int]:
+        if guild_data := self.get_guild_data(guild):
+            return guild_data.default_report_split_length
+
+    async def set_guild_default_report_split_length(self, guild: Guild, split_length: int):
+        guild_data = await self.get_or_init_guild_data(guild)
+        guild_data.default_report_split_length = split_length
+        await self.dirty()
+
+    # @@ default_report_max_rows
+
+    def get_guild_default_report_max_rows(self, guild: Guild) -> Optional[int]:
+        if guild_data := self.get_guild_data(guild):
+            return guild_data.default_report_max_rows
+
+    async def set_guild_default_report_max_rows(self, guild: Guild, max_rows: int):
+        guild_data = await self.get_or_init_guild_data(guild)
+        guild_data.default_report_max_rows = max_rows
+        await self.dirty()
+
+    # @@ default_report_min_score
+
+    def get_guild_default_report_min_score(self, guild: Guild) -> Optional[int]:
+        if guild_data := self.get_guild_data(guild):
+            return guild_data.default_report_min_score
+
+    async def set_guild_default_report_min_score(self, guild: Guild, min_score: int):
+        guild_data = await self.get_or_init_guild_data(guild)
+        guild_data.default_report_min_score = min_score
+        await self.dirty()

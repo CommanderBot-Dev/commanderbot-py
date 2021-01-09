@@ -74,20 +74,46 @@ class HelpChatCog(Cog, name="commanderbot_ext.help_chat"):
     async def cmd_helpchat_channels_remove(self, ctx: Context, channels: Greedy[TextChannel]):
         await self.state.remove_channels(ctx, channels)
 
-    # @@ helpchat nominate
+    # @@ helpchat report
 
-    @cmd_helpchat.command(name="nominations", aliases=["noms"])
+    @cmd_helpchat.group(name="report")
     @checks.is_administrator()
-    async def cmd_helpchat_nominations(
-        self,
-        ctx: Context,
-        after: str,
-        before: Optional[str] = None,
+    async def cmd_helpchat_report(self, ctx: Context):
+        if not ctx.invoked_subcommand:
+            await ctx.send_help(self.cmd_helpchat_report)
+
+    # @@ helpchat report set
+
+    @cmd_helpchat_report.group(name="set")
+    @checks.is_administrator()
+    async def cmd_helpchat_report_set(self, ctx: Context):
+        if not ctx.invoked_subcommand:
+            await ctx.send_help(self.cmd_helpchat_report_set)
+
+    @cmd_helpchat_report_set.command(name="split_length")
+    @checks.is_administrator()
+    async def cmd_helpchat_report_set_split_length(self, ctx: Context, split_length: int):
+        await self.state.set_default_report_split_length(ctx, split_length)
+
+    @cmd_helpchat_report_set.command(name="max_rows")
+    @checks.is_administrator()
+    async def cmd_helpchat_report_set_max_rows(self, ctx: Context, max_rows: int):
+        await self.state.set_default_report_max_rows(ctx, max_rows)
+
+    @cmd_helpchat_report_set.command(name="min_score")
+    @checks.is_administrator()
+    async def cmd_helpchat_report_set_min_score(self, ctx: Context, min_score: int):
+        await self.state.set_default_report_min_score(ctx, min_score)
+
+    # @@ helpchat report build
+
+    @cmd_helpchat_report.command(name="build")
+    @checks.is_administrator()
+    async def cmd_helpchat_report_build(
+        self, ctx: Context, after: str, before: Optional[str] = "now"
     ):
         after_date = datetime.strptime(after, DATE_FMT_YYYY_MM_DD)
         before_date = (
-            datetime.strptime(before, DATE_FMT_YYYY_MM_DD)
-            if before is not None
-            else datetime.utcnow()
+            datetime.utcnow() if before == "now" else datetime.strptime(before, DATE_FMT_YYYY_MM_DD)
         )
-        await self.state.build_nominations(ctx, after_date, before_date)
+        await self.state.build_report(ctx, after_date, before_date)

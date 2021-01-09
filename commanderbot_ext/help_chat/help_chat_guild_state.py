@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import List
 
 from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
-from commanderbot_ext.help_chat.help_chat_nom_context import HelpChatNomContext
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
+from commanderbot_ext.help_chat.help_chat_report import HelpChatReportBuildContext
 from commanderbot_ext.help_chat.help_chat_store import HelpChatStore
 from commanderbot_lib.guild_state.abc.cog_guild_state import CogGuildState
 from discord import TextChannel
@@ -110,9 +110,33 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
                 + " ".join(ch.mention for ch in failed_channels)
             )
 
-    async def build_nominations(self, ctx: Context, after: datetime, before: datetime):
+    async def set_default_report_split_length(self, ctx: Context, split_length: int):
+        await self.store.set_guild_default_report_split_length(self.guild, split_length)
+        await ctx.message.add_reaction("✔️")
+
+    async def set_default_report_max_rows(self, ctx: Context, max_rows: int):
+        await self.store.set_guild_default_report_max_rows(self.guild, max_rows)
+        await ctx.message.add_reaction("✔️")
+
+    async def set_default_report_min_score(self, ctx: Context, min_score: int):
+        await self.store.set_guild_default_report_min_score(self.guild, min_score)
+        await ctx.message.add_reaction("✔️")
+
+    async def build_report(self, ctx: Context, after: datetime, before: datetime):
+        # Build the report, which will send progress updates as each channel is scanned.
         help_channels: List[HelpChannel] = list(self.store.iter_guild_help_channels(self.guild))
-        nom_context = HelpChatNomContext(
-            ctx, options=self.options, help_channels=help_channels, after=after, before=before
+        report_context = HelpChatReportBuildContext(
+            ctx,
+            options=self.options,
+            help_channels=help_channels,
+            after=after,
+            before=before,
         )
-        await nom_context.run()
+        report = await report_context.build()
+        # Summarize the report in the current channel, using the guild's default options.
+        await report.summarize(
+            ctx,
+            split_length=self.store.get_guild_default_report_split_length(self.guild),
+            max_rows=self.store.get_guild_default_report_max_rows(self.guild),
+            min_score=self.store.get_guild_default_report_min_score(self.guild),
+        )
