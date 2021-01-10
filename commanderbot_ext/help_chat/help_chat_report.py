@@ -79,18 +79,19 @@ class HelpChatReport:
         count_results = len(sorted_user_results)
         after_str = self.after.strftime(DATE_FMT_YYYY_MM_DD)
         before_str = self.before.strftime(DATE_FMT_YYYY_MM_DD)
+        max_results = min(options.max_rows, count_results)
         yield (
-            f"Showing the top {options.max_rows} results (of {count_results})"
-            + f" with a score of at least {options.min_score}."
+            f"Showing the top {max_results:,} of {count_results:,} results"
+            + f" with a score of at least {options.min_score:,}."
             + " A user's score is determined by summing the length of all their messages"
-            + f" from {after_str} up to {before_str}."
+            + f" in help channels from {after_str} up to {before_str}."
             + "\n"
         )
         # Print a line for each user.
         for i, (user_id, score, days_active) in enumerate(sorted_user_results):
             if (i >= options.max_rows) or (score < options.min_score):
                 break
-            yield (f"<@{user_id}>: **{score}**" + f" ({days_active} days active)")
+            yield (f"<@{user_id}>: **{score:,}**" + f" ({days_active:,} days active)")
 
     def batch_summary_text(self, options: HelpChatSummaryOptions) -> Iterable[str]:
         batch = ""
@@ -186,7 +187,7 @@ class HelpChatReportBuildContext:
             status_text = "Done!"
 
         text = (
-            f"\nScanning message history from {after_str} to {before_str}, across"
+            f"\nScanning message history from {after_str} up to {before_str}, across"
             + f" {len(self.help_channels)} help channels..."
             + f"\n> {progress_emoji}"
             + f"\n{status_text}"
