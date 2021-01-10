@@ -45,6 +45,8 @@ class HelpChatSummaryOptions:
 
 @dataclass
 class HelpChatReport:
+    after: datetime
+    before: datetime
     built_at: datetime
     channel_states: List[ChannelState]
     user_table: UserTable
@@ -54,8 +56,9 @@ class HelpChatReport:
         timestamp_str = self.built_at.strftime(DATE_FMT_YYYY_MM_DD_HH_MM_SS)
         embed = Embed(
             type="rich",
-            title=f"Help-chat Summary {timestamp_str}",
+            title=f"Help-chat Report {timestamp_str}",
             description=text,
+            colour=0x77B255,
         )
         # If we've got more than a single batch, include the batch number in the footer.
         if count_batches > 1:
@@ -74,9 +77,13 @@ class HelpChatReport:
         sorted_user_results = sorted(self.get_user_results(), key=lambda row: -row[1])
         # Print some initial information about the report.
         count_results = len(sorted_user_results)
+        after_str = self.after.strftime(DATE_FMT_YYYY_MM_DD)
+        before_str = self.before.strftime(DATE_FMT_YYYY_MM_DD)
         yield (
             f"Showing the top {options.max_rows} results (of {count_results})"
-            + f" with a minimum score of {options.min_score}."
+            + f" with a score of at least {options.min_score}."
+            + " A user's score is determined by summing the length of all their messages"
+            + f" from {after_str} up to {before_str}."
             + "\n"
         )
         # Print a line for each user.
@@ -250,6 +257,8 @@ class HelpChatReportBuildContext:
         await self.update()
         # Return the final result, encapsulated in an object.
         return HelpChatReport(
+            after=self.after,
+            before=self.before,
             built_at=self._built_at,
             channel_states=self._channel_states,
             user_table=self._user_table,
