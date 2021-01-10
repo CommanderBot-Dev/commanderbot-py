@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.help_chat_state import HelpChatState
 from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD
 from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
-from discord import Message, TextChannel
+from discord import CategoryChannel, Message, TextChannel
 from discord.ext.commands import Bot, Cog, Context, group
 from discord.ext.commands.converter import Greedy
 
@@ -66,12 +66,20 @@ class HelpChatCog(Cog, name="commanderbot_ext.help_chat"):
 
     @cmd_helpchat_channels.command(name="add")
     @checks.is_administrator()
-    async def cmd_helpchat_channels_add(self, ctx: Context, channels: Greedy[TextChannel]):
+    async def cmd_helpchat_channels_add(
+        self, ctx: Context, channels: Greedy[Union[TextChannel, CategoryChannel]]
+    ):
+        if not channels:
+            await ctx.send_help(self.cmd_helpchat_channels_add)
         await self.state.add_channels(ctx, channels)
 
     @cmd_helpchat_channels.command(name="remove")
     @checks.is_administrator()
-    async def cmd_helpchat_channels_remove(self, ctx: Context, channels: Greedy[TextChannel]):
+    async def cmd_helpchat_channels_remove(
+        self, ctx: Context, channels: Greedy[Union[TextChannel, CategoryChannel]]
+    ):
+        if not channels:
+            await ctx.send_help(self.cmd_helpchat_channels_remove)
         await self.state.remove_channels(ctx, channels)
 
     # @@ helpchat report

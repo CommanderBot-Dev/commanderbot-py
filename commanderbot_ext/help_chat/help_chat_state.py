@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import List
+from typing import List, Union
 
 from commanderbot_ext.help_chat.help_chat_guild_state import HelpChatGuildState
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.help_chat_store import HelpChatStore
 from commanderbot_lib.state.abc.cog_state import CogState
-from discord import TextChannel
+from discord import CategoryChannel, TextChannel
 from discord.ext.commands import Context
 
 
@@ -21,11 +21,13 @@ class HelpChatState(CogState[HelpChatOptions, HelpChatStore, HelpChatGuildState]
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.list_channels(ctx)
 
-    async def add_channels(self, ctx: Context, channels: List[TextChannel]):
+    async def add_channels(self, ctx: Context, channels: List[Union[TextChannel, CategoryChannel]]):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.add_channels(ctx, channels)
 
-    async def remove_channels(self, ctx: Context, channels: List[TextChannel]):
+    async def remove_channels(
+        self, ctx: Context, channels: List[Union[TextChannel, CategoryChannel]]
+    ):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.remove_channels(ctx, channels)
 

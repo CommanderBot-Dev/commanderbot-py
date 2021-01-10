@@ -1,16 +1,26 @@
 from datetime import datetime
-from typing import List
+from typing import Iterable, List, Union
 
 from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.help_chat_report import HelpChatReportBuildContext
 from commanderbot_ext.help_chat.help_chat_store import HelpChatStore
 from commanderbot_lib.guild_state.abc.cog_guild_state import CogGuildState
-from discord import TextChannel
+from discord import CategoryChannel, TextChannel
 from discord.ext.commands import Context
 
 
 class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
+    @staticmethod
+    def _flatten_text_channels(
+        channels: List[Union[TextChannel, CategoryChannel]]
+    ) -> Iterable[TextChannel]:
+        for channel in channels:
+            if isinstance(channel, TextChannel):
+                yield channel
+            elif isinstance(channel, CategoryChannel):
+                yield from channel.channels
+
     async def show_channels(self, ctx: Context):
         if help_channels := self.store.iter_guild_help_channels(self.guild):
             channels = [help_channel.channel(ctx) for help_channel in help_channels]
@@ -34,14 +44,14 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
         else:
             await ctx.send(f"No help channels registered")
 
-    async def add_channels(self, ctx: Context, channels: List[TextChannel]):
+    async def add_channels(self, ctx: Context, channels: List[Union[TextChannel, CategoryChannel]]):
         added_help_channels: List[TextChannel] = []
         already_help_channels: List[TextChannel] = []
         failed_channels: List[TextChannel] = []
 
         now = datetime.utcnow()
 
-        for channel in channels:
+        for channel in self._flatten_text_channels(channels):
             try:
                 if help_channel := await self.store.get_guild_help_channel(self.guild, channel):
                     already_help_channels.append(channel)
@@ -75,12 +85,14 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
                 + " ".join(ch.mention for ch in failed_channels)
             )
 
-    async def remove_channels(self, ctx: Context, channels: List[TextChannel]):
+    async def remove_channels(
+        self, ctx: Context, channels: List[Union[TextChannel, CategoryChannel]]
+    ):
         removed_help_channels: List[TextChannel] = []
         not_help_channels: List[TextChannel] = []
         failed_channels: List[TextChannel] = []
 
-        for channel in channels:
+        for channel in self._flatten_text_channels(channels):
             try:
                 if help_channel := await self.store.get_guild_help_channel(self.guild, channel):
                     await self.store.remove_guild_help_channel(self.guild, help_channel)
