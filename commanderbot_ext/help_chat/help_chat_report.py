@@ -35,6 +35,12 @@ class ChannelState:
     total_messages: Optional[int] = None
     total_message_length: Optional[int] = None
 
+    @property
+    def status_text(self) -> str:
+        if self.total_messages:
+            return f"{self.channel.mention} ({self.total_messages:,} messages)"
+        return self.channel.mention
+
 
 @dataclass
 class HelpChatSummaryOptions:
@@ -180,9 +186,7 @@ class HelpChatReportBuildContext:
 
         status_text = ""
         if (states_in_progress := self.get_states_in_progress()) :
-            status_text = "Scanning: " + " ".join(
-                state.channel.mention for state in states_in_progress
-            )
+            status_text = "Scanning: " + " ".join(state.status_text for state in states_in_progress)
         elif self.is_finished():
             status_text = "Done!"
 
@@ -250,6 +254,9 @@ class HelpChatReportBuildContext:
                     )
                     # Increment the user's daily record by message count.
                     user_record[daily_key] += message_length
+                    # Update progress every 100 messages.
+                    if channel_state.total_messages % 1000 == 0:
+                        await self.update()
                 # Mark the channel as complete. Don't bother updating here, because we're going to
                 # update anyway as soon as we either (1) finish and run off the end of the loop or
                 # (2) enter the next iteration of the loop and mark the next channel to in-progress.
