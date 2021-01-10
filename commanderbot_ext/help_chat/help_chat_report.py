@@ -120,7 +120,6 @@ class HelpChatReport:
         # Send the first (and possibly only) batch as an embed with some initial response text.
         first_batch = batches[0]
         await ctx.reply(
-            content="The results are in:",
             embed=self.make_summary_batch_embed(1, count_batches, first_batch),
         )
         # Send an additional embed for each remaining batch (if any).
