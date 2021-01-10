@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List
 
@@ -46,13 +46,18 @@ class HelpChannel:
         return channel
 
 
+DEFAULT_REPORT_SPLIT_LENGTH = 1500
+DEFAULT_REPORT_MAX_ROWS = 10
+DEFAULT_REPORT_MIN_SCORE = 1
+
+
 @dataclass
 class HelpChatGuildData:
     guild_id: GuildID
-    help_channels: List[HelpChannel]
-    default_report_split_length: int
-    default_report_max_rows: int
-    default_report_min_score: int
+    help_channels: List[HelpChannel] = field(default_factory=list)
+    default_report_split_length: int = DEFAULT_REPORT_SPLIT_LENGTH
+    default_report_max_rows: int = DEFAULT_REPORT_MAX_ROWS
+    default_report_min_score: int = DEFAULT_REPORT_MIN_SCORE
 
     @staticmethod
     async def deserialize(data: dict, guild_id: GuildID) -> "HelpChatGuildData":
@@ -68,27 +73,12 @@ class HelpChatGuildData:
             help_channel = await HelpChannel.deserialize(raw_help_channel)
             help_channels.append(help_channel)
 
-        # default_report_split_length
-        default_report_split_length = data.get("default_report_split_length", 1500)
-        if not isinstance(default_report_split_length, int) or default_report_split_length < 0:
-            raise ValueError(f"Invalid default_report_split_length: {default_report_split_length}")
-
-        # default_report_max_rows
-        default_report_max_rows = data.get("default_report_max_rows", 10)
-        if not isinstance(default_report_max_rows, int) or default_report_max_rows < 0:
-            raise ValueError(f"Invalid default_report_max_rows: {default_report_max_rows}")
-
-        # default_report_min_score
-        default_report_min_score = data.get("default_report_min_score", 1)
-        if not isinstance(default_report_min_score, int) or default_report_min_score < 0:
-            raise ValueError(f"Invalid default_report_min_score: {default_report_min_score}")
-
         return HelpChatGuildData(
             guild_id=guild_id,
             help_channels=help_channels,
-            default_report_split_length=default_report_split_length,
-            default_report_max_rows=default_report_max_rows,
-            default_report_min_score=default_report_min_score,
+            default_report_split_length=data.get("default_report_split_length"),
+            default_report_max_rows=data.get("default_report_max_rows"),
+            default_report_min_score=data.get("default_report_min_score"),
         )
 
     def serialize(self) -> dict:

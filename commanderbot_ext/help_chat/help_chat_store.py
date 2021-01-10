@@ -41,7 +41,7 @@ class HelpChatStore(VersionedCachedStore[HelpChatOptions, VersionedFileDatabase,
     async def get_or_init_guild_data(self, guild: Guild) -> HelpChatGuildData:
         guild_data = self.get_guild_data(guild)
         if guild_data is None:
-            guild_data = HelpChatGuildData(guild_id=guild.id, help_channels=[])
+            guild_data = HelpChatGuildData(guild_id=guild.id)
             self._cache.guilds[guild.id] = guild_data
         return guild_data
 
