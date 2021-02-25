@@ -7,7 +7,7 @@ from typing import DefaultDict, Iterable, List, Optional, Tuple
 
 from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
-from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD, DATE_FMT_YYYY_MM_DD_HH_MM_SS
+from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD
 from commanderbot_lib.types import IDType
 from discord import AllowedMentions, Embed, Message, TextChannel, User
 from discord.ext.commands import Context
@@ -54,16 +54,16 @@ class HelpChatSummaryOptions:
 class HelpChatReport:
     after: datetime
     before: datetime
+    title: str
     built_at: datetime
     channel_states: List[ChannelState]
     user_table: UserTable
 
     def make_summary_batch_embed(self, batch_no: int, count_batches: int, text: str) -> Embed:
         # Create the base embed.
-        timestamp_str = self.built_at.strftime(DATE_FMT_YYYY_MM_DD_HH_MM_SS)
         embed = Embed(
             type="rich",
-            title=f"Help-chat Report {timestamp_str}",
+            title=f"Help-chat Report: {self.title}",
             description=text,
             colour=0x77B255,
         )
@@ -141,12 +141,14 @@ class HelpChatReportBuildContext:
         help_channels: List[HelpChannel],
         after: datetime,
         before: datetime,
+        title: str,
     ):
         self.ctx: Context = ctx
         self.options: HelpChatOptions = options
         self.help_channels: List[HelpChannel] = help_channels
         self.after: datetime = after
         self.before: datetime = before
+        self.title: str = title
 
         self._progress_message: Optional[Message] = None
         self._built_at: Optional[datetime] = None
@@ -269,6 +271,7 @@ class HelpChatReportBuildContext:
         return HelpChatReport(
             after=self.after,
             before=self.before,
+            title=self.title,
             built_at=self._built_at,
             channel_states=self._channel_states,
             user_table=self._user_table,

@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.help_chat_state import HelpChatState
-from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD
+from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD, DATE_FMT_YYYY_MM_DD_HH_MM_SS
 from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
 from discord import CategoryChannel, Message, TextChannel
@@ -118,10 +118,18 @@ class HelpChatCog(Cog, name="commanderbot_ext.help_chat"):
     @cmd_helpchat_report.command(name="build")
     @checks.is_administrator()
     async def cmd_helpchat_report_build(
-        self, ctx: Context, after: str, before: Optional[str] = "now"
+        self,
+        ctx: Context,
+        after: str,
+        before: Optional[str] = "now",
+        *,
+        title: Optional[str] = None,
     ):
         after_date = datetime.strptime(after, DATE_FMT_YYYY_MM_DD)
         before_date = (
             datetime.utcnow() if before == "now" else datetime.strptime(before, DATE_FMT_YYYY_MM_DD)
         )
-        await self.state.build_report(ctx, after_date, before_date)
+        actual_title = (
+            title if title is not None else datetime.utcnow().strftime(DATE_FMT_YYYY_MM_DD_HH_MM_SS)
+        )
+        await self.state.build_report(ctx, after_date, before_date, actual_title)
