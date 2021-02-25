@@ -1,6 +1,7 @@
 import asyncio
+import io
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import DefaultDict, Iterable, List, Optional, Tuple
@@ -9,10 +10,8 @@ from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD
 from commanderbot_lib.types import IDType
-from discord import AllowedMentions, Embed, Message, TextChannel, User
+from discord import AllowedMentions, Embed, File, Message, TextChannel, User
 from discord.ext.commands import Context
-
-UserTable = DefaultDict[IDType, DefaultDict[Tuple[int, int, int], int]]
 
 
 class ChannelStatus(Enum):
@@ -26,6 +25,28 @@ STATUS_EMOJI = {
     ChannelStatus.IN_PROGRESS: "🔄",
     ChannelStatus.COMPLETE: "✅",
 }
+
+
+@dataclass
+class UserRecord:
+    user_id: IDType
+    username: str
+
+    # map YYYY-MM-DD to score (initialized at 0)
+    score_by_day: DefaultDict[Tuple[int, int, int], int] = field(
+        default_factory=lambda: defaultdict(lambda: 0)
+    )
+
+    @property
+    def total_score(self) -> int:
+        return sum(self.score_by_day.values())
+
+    @property
+    def days_active(self) -> int:
+        return len(self.score_by_day)
+
+
+UserTable = DefaultDict[IDType, UserRecord]
 
 
 @dataclass
@@ -54,16 +75,20 @@ class HelpChatSummaryOptions:
 class HelpChatReport:
     after: datetime
     before: datetime
-    title: str
+    label: str
     built_at: datetime
     channel_states: List[ChannelState]
     user_table: UserTable
+
+    @property
+    def title(self) -> str:
+        return f"Help-chat Report: {self.label}"
 
     def make_summary_batch_embed(self, batch_no: int, count_batches: int, text: str) -> Embed:
         # Create the base embed.
         embed = Embed(
             type="rich",
-            title=f"Help-chat Report: {self.title}",
+            title=self.title,
             description=text,
             colour=0x77B255,
         )
@@ -73,17 +98,39 @@ class HelpChatReport:
         # Return the final embed.
         return embed
 
-    def get_user_results(self) -> Iterable[Tuple[IDType, int, int]]:
-        for user_id, user_record in self.user_table.items():
-            score = sum(user_record.values())
-            days_active = len(user_record)
-            yield user_id, score, days_active
+    def get_user_records(self) -> Iterable[UserRecord]:
+        # Get user results, in arbitrary order.
+        return self.user_table.values()
+
+    def get_sorted_user_records(self) -> Iterable[UserRecord]:
+        # Get user results, sorted by score in descending order.
+        return sorted(self.get_user_records(), key=lambda user_record: -user_record.total_score)
+
+    def build_results_file_line(self, user_record: UserRecord) -> str:
+        return ",".join(
+            str(elem)
+            for elem in (
+                user_record.user_id,
+                user_record.username,
+                user_record.total_score,
+                user_record.days_active,
+            )
+        )
+
+    def build_results_file(self) -> File:
+        sorted_user_records = self.get_sorted_user_records()
+        lines = [
+            "User ID,Username,Score,Days Active",
+            *(self.build_results_file_line(user_record) for user_record in sorted_user_records),
+        ]
+        file_contents = "\n".join(lines)
+        filename = f"{self.title}.csv"
+        return File(fp=io.StringIO(file_contents), filename=filename)
 
     def build_summary_lines(self, options: HelpChatSummaryOptions) -> Iterable[str]:
-        # Sort the user results, descending by score.
-        sorted_user_results = sorted(self.get_user_results(), key=lambda row: -row[1])
+        sorted_user_records = self.get_sorted_user_records()
         # Print some initial information about the report.
-        count_results = len(sorted_user_results)
+        count_results = len(sorted_user_records)
         after_str = self.after.strftime(DATE_FMT_YYYY_MM_DD)
         before_str = self.before.strftime(DATE_FMT_YYYY_MM_DD)
         max_results = min(options.max_rows, count_results)
@@ -95,10 +142,13 @@ class HelpChatReport:
             + "\n"
         )
         # Print a line for each user.
-        for i, (user_id, score, days_active) in enumerate(sorted_user_results):
-            if (i >= options.max_rows) or (score < options.min_score):
+        for i, user_record in enumerate(sorted_user_records):
+            if (i >= options.max_rows) or (user_record.total_score < options.min_score):
                 break
-            yield (f"<@{user_id}>: **{score:,}**" + f" ({days_active:,} days active)")
+            yield (
+                f"<@{user_record.user_id}>: **{user_record.total_score:,}**"
+                + f" ({user_record.days_active:,} days active)"
+            )
 
     def batch_summary_text(self, options: HelpChatSummaryOptions) -> Iterable[str]:
         batch = ""
@@ -114,14 +164,18 @@ class HelpChatReport:
 
     async def summarize(self, ctx: Context, **kwargs):
         options = HelpChatSummaryOptions(**kwargs)
+        # Create a simple CSV file with the full results.
+        results_file = self.build_results_file()
         # Split the response into individual batches, to avoid hitting the message cap.
         batches = list(self.batch_summary_text(options))
         # Count the number of batches so we can include this information in the response.
         count_batches = len(batches)
-        # Send the first (and possibly only) batch as an embed with some initial response text.
+        # Send the first (and possibly only) batch as an embed with some initial response text,
+        # with the results file attached.
         first_batch = batches[0]
         await ctx.reply(
             embed=self.make_summary_batch_embed(1, count_batches, first_batch),
+            file=results_file,
         )
         # Send an additional embed for each remaining batch (if any).
         for i, batch in enumerate(batches[1:]):
@@ -141,14 +195,14 @@ class HelpChatReportBuildContext:
         help_channels: List[HelpChannel],
         after: datetime,
         before: datetime,
-        title: str,
+        label: str,
     ):
         self.ctx: Context = ctx
         self.options: HelpChatOptions = options
         self.help_channels: List[HelpChannel] = help_channels
         self.after: datetime = after
         self.before: datetime = before
-        self.title: str = title
+        self.label: str = label
 
         self._progress_message: Optional[Message] = None
         self._built_at: Optional[datetime] = None
@@ -162,7 +216,7 @@ class HelpChatReportBuildContext:
             ChannelState(help_channel, help_channel.channel(self.ctx))
             for help_channel in self.help_channels
         ]
-        self._user_table = defaultdict(lambda: defaultdict(int))
+        self._user_table = {}
 
     def get_states_with_status(self, status: ChannelStatus) -> List[ChannelState]:
         return [state for state in self._channel_states if state.status == status]
@@ -249,16 +303,20 @@ class HelpChatReportBuildContext:
                     channel_state.total_message_length += message_length
                     # Update the author's record.
                     author: User = message.author
-                    user_record = self._user_table[author.id]
+                    user_record = self._user_table.get(author.id)
+                    if user_record is None:
+                        # Create a new record for this user, if one does not already exist.
+                        user_record = UserRecord(user_id=author.id, username=str(author))
+                        self._user_table[author.id] = user_record
                     # Build the daily record key from YYYY-MM-DD.
                     daily_key = (
                         message.created_at.year,
                         message.created_at.month,
                         message.created_at.day,
                     )
-                    # Increment the user's daily record by message count.
-                    user_record[daily_key] += message_length
-                    # Update progress every 100 messages.
+                    # Increment the user's daily score by message count.
+                    user_record.score_by_day[daily_key] += message_length
+                    # Update progress every X messages.
                     if channel_state.total_messages % 1000 == 0:
                         await self.update()
                 # Mark the channel as complete. Don't bother updating here, because we're going to
@@ -271,7 +329,7 @@ class HelpChatReportBuildContext:
         return HelpChatReport(
             after=self.after,
             before=self.before,
-            title=self.title,
+            label=self.label,
             built_at=self._built_at,
             channel_states=self._channel_states,
             user_table=self._user_table,

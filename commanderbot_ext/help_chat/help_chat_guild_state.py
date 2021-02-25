@@ -134,7 +134,7 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
         await self.store.set_guild_default_report_min_score(self.guild, min_score)
         await ctx.message.add_reaction("✔️")
 
-    async def build_report(self, ctx: Context, after: datetime, before: datetime, title: str):
+    async def build_report(self, ctx: Context, after: datetime, before: datetime, label: str):
         # Build the report, which will send progress updates as each channel is scanned.
         help_channels: List[HelpChannel] = list(self.store.iter_guild_help_channels(self.guild))
         report_context = HelpChatReportBuildContext(
@@ -143,7 +143,7 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
             help_channels=help_channels,
             after=after,
             before=before,
-            title=title,
+            label=label,
         )
         report = await report_context.build()
         # Summarize the report in the current channel, using the guild's default options.

@@ -123,13 +123,13 @@ class HelpChatCog(Cog, name="commanderbot_ext.help_chat"):
         after: str,
         before: Optional[str] = "now",
         *,
-        title: Optional[str] = None,
+        label: Optional[str] = None,
     ):
         after_date = datetime.strptime(after, DATE_FMT_YYYY_MM_DD)
         before_date = (
             datetime.utcnow() if before == "now" else datetime.strptime(before, DATE_FMT_YYYY_MM_DD)
         )
-        actual_title = (
-            title if title is not None else datetime.utcnow().strftime(DATE_FMT_YYYY_MM_DD_HH_MM_SS)
+        actual_label = (
+            label if label is not None else datetime.utcnow().strftime(DATE_FMT_YYYY_MM_DD_HH_MM_SS)
         )
-        await self.state.build_report(ctx, after_date, before_date, actual_title)
+        await self.state.build_report(ctx, after_date, before_date, actual_label)

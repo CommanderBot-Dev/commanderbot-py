@@ -43,6 +43,6 @@ class HelpChatState(CogState[HelpChatOptions, HelpChatStore, HelpChatGuildState]
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.set_default_report_min_score(ctx, min_score)
 
-    async def build_report(self, ctx: Context, after: datetime, before: datetime, title: str):
+    async def build_report(self, ctx: Context, after: datetime, before: datetime, label: str):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.build_report(ctx, after, before, title)
+            await guild_state.build_report(ctx, after, before, label)
