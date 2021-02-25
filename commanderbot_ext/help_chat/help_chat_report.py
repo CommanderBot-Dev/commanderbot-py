@@ -1,3 +1,4 @@
+import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
@@ -124,6 +125,8 @@ class HelpChatReport:
         )
         # Send an additional embed for each remaining batch (if any).
         for i, batch in enumerate(batches[1:]):
+            # Wait a few seconds before posting each additional embed, just in case.
+            await asyncio.sleep(5)
             await ctx.send(
                 content=None,
                 embed=self.make_summary_batch_embed(i + 2, count_batches, batch),
