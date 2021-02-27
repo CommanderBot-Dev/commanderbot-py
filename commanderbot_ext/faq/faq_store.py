@@ -1,15 +1,16 @@
 from datetime import datetime
 from typing import Iterable, Optional
 
-from commanderbot_ext.faq import faq_migrations as migrations
-from commanderbot_ext.faq.faq_cache import FaqCache, FaqEntry, FaqGuildData
-from commanderbot_ext.faq.faq_options import FaqOptions
 from commanderbot_lib.database.abc.versioned_file_database import (
     DataMigration,
     VersionedFileDatabase,
 )
 from commanderbot_lib.store.abc.versioned_cached_store import VersionedCachedStore
 from discord import Guild, Message
+
+from commanderbot_ext.faq import faq_migrations as migrations
+from commanderbot_ext.faq.faq_cache import FaqCache, FaqEntry, FaqGuildData
+from commanderbot_ext.faq.faq_options import FaqOptions
 
 
 class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]):
@@ -43,11 +44,15 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         if guild_data := self.get_guild_data(guild):
             return guild_data.entries.values()
 
-    async def get_guild_faq_by_name(self, guild: Guild, faq_name: str) -> Optional[FaqEntry]:
+    async def get_guild_faq_by_name(
+        self, guild: Guild, faq_name: str
+    ) -> Optional[FaqEntry]:
         if guild_data := self.get_guild_data(guild):
             return guild_data.entries.get(faq_name)
 
-    async def get_guild_faq_by_alias(self, guild: Guild, faq_alias: str) -> Optional[FaqEntry]:
+    async def get_guild_faq_by_alias(
+        self, guild: Guild, faq_alias: str
+    ) -> Optional[FaqEntry]:
         if guild_data := self.get_guild_data(guild):
             # TODO Optimize look-up by re-building a map every time aliases are changed. #optimize
             for faq_entry in guild_data.entries.values():

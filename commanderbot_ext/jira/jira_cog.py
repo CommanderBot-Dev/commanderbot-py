@@ -89,7 +89,9 @@ class JiraCog(Cog):
             else:
                 fix_version = report_data["fixVersions"][0]["name"]
 
-            jira_embed.add_field(name="Resolution", value=resolution_status, inline=True)
+            jira_embed.add_field(
+                name="Resolution", value=resolution_status, inline=True
+            )
             jira_embed.add_field(name="Resolved On", value=resolve_date, inline=True)
             jira_embed.add_field(name="Fix Version", value=fix_version, inline=True)
 

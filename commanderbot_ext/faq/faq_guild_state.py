@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from commanderbot_ext.faq.faq_cache import FaqEntry
-from commanderbot_ext.faq.faq_options import FaqOptions
-from commanderbot_ext.faq.faq_store import FaqStore
 from commanderbot_lib.guild_state.abc.cog_guild_state import CogGuildState
 from discord import Message
 from discord.ext.commands import Context
+
+from commanderbot_ext.faq.faq_cache import FaqEntry
+from commanderbot_ext.faq.faq_options import FaqOptions
+from commanderbot_ext.faq.faq_store import FaqStore
 
 
 class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
@@ -47,7 +48,9 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
         else:
             await ctx.send(f"No FAQ matching `{faq_query}`")
 
-    async def add_faq(self, ctx: Context, faq_name: str, message: Message, content: str):
+    async def add_faq(
+        self, ctx: Context, faq_name: str, message: Message, content: str
+    ):
         if await self.store.get_guild_faq_by_name(self.guild, faq_name):
             await ctx.send(f"FAQ named `{faq_name}` already exists")
         else:
@@ -70,7 +73,9 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
-    async def update_faq(self, ctx: Context, faq_name: str, message: Message, content: str):
+    async def update_faq(
+        self, ctx: Context, faq_name: str, message: Message, content: str
+    ):
         if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
             await self.store.update_faq(faq_entry, message, content)
             await ctx.send(f"Updated FAQ named `{faq_name}`")

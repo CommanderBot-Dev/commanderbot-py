@@ -1,11 +1,12 @@
 from typing import Optional
 
-from commanderbot_ext.faq.faq_options import FaqOptions
-from commanderbot_ext.faq.faq_state import FaqState
 from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
 from discord import Message
 from discord.ext.commands import Bot, Cog, Context, command, group
+
+from commanderbot_ext.faq.faq_options import FaqOptions
+from commanderbot_ext.faq.faq_state import FaqState
 
 
 # TODO Try to cut-down on the amount of boilerplate by sub-classing `Cog`. #refactor
@@ -93,12 +94,16 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
 
     @cmd_faq_update.command(name="message")
     @checks.is_administrator()
-    async def cmd_faq_update_message(self, ctx: Context, faq_name: str, message: Message):
+    async def cmd_faq_update_message(
+        self, ctx: Context, faq_name: str, message: Message
+    ):
         await self.state.update_faq(ctx, faq_name, message, message.content)
 
     @cmd_faq_update.command(name="content")
     @checks.is_administrator()
-    async def cmd_faq_update_content(self, ctx: Context, faq_name: str, *, content: str):
+    async def cmd_faq_update_content(
+        self, ctx: Context, faq_name: str, *, content: str
+    ):
         await self.state.update_faq(ctx, faq_name, ctx.message, content)
 
     # @@ faq alias
@@ -116,5 +121,7 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
 
     @cmd_faq_alias.command(name="remove")
     @checks.is_administrator()
-    async def cmd_faq_alias_remove(self, ctx: Context, faq_name: str, alias_to_remove: str):
+    async def cmd_faq_alias_remove(
+        self, ctx: Context, faq_name: str, alias_to_remove: str
+    ):
         await self.state.remove_alias(ctx, faq_name, alias_to_remove)
