@@ -90,7 +90,8 @@ class FaqGuildData:
     def serialize(self) -> dict:
         return {
             "entries": {
-                faq_name: faq_entry.serialize() for faq_name, faq_entry in self.entries.items()
+                faq_name: faq_entry.serialize()
+                for faq_name, faq_entry in self.entries.items()
             }
         }
 
@@ -109,13 +110,16 @@ class FaqCache:
         guilds = {}
         for raw_guild_id, raw_guild_data in raw_guilds.items():
             guild_id = int(raw_guild_id)
-            guild_data = await FaqGuildData.deserialize(raw_guild_data, guild_id=guild_id)
+            guild_data = await FaqGuildData.deserialize(
+                raw_guild_data, guild_id=guild_id
+            )
             guilds[guild_id] = guild_data
         return FaqCache(guilds=guilds)
 
     def serialize(self) -> dict:
         return {
             "guilds": {
-                guild_id: guild_data.serialize() for guild_id, guild_data in self.guilds.items()
+                guild_id: guild_data.serialize()
+                for guild_id, guild_data in self.guilds.items()
             }
         }

@@ -49,4 +49,6 @@ class VoteCog(Cog):
 
             # If any error occurred, then don't bother adding the reaction and log the error
             except:
-                self._log.exception(f"Couldn't add reaction {emoji} to message {ctx.message.id}")
+                self._log.exception(
+                    f"Couldn't add reaction {emoji} to message {ctx.message.id}"
+                )

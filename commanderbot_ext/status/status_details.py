@@ -49,7 +49,9 @@ class StatusDetails:
             "commanderbot-lib version": self.commanderbot_lib_version,
             "commanderbot-ext version": self.commanderbot_ext_version,
             "started at": str(self.started_at) if self.started_at else None,
-            "connected since": str(self.connected_since) if self.connected_since else None,
+            "connected since": str(self.connected_since)
+            if self.connected_since
+            else None,
             "uptime": str(self.uptime) if self.uptime else None,
         }
         non_empty_rows = {k: v for k, v in all_rows.items() if v}

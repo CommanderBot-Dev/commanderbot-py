@@ -1,4 +1,5 @@
 from discord.ext import commands
+
 from commanderbot_ext.jira.jira_cog import JiraCog
 
 

@@ -1,4 +1,5 @@
 from discord.ext import commands
+
 from commanderbot_ext.vote.vote_cog import VoteCog
 
 
