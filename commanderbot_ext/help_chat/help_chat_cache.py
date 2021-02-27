@@ -40,9 +40,13 @@ class HelpChannel:
     def channel(self, ctx: Context) -> TextChannel:
         channel = ctx.bot.get_channel(self.channel_id)
         if channel is None:
-            raise ValueError(f"Failed to resolve help channel from channel ID: {self.channel}")
+            raise ValueError(
+                f"Failed to resolve help channel from channel ID: {self.channel}"
+            )
         if not isinstance(channel, TextChannel):
-            raise ValueError(f"Help channel resolved into non-text type channel: {channel}")
+            raise ValueError(
+                f"Help channel resolved into non-text type channel: {channel}"
+            )
         return channel
 
 
@@ -83,7 +87,9 @@ class HelpChatGuildData:
 
     def serialize(self) -> dict:
         return {
-            "help_channels": [help_channel.serialize() for help_channel in self.help_channels],
+            "help_channels": [
+                help_channel.serialize() for help_channel in self.help_channels
+            ],
             "default_report_split_length": self.default_report_split_length,
             "default_report_max_rows": self.default_report_max_rows,
             "default_report_min_score": self.default_report_min_score,
@@ -104,13 +110,16 @@ class HelpChatCache:
         guilds = {}
         for raw_guild_id, raw_guild_data in raw_guilds.items():
             guild_id = int(raw_guild_id)
-            guild_data = await HelpChatGuildData.deserialize(raw_guild_data, guild_id=guild_id)
+            guild_data = await HelpChatGuildData.deserialize(
+                raw_guild_data, guild_id=guild_id
+            )
             guilds[guild_id] = guild_data
         return HelpChatCache(guilds=guilds)
 
     def serialize(self) -> dict:
         return {
             "guilds": {
-                guild_id: guild_data.serialize() for guild_id, guild_data in self.guilds.items()
+                guild_id: guild_data.serialize()
+                for guild_id, guild_data in self.guilds.items()
             }
         }

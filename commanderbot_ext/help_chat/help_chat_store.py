@@ -1,7 +1,5 @@
 from typing import Iterable, Optional
 
-from commanderbot_ext.help_chat.help_chat_cache import HelpChannel, HelpChatCache, HelpChatGuildData
-from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_lib.database.abc.versioned_file_database import (
     DataMigration,
     VersionedFileDatabase,
@@ -9,8 +7,17 @@ from commanderbot_lib.database.abc.versioned_file_database import (
 from commanderbot_lib.store.abc.versioned_cached_store import VersionedCachedStore
 from discord import Guild, TextChannel
 
+from commanderbot_ext.help_chat.help_chat_cache import (
+    HelpChannel,
+    HelpChatCache,
+    HelpChatGuildData,
+)
+from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 
-class HelpChatStore(VersionedCachedStore[HelpChatOptions, VersionedFileDatabase, HelpChatCache]):
+
+class HelpChatStore(
+    VersionedCachedStore[HelpChatOptions, VersionedFileDatabase, HelpChatCache]
+):
     # @implements CachedStore
     async def _build_cache(self, data: dict) -> HelpChatCache:
         return await HelpChatCache.deserialize(data)
@@ -77,7 +84,9 @@ class HelpChatStore(VersionedCachedStore[HelpChatOptions, VersionedFileDatabase,
         if guild_data := self.get_guild_data(guild):
             return guild_data.default_report_split_length
 
-    async def set_guild_default_report_split_length(self, guild: Guild, split_length: int):
+    async def set_guild_default_report_split_length(
+        self, guild: Guild, split_length: int
+    ):
         guild_data = await self.get_or_init_guild_data(guild)
         guild_data.default_report_split_length = split_length
         await self.dirty()

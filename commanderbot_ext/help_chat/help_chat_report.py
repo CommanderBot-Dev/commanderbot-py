@@ -6,12 +6,13 @@ from datetime import datetime
 from enum import Enum
 from typing import DefaultDict, Iterable, List, Optional, Tuple
 
-from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
-from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
-from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD
 from commanderbot_lib.types import IDType
 from discord import AllowedMentions, Embed, File, Message, TextChannel, User
 from discord.ext.commands import Context
+
+from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
+from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
+from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD
 
 
 class ChannelStatus(Enum):
@@ -84,7 +85,9 @@ class HelpChatReport:
     def title(self) -> str:
         return f"Help-chat Report: {self.label}"
 
-    def make_summary_batch_embed(self, batch_no: int, count_batches: int, text: str) -> Embed:
+    def make_summary_batch_embed(
+        self, batch_no: int, count_batches: int, text: str
+    ) -> Embed:
         # Create the base embed.
         embed = Embed(
             type="rich",
@@ -104,7 +107,9 @@ class HelpChatReport:
 
     def get_sorted_user_records(self) -> Iterable[UserRecord]:
         # Get user results, sorted by score in descending order.
-        return sorted(self.get_user_records(), key=lambda user_record: -user_record.total_score)
+        return sorted(
+            self.get_user_records(), key=lambda user_record: -user_record.total_score
+        )
 
     def build_results_file_line(self, user_record: UserRecord) -> str:
         return ",".join(
@@ -121,7 +126,10 @@ class HelpChatReport:
         sorted_user_records = self.get_sorted_user_records()
         lines = [
             "User ID,Username,Score,Days Active",
-            *(self.build_results_file_line(user_record) for user_record in sorted_user_records),
+            *(
+                self.build_results_file_line(user_record)
+                for user_record in sorted_user_records
+            ),
         ]
         file_contents = "\n".join(lines)
         filename = f"{self.title}.csv"
@@ -240,11 +248,15 @@ class HelpChatReportBuildContext:
         after_str = self.after.strftime(DATE_FMT_YYYY_MM_DD)
         before_str = self.before.strftime(DATE_FMT_YYYY_MM_DD)
 
-        progress_emoji = " ".join(STATUS_EMOJI[state.status] for state in self._channel_states)
+        progress_emoji = " ".join(
+            STATUS_EMOJI[state.status] for state in self._channel_states
+        )
 
         status_text = ""
         if (states_in_progress := self.get_states_in_progress()) :
-            status_text = "Scanning: " + " ".join(state.status_text for state in states_in_progress)
+            status_text = "Scanning: " + " ".join(
+                state.status_text for state in states_in_progress
+            )
         elif self.is_finished():
             status_text = "Done!"
 
@@ -306,7 +318,9 @@ class HelpChatReportBuildContext:
                     user_record = self._user_table.get(author.id)
                     if user_record is None:
                         # Create a new record for this user, if one does not already exist.
-                        user_record = UserRecord(user_id=author.id, username=str(author))
+                        user_record = UserRecord(
+                            user_id=author.id, username=str(author)
+                        )
                         self._user_table[author.id] = user_record
                     # Build the daily record key from YYYY-MM-DD.
                     daily_key = (

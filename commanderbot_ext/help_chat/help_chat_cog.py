@@ -1,14 +1,18 @@
 from datetime import datetime
 from typing import Optional, Union
 
-from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
-from commanderbot_ext.help_chat.help_chat_state import HelpChatState
-from commanderbot_ext.help_chat.utils import DATE_FMT_YYYY_MM_DD, DATE_FMT_YYYY_MM_DD_HH_MM_SS
 from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
 from discord import CategoryChannel, Message, TextChannel
 from discord.ext.commands import Bot, Cog, Context, group
 from discord.ext.commands.converter import Greedy
+
+from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
+from commanderbot_ext.help_chat.help_chat_state import HelpChatState
+from commanderbot_ext.help_chat.utils import (
+    DATE_FMT_YYYY_MM_DD,
+    DATE_FMT_YYYY_MM_DD_HH_MM_SS,
+)
 
 
 # TODO Try to cut-down on the amount of boilerplate by sub-classing `Cog`. #refactor
@@ -100,7 +104,9 @@ class HelpChatCog(Cog, name="commanderbot_ext.help_chat"):
 
     @cmd_helpchat_report_set.command(name="split_length")
     @checks.is_administrator()
-    async def cmd_helpchat_report_set_split_length(self, ctx: Context, split_length: int):
+    async def cmd_helpchat_report_set_split_length(
+        self, ctx: Context, split_length: int
+    ):
         await self.state.set_default_report_split_length(ctx, split_length)
 
     @cmd_helpchat_report_set.command(name="max_rows")
@@ -127,9 +133,13 @@ class HelpChatCog(Cog, name="commanderbot_ext.help_chat"):
     ):
         after_date = datetime.strptime(after, DATE_FMT_YYYY_MM_DD)
         before_date = (
-            datetime.utcnow() if before == "now" else datetime.strptime(before, DATE_FMT_YYYY_MM_DD)
+            datetime.utcnow()
+            if before == "now"
+            else datetime.strptime(before, DATE_FMT_YYYY_MM_DD)
         )
         actual_label = (
-            label if label is not None else datetime.utcnow().strftime(DATE_FMT_YYYY_MM_DD_HH_MM_SS)
+            label
+            if label is not None
+            else datetime.utcnow().strftime(DATE_FMT_YYYY_MM_DD_HH_MM_SS)
         )
         await self.state.build_report(ctx, after_date, before_date, actual_label)

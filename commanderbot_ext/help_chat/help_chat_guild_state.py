@@ -1,13 +1,14 @@
 from datetime import datetime
 from typing import Iterable, List, Union
 
+from commanderbot_lib.guild_state.abc.cog_guild_state import CogGuildState
+from discord import CategoryChannel, TextChannel
+from discord.ext.commands import Context
+
 from commanderbot_ext.help_chat.help_chat_cache import HelpChannel
 from commanderbot_ext.help_chat.help_chat_options import HelpChatOptions
 from commanderbot_ext.help_chat.help_chat_report import HelpChatReportBuildContext
 from commanderbot_ext.help_chat.help_chat_store import HelpChatStore
-from commanderbot_lib.guild_state.abc.cog_guild_state import CogGuildState
-from discord import CategoryChannel, TextChannel
-from discord.ext.commands import Context
 
 
 class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
@@ -37,14 +38,19 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
             lines = []
             for help_channel in help_channels:
                 channel = help_channel.channel(ctx)
-                lines.append(f"{channel.mention} registered on {help_channel.registered_on}")
+                lines.append(
+                    f"{channel.mention} registered on {help_channel.registered_on}"
+                )
             await ctx.send(
-                f"There are {len(help_channels)} help channels registered:\n" + "\n".join(lines)
+                f"There are {len(help_channels)} help channels registered:\n"
+                + "\n".join(lines)
             )
         else:
             await ctx.send(f"No help channels registered")
 
-    async def add_channels(self, ctx: Context, channels: List[Union[TextChannel, CategoryChannel]]):
+    async def add_channels(
+        self, ctx: Context, channels: List[Union[TextChannel, CategoryChannel]]
+    ):
         added_help_channels: List[TextChannel] = []
         already_help_channels: List[TextChannel] = []
         failed_channels: List[TextChannel] = []
@@ -53,7 +59,9 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
 
         for channel in self._flatten_text_channels(channels):
             try:
-                if help_channel := await self.store.get_guild_help_channel(self.guild, channel):
+                if help_channel := await self.store.get_guild_help_channel(
+                    self.guild, channel
+                ):
                     already_help_channels.append(channel)
                 else:
                     help_channel = HelpChannel(
@@ -94,7 +102,9 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
 
         for channel in self._flatten_text_channels(channels):
             try:
-                if help_channel := await self.store.get_guild_help_channel(self.guild, channel):
+                if help_channel := await self.store.get_guild_help_channel(
+                    self.guild, channel
+                ):
                     await self.store.remove_guild_help_channel(self.guild, help_channel)
                     removed_help_channels.append(channel)
                 else:
@@ -134,9 +144,13 @@ class HelpChatGuildState(CogGuildState[HelpChatOptions, HelpChatStore]):
         await self.store.set_guild_default_report_min_score(self.guild, min_score)
         await ctx.message.add_reaction("✔️")
 
-    async def build_report(self, ctx: Context, after: datetime, before: datetime, label: str):
+    async def build_report(
+        self, ctx: Context, after: datetime, before: datetime, label: str
+    ):
         # Build the report, which will send progress updates as each channel is scanned.
-        help_channels: List[HelpChannel] = list(self.store.iter_guild_help_channels(self.guild))
+        help_channels: List[HelpChannel] = list(
+            self.store.iter_guild_help_channels(self.guild)
+        )
         report_context = HelpChatReportBuildContext(
             ctx,
             options=self.options,
