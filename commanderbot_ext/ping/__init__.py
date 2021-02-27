@@ -1,5 +1,6 @@
-from commanderbot_ext.ping.ping_cog import PingCog
 from discord.ext import commands
+
+from commanderbot_ext.ping.ping_cog import PingCog
 
 
 def setup(bot: commands.Bot):
