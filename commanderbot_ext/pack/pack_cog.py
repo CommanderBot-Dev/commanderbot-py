@@ -32,7 +32,7 @@ class PackCog(Cog):
 
         async with self.error_handler(ctx):
             attachments = await loop.run_in_executor(
-                None, generate_packs, author, message.content
+                None, generate_packs, author, message.content.split("\n", 1)[-1]
             )
 
             if attachments:
