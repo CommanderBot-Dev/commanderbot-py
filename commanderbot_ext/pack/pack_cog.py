@@ -12,10 +12,11 @@ from discord.ext.commands import Bot, Cog, Context, command
 from commanderbot_ext.pack.pack_generate import generate_packs
 
 
-class PackCog(Cog):
-    def __init__(self, bot: Bot):
+class PackCog(Cog, name="commanderbot_ext.pack"):
+    def __init__(self, bot: Bot, **options):
         self.bot: Bot = bot
         self._log: Logger = get_clogger(self)
+        self.project_config = options
 
     @command(name="pack")
     async def cmd_pack(self, ctx: Context):
@@ -25,6 +26,7 @@ class PackCog(Cog):
 
         message: Message = ctx.message
         author = message.author.display_name
+        message_content = message.content.split("\n", 1)[-1]
 
         self._log.info("%s: Running build for %s.", message.id, author)
 
@@ -32,7 +34,7 @@ class PackCog(Cog):
 
         async with self.error_handler(ctx):
             attachments = await loop.run_in_executor(
-                None, generate_packs, author, message.content.split("\n", 1)[-1]
+                None, generate_packs, author, self.project_config, message_content
             )
 
             if attachments:
@@ -61,5 +63,7 @@ class PackCog(Cog):
 
         if exception:
             message += f"\n```{format_exc(exception)}```"
+        else:
+            message = f"```{message}```"
 
         await ctx.send(message)

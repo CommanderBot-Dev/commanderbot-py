@@ -1,21 +1,35 @@
 import io
+import os
 from typing import Dict
 from zipfile import ZipFile
 
-from beet import Context, run_beet
+from beet import Context, ProjectConfig, config_error_handler, run_beet
+from beet.core.utils import JsonDict
 from lectern import Document
 
 
-def generate_packs(project_name: str, message_source: str) -> Dict[str, bytes]:
+def generate_packs(
+    project_name: str,
+    project_config: JsonDict,
+    message_content: str,
+) -> Dict[str, bytes]:
+    project_directory = os.getcwd()
     packs: Dict[str, bytes] = {}
 
-    config = {
+    message_config = {
         "name": project_name,
         "pipeline": [__name__],
         "meta": {
-            "source": message_source,
+            "source": message_content,
         },
     }
+
+    with config_error_handler():
+        config = (
+            ProjectConfig(**project_config)
+            .resolve(project_directory)
+            .with_defaults(ProjectConfig(**message_config).resolve(project_directory))
+        )
 
     with run_beet(config) as ctx:
         for pack in ctx.packs:
@@ -26,7 +40,7 @@ def generate_packs(project_name: str, message_source: str) -> Dict[str, bytes]:
 
             with ZipFile(fp, mode="w") as output:
                 pack.dump(output)
-                output.writestr("source.md", message_source)
+                output.writestr("source.md", message_content)
 
             packs[f"{pack.name}.zip"] = fp.getvalue()
 
