@@ -54,10 +54,8 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         self, guild: Guild, faq_alias: str
     ) -> Optional[FaqEntry]:
         if guild_data := self.get_guild_data(guild):
-            # TODO Optimize look-up by re-building a map every time aliases are changed. #optimize
-            for faq_entry in guild_data.entries.values():
-                if faq_alias in faq_entry.aliases:
-                    return faq_entry
+            if faq_alias in guild_data.alias_map:
+                return guild_data.alias_map[faq_alias]
 
     async def get_guild_faq(self, guild: Guild, faq_query: str) -> Optional[FaqEntry]:
         # First try to get the FAQ entry by name.
@@ -94,16 +92,20 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         await self.dirty()
         return entry.hits
 
-    async def add_alias_to_faq(self, entry: FaqEntry, alias: str) -> bool:
+    async def add_alias_to_faq(self, entry: FaqEntry, alias: str, guild: Guild) -> bool:
         if alias in entry.aliases:
             return False
         entry.aliases.add(alias)
+        if guild_data := self.get_guild_data(guild):
+            guild_data.alias_map[alias] = entry
         await self.dirty()
         return True
 
-    async def remove_alias_from_faq(self, entry: FaqEntry, alias: str) -> bool:
+    async def remove_alias_from_faq(self, entry: FaqEntry, alias: str, guild: Guild) -> bool:
         if alias not in entry.aliases:
             return False
         entry.aliases.remove(alias)
+        if guild_data := self.get_guild_data(guild):
+            del guild_data.alias_map[alias]
         await self.dirty()
         return True

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from commanderbot_lib.guild_state.abc.cog_guild_state import CogGuildState
-from discord import Message
+from discord import Guild, Message
 from discord.ext.commands import Context
 
 from commanderbot_ext.faq.faq_cache import FaqEntry
@@ -82,18 +82,18 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
-    async def add_alias(self, ctx: Context, faq_name: str, faq_alias: str):
+    async def add_alias(self, ctx: Context, faq_name: str, faq_alias: str, guild: Guild):
         if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
-            if await self.store.add_alias_to_faq(faq_entry, faq_alias):
+            if await self.store.add_alias_to_faq(faq_entry, faq_alias, guild):
                 await ctx.send(f"Added alias `{faq_alias}` to FAQ `{faq_name}`")
             else:
                 await ctx.send(f"FAQ `{faq_name}` already has alias `{faq_alias}`")
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
-    async def remove_alias(self, ctx: Context, faq_name: str, faq_alias: str):
+    async def remove_alias(self, ctx: Context, faq_name: str, faq_alias: str, guild: Guild):
         if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
-            if await self.store.remove_alias_from_faq(faq_entry, faq_alias):
+            if await self.store.remove_alias_from_faq(faq_entry, faq_alias, guild):
                 await ctx.send(f"Removed alias `{faq_alias}` from FAQ `{faq_name}`")
             else:
                 await ctx.send(f"FAQ `{faq_name}` has no alias `{faq_alias}`")
