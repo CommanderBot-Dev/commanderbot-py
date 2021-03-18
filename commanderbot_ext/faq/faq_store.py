@@ -92,14 +92,13 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         await self.dirty()
         return entry.hits
 
-    async def add_alias_to_faq(self, entry: FaqEntry, alias: str, guild: Guild) -> bool:
-        if alias in entry.aliases:
-            return False
-        entry.aliases.add(alias)
+    async def add_alias_to_faq(self, entry: FaqEntry, alias: str, guild: Guild) -> Optional[str]: # None on OK
         if guild_data := self.get_guild_data(guild):
+            if alias in guild_data.alias_map:
+                return guild_data.alias_map[alias].name
+            entry.aliases.add(alias)
             guild_data.alias_map[alias] = entry
-        await self.dirty()
-        return True
+            await self.dirty()
 
     async def remove_alias_from_faq(self, alias: str, guild: Guild) -> Optional[str]:
         if guild_data := self.get_guild_data(guild):

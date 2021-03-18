@@ -84,10 +84,10 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
 
     async def add_alias(self, ctx: Context, faq_name: str, faq_alias: str, guild: Guild):
         if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
-            if await self.store.add_alias_to_faq(faq_entry, faq_alias, guild):
-                await ctx.send(f"Added alias `{faq_alias}` to FAQ `{faq_name}`")
+            if pre_faq := await self.store.add_alias_to_faq(faq_entry, faq_alias, guild):
+                await ctx.send(f"FAQ `{pre_faq}` already has alias `{faq_alias}`")
             else:
-                await ctx.send(f"FAQ `{faq_name}` already has alias `{faq_alias}`")
+                await ctx.send(f"Added alias `{faq_alias}` to FAQ `{faq_name}`")
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
