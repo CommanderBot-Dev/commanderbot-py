@@ -122,6 +122,6 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
     @cmd_faq_alias.command(name="remove")
     @checks.is_administrator()
     async def cmd_faq_alias_remove(
-        self, ctx: Context, faq_name: str, alias_to_remove: str
+        self, ctx: Context, alias_to_remove: str
     ):
-        await self.state.remove_alias(ctx, faq_name, alias_to_remove)
+        await self.state.remove_alias(ctx, alias_to_remove)

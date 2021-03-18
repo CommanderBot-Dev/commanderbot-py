@@ -91,14 +91,11 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
-    async def remove_alias(self, ctx: Context, faq_name: str, faq_alias: str, guild: Guild):
-        if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
-            if await self.store.remove_alias_from_faq(faq_entry, faq_alias, guild):
-                await ctx.send(f"Removed alias `{faq_alias}` from FAQ `{faq_name}`")
-            else:
-                await ctx.send(f"FAQ `{faq_name}` has no alias `{faq_alias}`")
+    async def remove_alias(self, ctx: Context, faq_alias: str, guild: Guild):
+        if faq_name := await self.store.remove_alias_from_faq(faq_alias, guild):
+            await ctx.send(f"Removed alias `{faq_alias}` from FAQ `{faq_name}`")
         else:
-            await ctx.send(f"No FAQ named `{faq_name}`")
+            await ctx.send(f"No FAQ has alias `{faq_alias}`")
 
     # @overrides CogGuildState
     async def on_message(self, message: Message):

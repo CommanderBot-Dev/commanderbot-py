@@ -101,11 +101,13 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         await self.dirty()
         return True
 
-    async def remove_alias_from_faq(self, entry: FaqEntry, alias: str, guild: Guild) -> bool:
-        if alias not in entry.aliases:
-            return False
-        entry.aliases.remove(alias)
+    async def remove_alias_from_faq(self, alias: str, guild: Guild) -> Optional[str]:
         if guild_data := self.get_guild_data(guild):
-            del guild_data.alias_map[alias]
-        await self.dirty()
-        return True
+            if alias in guild_data.alias_map:
+                entry: FaqEntry = guild_data.alias_map[alias]
+                faq: str = entry.name
+                entry.aliases.remove(alias)
+                del guild_data.alias_map[alias]
+                await self.dirty()
+                return faq
+        return None
