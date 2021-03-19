@@ -98,12 +98,10 @@ If you are sure, react to this message with {confirm}. To abort, react with {rej
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
-    async def add_alias(
-        self, ctx: Context, faq_name: str, faq_alias: str, guild: Guild
-    ):
+    async def add_alias(self, ctx: Context, faq_name: str, faq_alias: str):
         if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
             if pre_faq := await self.store.add_alias_to_faq(
-                faq_entry, faq_alias, guild
+                faq_entry, faq_alias, self.guild
             ):
                 await ctx.send(f"FAQ `{pre_faq}` already has alias `{faq_alias}`")
             else:

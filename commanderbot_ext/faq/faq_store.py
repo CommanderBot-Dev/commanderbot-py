@@ -76,12 +76,13 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         await self.dirty()
 
     async def remove_guild_faq(self, guild: Guild, faq: FaqEntry) -> str:
-        if guild_data := self.get_guild_data(guild):
-            for alias in faq.aliases:
-                del guild_data.aliases[alias]
-            guild_data.entries.pop(faq.name)
-            await self.dirty()
-            return faq.name
+        guild_data = self.get_guild_data(guild)
+        assert guild_data != None
+        for alias in faq.aliases:
+            del guild_data.aliases[alias]
+        guild_data.entries.pop(faq.name)
+        await self.dirty()
+        return faq.name
 
     async def update_faq(self, entry: FaqEntry, message: Message, content: str):
         now = datetime.utcnow()
