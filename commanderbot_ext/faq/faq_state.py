@@ -46,7 +46,7 @@ class FaqState(CogState[FaqOptions, FaqStore, FaqGuildState]):
     async def remove_alias(self, ctx: Context, alias: str):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.remove_alias(ctx, alias, ctx.guild)
-    
+
     async def on_reaction_add(self, reaction: Reaction, user: User):
         if guild_state := await self.get_guild_state(reaction.message.guild):
             await guild_state.on_reaction_add(reaction, user)

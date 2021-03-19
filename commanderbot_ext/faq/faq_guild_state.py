@@ -9,6 +9,7 @@ from commanderbot_ext.faq.faq_options import FaqOptions
 from commanderbot_ext.faq.faq_store import FaqStore
 from commanderbot_ext.faq.faq_const import confirm, reject
 
+
 class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
     async def list_faqs(self, ctx: Context):
         if entries := await self.store.iter_guild_faqs(self.guild):
@@ -72,14 +73,17 @@ class FaqGuildState(CogGuildState[FaqOptions, FaqStore]):
             message: Message = await ctx.send(
                 f"Are you sure you'd like to remove the FAQ `{faq.name}`? You won't be able to recover it.\n\
 If you are sure, react to this message with {confirm}. To abort, react with {reject}",
-                reference = ctx.message, mention_author = False
+                reference=ctx.message,
+                mention_author=False,
             )
             await message.add_reaction(confirm)
             await message.add_reaction(reject)
             if guild_data := self.store.get_guild_data(self.guild):
                 guild_data.confirmation[ctx.author.id] = (message, faq)
         else:
-            await ctx.reply(f'Unknow FAQ {faq_name}', reference = ctx.message, mention_author = False)
+            await ctx.reply(
+                f"Unknow FAQ {faq_name}", reference=ctx.message, mention_author=False
+            )
 
     async def remove_faq(self, channel: TextChannel, faq: FaqEntry):
         if removed_faq_entry := await self.store.remove_guild_faq(self.guild, faq):
@@ -94,9 +98,13 @@ If you are sure, react to this message with {confirm}. To abort, react with {rej
         else:
             await ctx.send(f"No FAQ named `{faq_name}`")
 
-    async def add_alias(self, ctx: Context, faq_name: str, faq_alias: str, guild: Guild):
+    async def add_alias(
+        self, ctx: Context, faq_name: str, faq_alias: str, guild: Guild
+    ):
         if faq_entry := await self.store.get_guild_faq_by_name(self.guild, faq_name):
-            if pre_faq := await self.store.add_alias_to_faq(faq_entry, faq_alias, guild):
+            if pre_faq := await self.store.add_alias_to_faq(
+                faq_entry, faq_alias, guild
+            ):
                 await ctx.send(f"FAQ `{pre_faq}` already has alias `{faq_alias}`")
             else:
                 await ctx.send(f"Added alias `{faq_alias}` to FAQ `{faq_name}`")
@@ -112,7 +120,9 @@ If you are sure, react to this message with {confirm}. To abort, react with {rej
     # @overrides CogGuildState
     async def on_message(self, message: Message):
         if await self.store.maybe_stop_confirmation(self.guild, message.author):
-            await message.channel.send('Aborted FAQ removal due to another message being sent')
+            await message.channel.send(
+                "Aborted FAQ removal due to another message being sent"
+            )
         prefix = self.options.prefix
         if prefix:
             content = message.content
@@ -124,9 +134,11 @@ If you are sure, react to this message with {confirm}. To abort, react with {rej
 
     async def on_reaction_add(self, reaction: Reaction, user: User):
         if reaction.emoji == confirm:
-            if target := await self.store.test_confirmation(self.guild, reaction.message.id, user):
+            if target := await self.store.test_confirmation(
+                self.guild, reaction.message.id, user
+            ):
                 await self.remove_faq(reaction.message.channel, target)
         elif reaction.emoji == reject:
             async for user in reaction.users():
                 if await self.store.maybe_stop_confirmation(self.guild, user):
-                    await reaction.message.channel.send('Aborted FAQ removal')
+                    await reaction.message.channel.send("Aborted FAQ removal")

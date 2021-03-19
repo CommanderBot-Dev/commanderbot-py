@@ -93,7 +93,9 @@ class FaqGuildData:
         for _, entry in entries.items():
             for alias in entry.aliases:
                 aliases[alias] = entry
-        return FaqGuildData(guild_id=guild_id, entries=entries, aliases=aliases, confirmation={})
+        return FaqGuildData(
+            guild_id=guild_id, entries=entries, aliases=aliases, confirmation={}
+        )
 
     def serialize(self) -> dict:
         return {

@@ -95,7 +95,9 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         await self.dirty()
         return entry.hits
 
-    async def add_alias_to_faq(self, entry: FaqEntry, alias: str, guild: Guild) -> Optional[str]: # None on OK
+    async def add_alias_to_faq(
+        self, entry: FaqEntry, alias: str, guild: Guild
+    ) -> Optional[str]:  # None on OK
         if guild_data := self.get_guild_data(guild):
             if alias in guild_data.aliases:
                 return guild_data.aliases[alias].name
@@ -124,7 +126,9 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
                 del guild_data.confirmation[user.id]
                 return True
 
-    async def test_confirmation(self, guild: Guild, message: int, user: User) -> Optional[FaqEntry]:
+    async def test_confirmation(
+        self, guild: Guild, message: int, user: User
+    ) -> Optional[FaqEntry]:
         if guild_data := self.get_guild_data(guild):
             if conf := guild_data.confirmation.get(user.id):
                 if message == conf[0].id:
