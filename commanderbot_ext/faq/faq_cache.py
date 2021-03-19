@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Set
+from typing import Dict, Set, Tuple
+
+from discord import Message
 
 from commanderbot_lib.types import GuildID
 
@@ -73,6 +75,8 @@ class FaqEntry:
 class FaqGuildData:
     guild_id: GuildID
     entries: Dict[str, FaqEntry]
+    aliases: Dict[str, FaqEntry]
+    confirmation: Dict[int, Tuple[Message, FaqEntry]]
 
     @staticmethod
     async def deserialize(data: dict, guild_id: GuildID) -> "FaqGuildData":
@@ -85,7 +89,13 @@ class FaqGuildData:
         for faq_name, raw_faq_entry in raw_entries.items():
             faq_entry = await FaqEntry.deserialize(raw_faq_entry, faq_name)
             entries[faq_name] = faq_entry
-        return FaqGuildData(guild_id=guild_id, entries=entries)
+        aliases = {}
+        for _, entry in entries.items():
+            for alias in entry.aliases:
+                aliases[alias] = entry
+        return FaqGuildData(
+            guild_id=guild_id, entries=entries, aliases=aliases, confirmation={}
+        )
 
     def serialize(self) -> dict:
         return {
