@@ -1,0 +1,2 @@
+confirm: str = '✅'
+reject: str = '❌'

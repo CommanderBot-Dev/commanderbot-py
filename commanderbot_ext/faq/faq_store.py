@@ -6,11 +6,12 @@ from commanderbot_lib.database.abc.versioned_file_database import (
     VersionedFileDatabase,
 )
 from commanderbot_lib.store.abc.versioned_cached_store import VersionedCachedStore
-from discord import Guild, Message
+from discord import Guild, Message, User
 
 from commanderbot_ext.faq import faq_migrations as migrations
 from commanderbot_ext.faq.faq_cache import FaqCache, FaqEntry, FaqGuildData
 from commanderbot_ext.faq.faq_options import FaqOptions
+from commanderbot_ext.faq.faq_const import confirm, reject
 
 
 class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]):
@@ -54,8 +55,8 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         self, guild: Guild, faq_alias: str
     ) -> Optional[FaqEntry]:
         if guild_data := self.get_guild_data(guild):
-            if faq_alias in guild_data.alias_map:
-                return guild_data.alias_map[faq_alias]
+            if faq_alias in guild_data.aliases:
+                return guild_data.aliases[faq_alias]
 
     async def get_guild_faq(self, guild: Guild, faq_query: str) -> Optional[FaqEntry]:
         # First try to get the FAQ entry by name.
@@ -74,11 +75,13 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
         guild_data.entries[faq_entry.name] = faq_entry
         await self.dirty()
 
-    async def remove_guild_faq(self, guild: Guild, faq_name: str) -> Optional[FaqEntry]:
+    async def remove_guild_faq(self, guild: Guild, faq: FaqEntry) -> str:
         if guild_data := self.get_guild_data(guild):
-            if removed_entry := guild_data.entries.pop(faq_name, None):
-                await self.dirty()
-                return removed_entry
+            for alias in faq.aliases:
+                del guild_data.aliases[alias]
+            guild_data.entries.pop(faq.name)
+            await self.dirty()
+            return faq.name
 
     async def update_faq(self, entry: FaqEntry, message: Message, content: str):
         now = datetime.utcnow()
@@ -94,19 +97,36 @@ class FaqStore(VersionedCachedStore[FaqOptions, VersionedFileDatabase, FaqCache]
 
     async def add_alias_to_faq(self, entry: FaqEntry, alias: str, guild: Guild) -> Optional[str]: # None on OK
         if guild_data := self.get_guild_data(guild):
-            if alias in guild_data.alias_map:
-                return guild_data.alias_map[alias].name
+            if alias in guild_data.aliases:
+                return guild_data.aliases[alias].name
             entry.aliases.add(alias)
-            guild_data.alias_map[alias] = entry
+            guild_data.aliases[alias] = entry
             await self.dirty()
 
     async def remove_alias_from_faq(self, alias: str, guild: Guild) -> Optional[str]:
         if guild_data := self.get_guild_data(guild):
-            if alias in guild_data.alias_map:
-                entry: FaqEntry = guild_data.alias_map[alias]
+            if alias in guild_data.aliases:
+                entry: FaqEntry = guild_data.aliases[alias]
                 faq: str = entry.name
                 entry.aliases.remove(alias)
-                del guild_data.alias_map[alias]
+                del guild_data.aliases[alias]
                 await self.dirty()
                 return faq
         return None
+
+    async def maybe_stop_confirmation(self, guild: Guild, user: User) -> bool:
+        if guild_data := self.get_guild_data(guild):
+            if user.id in guild_data.confirmation:
+                confirm_msg: Message = guild_data.confirmation[user.id][0]
+                this_user: User = confirm_msg.author
+                await confirm_msg.remove_reaction(confirm, this_user)
+                await confirm_msg.remove_reaction(reject, this_user)
+                del guild_data.confirmation[user.id]
+                return True
+
+    async def test_confirmation(self, guild: Guild, message: int, user: User) -> Optional[FaqEntry]:
+        if guild_data := self.get_guild_data(guild):
+            if conf := guild_data.confirmation.get(user.id):
+                if message == conf[0].id:
+                    del guild_data.confirmation[user.id]
+                    return conf[1]

@@ -2,7 +2,7 @@ from typing import Optional
 
 from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
-from discord import Message
+from discord import Message, Reaction, User
 from discord.ext.commands import Bot, Cog, Context, command, group
 
 from commanderbot_ext.faq.faq_options import FaqOptions
@@ -35,6 +35,10 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
     @Cog.listener()
     async def on_message(self, message: Message):
         await self.state.on_message(message)
+
+    @Cog.listener()
+    async def on_reaction_add(self, reaction: Reaction, user: User):
+        await self.state.on_reaction_add(reaction, user)
 
     # @@ COMMANDS
 
@@ -82,7 +86,7 @@ class FaqCog(Cog, name="commanderbot_ext.faq"):
     @cmd_faq.command(name="remove")
     @checks.is_administrator()
     async def cmd_faq_remove(self, ctx: Context, faq_name: str):
-        await self.state.remove_faq(ctx, faq_name)
+        await self.state.confirm_remove_faq(ctx, faq_name)
 
     # @@ faq update
 

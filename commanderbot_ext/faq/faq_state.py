@@ -1,5 +1,5 @@
 from commanderbot_lib.state.abc.cog_state import CogState
-from discord import Message
+from discord import Message, Reaction, User
 from discord.ext.commands import Context
 
 from commanderbot_ext.faq.faq_guild_state import FaqGuildState
@@ -29,9 +29,9 @@ class FaqState(CogState[FaqOptions, FaqStore, FaqGuildState]):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.add_faq(ctx, faq_name, message, content)
 
-    async def remove_faq(self, ctx: Context, faq_name: str):
+    async def confirm_remove_faq(self, ctx: Context, faq_name: str):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.remove_faq(ctx, faq_name)
+            await guild_state.confirm_remove_faq(ctx, faq_name)
 
     async def update_faq(
         self, ctx: Context, faq_name: str, message: Message, content: str
@@ -46,3 +46,7 @@ class FaqState(CogState[FaqOptions, FaqStore, FaqGuildState]):
     async def remove_alias(self, ctx: Context, alias: str):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.remove_alias(ctx, alias, ctx.guild)
+    
+    async def on_reaction_add(self, reaction: Reaction, user: User):
+        if guild_state := await self.get_guild_state(reaction.message.guild):
+            await guild_state.on_reaction_add(reaction, user)
