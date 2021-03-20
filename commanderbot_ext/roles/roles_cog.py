@@ -29,15 +29,6 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
             store=self.store,
         )
 
-    # @@ LISTENERS
-
-    # DELETEME
-    @Cog.listener()
-    async def on_message(self, message: Message):
-        await self.state.on_message(message)
-
-    # @@ COMMANDS
-
     @group(name="roles")
     async def cmd_roles(self, ctx: Context):
         if not ctx.invoked_subcommand:

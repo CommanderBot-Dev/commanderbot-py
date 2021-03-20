@@ -115,10 +115,3 @@ class RolesGuildState(CogGuildState):
     async def remove_role(self, ctx: Context, role: Role):
         if self.store.remove_role(role):
             await ctx.reply(f"Removed `{role}` from opt-in roles.")
-
-    # @@ HANDLERS
-
-    # DELETEME
-    async def on_message(self, message: Message):
-        if message.content == "foo":
-            await message.reply("bar")
