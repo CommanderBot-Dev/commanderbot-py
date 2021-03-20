@@ -11,7 +11,7 @@ from commanderbot_ext.invite.invite_store import (
     NotExistException,
     NotApplicableException,
     TagNameClashException,
-    InviteNameException
+    InviteNameException,
 )
 
 
@@ -45,7 +45,7 @@ class InviteGuildState(CogGuildState[InviteOptions, InviteStore]):
     async def add_invite(self, ctx: Context, link: str):
         name = (await ctx.bot.fetch_invite(link)).guild.name
         try:
-            await self.store.add_invite(self.guild, name, link)                
+            await self.store.add_invite(self.guild, name, link)
             await ctx.send(f"Added invite `{name}`")
         except InviteNameException as e:
             await ctx.send(
@@ -54,17 +54,17 @@ class InviteGuildState(CogGuildState[InviteOptions, InviteStore]):
         except TagNameClashException:
             await ctx.send(f"A tag already exists under the name `{name}`")
 
-
     async def update_invite(self, ctx: Context, name: str, link: str):
         try:
-            await self.store.update_invite(self.guild, name, link)
+            new_name = (await ctx.bot.fetch_invite(link)).guild.name
+            await self.store.update_invite(self.guild, name, link, new_name)
             await ctx.send(f"Updated invite `{name}`:\n{link}")
         except InviteNameException:
             await ctx.send(f"No invite exists called `{name}`")
 
     async def remove_invite(self, ctx: Context, name: str):
         try:
-            await self.store.remove_invite(self.guild, name):
+            await self.store.remove_invite(self.guild, name)
             await ctx.send(f"Invite `{name}` removed")
         except InviteNameException:
             await ctx.send(f"No invite exists called `{name}`")
@@ -92,7 +92,9 @@ Added On: {invite.added_on}
         except NotApplicableException:
             await ctx.send(f"Invite `{name}` already has tag `{tag}`")
         except TagNameClashException:
-            await ctx.send(f"An invite already exists called `{tag}` so I can't use it as a tag")
+            await ctx.send(
+                f"An invite already exists called `{tag}` so I can't use it as a tag"
+            )
 
     async def remove_tag(self, ctx: Context, name: str, tag: str):
         try:

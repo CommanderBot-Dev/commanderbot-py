@@ -25,8 +25,10 @@ class NotExistException(Exception):
 class NotApplicableException(Exception):
     pass
 
+
 class TagNameClashException(Exception):
     pass
+
 
 @dataclass
 class InviteNameException(Exception):
@@ -80,14 +82,17 @@ class InviteStore(
             raise TagNameClashException
         if name in guild_data.entries:
             raise InviteNameException(existing=guild_data.entries[name])
-        guild_data.entries[name] = InviteEntry(name=name, link=link, tags=set(), hits=0, added_on=datetime.utcnow())
+        guild_data.entries[name] = InviteEntry(
+            name=name, link=link, tags=set(), hits=0, added_on=datetime.utcnow()
+        )
         await self.dirty()
 
-    async def update_invite(self, guild: Guild, name: str, link: str):
+    async def update_invite(self, guild: Guild, name: str, link: str, new_name: str):
         guild_data = self.guild_data(guild)
         if name not in guild_data.entries:
             raise InviteNameException()
         guild_data.entries[name].link = link
+        guild_data.entries[new_name] = guild_data.entries.pop(name)
         await self.dirty()
 
     async def remove_invite(self, guild: Guild, name: str) -> bool:

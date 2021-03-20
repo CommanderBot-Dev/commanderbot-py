@@ -39,10 +39,17 @@ class InviteEntry:
         assert isinstance(raw_added_on, str)
         added_on = datetime.fromisoformat(raw_added_on)
 
-        return InviteEntry(name=name, link=link, tags=set(tags), hits=hits, added_on=added_on)
+        return InviteEntry(
+            name=name, link=link, tags=set(tags), hits=hits, added_on=added_on
+        )
 
     def serialize(self) -> dict:
-        return {"link": self.link, "tags": list(self.tags), "hits": self.hits, "added_on": self.added_on.isoformat()}
+        return {
+            "link": self.link,
+            "tags": list(self.tags),
+            "hits": self.hits,
+            "added_on": self.added_on.isoformat(),
+        }
 
 
 @dataclass
