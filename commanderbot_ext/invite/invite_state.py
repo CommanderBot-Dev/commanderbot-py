@@ -26,3 +26,11 @@ class InviteState(CogState[InviteOptions, InviteStore, InviteGuildState]):
     async def remove_invite(self, ctx: Context, name: str):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.remove_invite(ctx, name)
+
+    async def add_tag(self, ctx: Context, name: str, tag: str):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.add_tag(ctx, name, tag)
+
+    async def remove_tag(self, ctx: Context, name: str, tag: str):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.remove_tag(ctx, name, tag)

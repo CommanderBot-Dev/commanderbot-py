@@ -20,13 +20,13 @@ class InviteEntry:
 
         # link
         link: str = data["link"]
-        assert isinstance(content, str)
+        assert isinstance(link, str)
 
         # tags
         tags = data["tags"]
         assert isinstance(tags, list)
         for tag in tags:
-            assert isinstance(alias, str)
+            assert isinstance(tag, str)
 
         return InviteEntry(name=name, link=link, tags=set(tags))
 

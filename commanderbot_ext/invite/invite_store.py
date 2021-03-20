@@ -16,6 +16,8 @@ from commanderbot_ext.invite.invite_cache import (
 )
 from commanderbot_ext.invite.invite_options import InviteOptions
 
+class NotExistException(Exception): pass
+class NotApplicableException(Exception): pass
 
 class InviteStore(
     VersionedCachedStore[InviteOptions, VersionedFileDatabase, InviteCache]
@@ -65,10 +67,30 @@ class InviteStore(
             return guild_data.entries[name]
         else:
             guild_data.entries[name] = InviteEntry(name=name, link=link, tags=set())
+            await self.dirty()
 
     async def remove_invite(self, guild: Guild, name: str) -> bool:
         guild_data = self.guild_data(guild)
         if name not in guild_data.entries:
             return False
         del guild_data.entries[name]
+        await self.dirty()
         return True
+
+    async def add_tag(self, guild: Guild, name: str, tag: str):
+        guild_data = self.guild_data(guild)
+        if name not in guild_data.entries:
+            raise NotExistException
+        if tag in guild_data.entries[name].tags:
+            raise NotApplicableException
+        guild_data.entries[name].tags.add(tag)
+        await self.dirty()
+
+    async def remove_tag(self, guild: Guild, name: str, tag: str):
+        guild_data = self.guild_data(guild)
+        if name not in guild_data.entries:
+            raise NotExistException
+        if tag not in guild_data.entries[name].tags:
+            raise NotApplicableException
+        guild_data.entries[name].tags.remove(tag)
+        await self.dirty()

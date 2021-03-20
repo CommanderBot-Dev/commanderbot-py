@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 from commanderbot_lib import checks
 from commanderbot_lib.logging import Logger, get_clogger
@@ -8,6 +8,10 @@ from discord.ext.commands import Bot, Cog, Context, command, group
 from commanderbot_ext.invite.invite_options import InviteOptions
 from commanderbot_ext.invite.invite_state import InviteState
 
+# Split into invite name / arg
+def split(args: str) -> Tuple[str, str]:
+    words = args.split(" ")
+    return (" ".join(words[:-1]), words[-1])
 
 class InviteCog(Cog, name="commanderbot_ext.invite"):
     def __init__(self, bot: Bot, **options):
@@ -42,11 +46,11 @@ class InviteCog(Cog, name="commanderbot_ext.invite"):
         if not ctx.invoked_subcommand:
             await self.state.list_invites(ctx)
 
-    @cmd_invites.command(name="add")
+    @cmd_invites.command(name="add", usage="<name> <link>")
     @checks.is_administrator()
     async def cmd_add(self, ctx: Context, *, args: str):
-        words = args.split(" ")
-        await self.state.add_invite(ctx, " ".join(words[:-1]), words[-1])
+        name, link = split(args)
+        await self.state.add_invite(ctx, name, link)
 
     @cmd_invites.command(name="remove")
     async def cmd_remove(self, ctx: Context, *, name: str):
@@ -54,14 +58,17 @@ class InviteCog(Cog, name="commanderbot_ext.invite"):
 
     @cmd_invites.group(name="tag")
     async def cmd_tag(self, ctx: Context):
-        pass
+        if not ctx.invoked_subcommand:
+            await ctx.send_help(self.cmd_tag)
 
     ## @@ faq tag
 
-    @cmd_tag.command(name="add")
-    async def cmd_tag_add(self, ctx: Context, name: str, tag: str):
-        pass
+    @cmd_tag.command(name="add", usage="<name> <tag>")
+    async def cmd_tag_add(self, ctx: Context, *, args: str):
+        name, tag = split(args)
+        await self.state.add_tag(ctx, name, tag)
 
-    @cmd_tag.command(name="remove")
-    async def cmd_tag_add(self, ctx: Context, name: str, tag: str):
-        pass
+    @cmd_tag.command(name="remove", usage="<name> <tag>")
+    async def cmd_tag_remove(self, ctx: Context, *, args: str):
+        name, tag = split(args)
+        await self.state.remove_tag(ctx, name, tag)

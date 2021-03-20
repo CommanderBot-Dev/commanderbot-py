@@ -6,7 +6,7 @@ from discord.ext.commands import Context
 
 from commanderbot_ext.invite.invite_cache import InviteEntry
 from commanderbot_ext.invite.invite_options import InviteOptions
-from commanderbot_ext.invite.invite_store import InviteStore
+from commanderbot_ext.invite.invite_store import InviteStore, NotExistException, NotApplicableException
 
 
 class InviteGuildState(CogGuildState[InviteOptions, InviteStore]):
@@ -27,12 +27,30 @@ class InviteGuildState(CogGuildState[InviteOptions, InviteStore]):
 
     async def add_invite(self, ctx: Context, name: str, link: str):
         if existing_entry := await self.store.add_invite(self.guild, name, link):
-            await ctx.send(f"An invite already exists under the name {name}:\n{link}")
+            await ctx.send(f"An invite already exists under the name `{name}``:\n{link}")
         else:
-            await ctx.send(f"Added invite {name}")
+            await ctx.send(f"Added invite `{name}`")
 
     async def remove_invite(self, ctx: Context, name: str):
         if await self.store.remove_invite(self.guild, name):
-            await ctx.send(f"Invite {name} removed")
+            await ctx.send(f"Invite `{name}` removed")
         else:
-            await ctx.send(f"No invite exists called {name}")
+            await ctx.send(f"No invite exists called `{name}`")
+
+    async def add_tag(self, ctx: Context, name: str, tag: str):
+        try:
+            await self.store.add_tag(self.guild, name, tag)
+            await ctx.send(f"Added tag `{tag}` to invite {name}")
+        except NotExistException:
+            await ctx.send(f"No invite exists called `{name}`")
+        except NotApplicableException:
+            await ctx.send(f"Invite `{name}` already has tag `{tag}`")
+
+    async def remove_tag(self, ctx: Context, name: str, tag: str):
+        try:
+            await self.store.remove_tag(self.guild, name, tag)
+            await ctx.send(f"Removed tag `{tag}` from invite {name}")
+        except NotExistException:
+            await ctx.send(f"No invite exists called `{name}`")
+        except NotApplicableException:
+            await ctx.send(f"Invite `{name}` doesn't have the tag `{tag}`")
