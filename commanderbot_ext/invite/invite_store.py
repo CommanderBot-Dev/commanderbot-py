@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Iterable, Optional, Set
+from dataclasses import dataclass
 
 from commanderbot_lib.database.abc.versioned_file_database import (
     DataMigration,
@@ -23,6 +24,13 @@ class NotExistException(Exception):
 
 class NotApplicableException(Exception):
     pass
+
+class TagNameClashException(Exception):
+    pass
+
+@dataclass
+class InviteNameException(Exception):
+    existing: Optional[InviteEntry]
 
 
 class InviteStore(
@@ -66,31 +74,28 @@ class InviteStore(
     def get_invites_by_tag(self, guild: Guild, tag: str) -> Optional[Set[InviteEntry]]:
         return self.guild_data(guild).tags.get(tag)
 
-    async def add_invite(
-        self, guild: Guild, name: str, link: str
-    ) -> Optional[InviteEntry]:
+    async def add_invite(self, guild: Guild, name: str, link: str):
         guild_data = self.guild_data(guild)
+        if name in guild_data.tags:
+            raise TagNameClashException
         if name in guild_data.entries:
-            return guild_data.entries[name]
-        else:
-            guild_data.entries[name] = InviteEntry(name=name, link=link, tags=set(), hits=0, added_on=datetime.utcnow())
-            await self.dirty()
+            raise InviteNameException(existing=guild_data.entries[name])
+        guild_data.entries[name] = InviteEntry(name=name, link=link, tags=set(), hits=0, added_on=datetime.utcnow())
+        await self.dirty()
 
-    async def update_invite(self, guild: Guild, name: str, link: str) -> bool:
+    async def update_invite(self, guild: Guild, name: str, link: str):
         guild_data = self.guild_data(guild)
         if name not in guild_data.entries:
-            return False
+            raise InviteNameException()
         guild_data.entries[name].link = link
         await self.dirty()
-        return True
 
     async def remove_invite(self, guild: Guild, name: str) -> bool:
         guild_data = self.guild_data(guild)
         if name not in guild_data.entries:
-            return False
+            raise InviteNameException()
         del guild_data.entries[name]
         await self.dirty()
-        return True
 
     async def add_tag(self, guild: Guild, name: str, tag: str):
         guild_data = self.guild_data(guild)
@@ -98,6 +103,8 @@ class InviteStore(
             raise NotExistException
         if tag in guild_data.entries[name].tags:
             raise NotApplicableException
+        if tag in guild_data.entries:
+            raise TagNameClashException
         guild_data.entries[name].tags.add(tag)
         if tag not in guild_data.tags:
             guild_data.tags[tag] = []
