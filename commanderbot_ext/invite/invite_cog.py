@@ -13,6 +13,7 @@ def split(args: str) -> Tuple[str, str]:
     words = args.split(" ")
     return (" ".join(words[:-1]), words[-1])
 
+
 class InviteCog(Cog, name="commanderbot_ext.invite"):
     def __init__(self, bot: Bot, **options):
         self.bot: Bot = bot
@@ -41,6 +42,10 @@ class InviteCog(Cog, name="commanderbot_ext.invite"):
 
     # @@ COMMANDS
 
+    @command(name="invite")
+    async def cmd_invite(self, ctx: Context, *, invite: str):
+        await self.state.show_invite(ctx, invite)
+
     @group(name="invites")
     async def cmd_invites(self, ctx: Context):
         if not ctx.invoked_subcommand:
@@ -52,11 +57,22 @@ class InviteCog(Cog, name="commanderbot_ext.invite"):
         name, link = split(args)
         await self.state.add_invite(ctx, name, link)
 
+    @cmd_invites.command(name="update", usage="<name> <link>")
+    @checks.is_administrator()
+    async def cmd_update(self, ctx: Context, *, args: str):
+        name, link = split(args)
+        await self.state.update_invite(ctx, name, link)
+
     @cmd_invites.command(name="remove")
     async def cmd_remove(self, ctx: Context, *, name: str):
         await self.state.remove_invite(ctx, name)
 
+    @cmd_invites.command(name="details")
+    async def cmd_details(self, ctx: Context, *, name: str):
+        await self.state.details(ctx, name)
+
     @cmd_invites.group(name="tag")
+    @checks.is_administrator()
     async def cmd_tag(self, ctx: Context):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_tag)

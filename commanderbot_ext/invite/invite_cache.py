@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Set, Tuple
+from typing import Dict, Set, Tuple, List
 
 from discord import Message
 
@@ -38,7 +38,7 @@ class InviteEntry:
 class InviteGuildData:
     guild_id: GuildID
     entries: Dict[str, InviteEntry]
-    tags: Dict[str, Set[InviteEntry]]
+    tags: Dict[str, List[InviteEntry]]
 
     @staticmethod
     async def deserialize(data: dict, guild_id: GuildID) -> "InviteGuildData":
@@ -55,8 +55,8 @@ class InviteGuildData:
         for _, entry in entries.items():
             for tag in entry.tags:
                 if tag not in tags:
-                    tags[tag] = set()
-                tags[tag].add(entry)
+                    tags[tag] = []
+                tags[tag].append(entry)
         return InviteGuildData(guild_id=guild_id, entries=entries, tags=tags)
 
     def serialize(self) -> dict:
