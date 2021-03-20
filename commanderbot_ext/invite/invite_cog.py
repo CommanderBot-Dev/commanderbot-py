@@ -51,11 +51,10 @@ class InviteCog(Cog, name="commanderbot_ext.invite"):
         if not ctx.invoked_subcommand:
             await self.state.list_invites(ctx)
 
-    @cmd_invites.command(name="add", usage="<name> <link>")
+    @cmd_invites.command(name="add")
     @checks.is_administrator()
-    async def cmd_add(self, ctx: Context, *, args: str):
-        name, link = split(args)
-        await self.state.add_invite(ctx, name, link)
+    async def cmd_add(self, ctx: Context, link: str):
+        await self.state.add_invite(ctx, link)
 
     @cmd_invites.command(name="update", usage="<name> <link>")
     @checks.is_administrator()

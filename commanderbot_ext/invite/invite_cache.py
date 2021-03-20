@@ -12,6 +12,8 @@ class InviteEntry:
     name: str
     link: str
     tags: Set[str]
+    hits: int
+    added_on: datetime
 
     @staticmethod
     async def deserialize(data: dict, name: str) -> "InviteEntry":
@@ -28,10 +30,19 @@ class InviteEntry:
         for tag in tags:
             assert isinstance(tag, str)
 
-        return InviteEntry(name=name, link=link, tags=set(tags))
+        # hits
+        hits = data["hits"]
+        assert isinstance(hits, int)
+
+        # added_on
+        raw_added_on = data["added_on"]
+        assert isinstance(raw_added_on, str)
+        added_on = datetime.fromisoformat(raw_added_on)
+
+        return InviteEntry(name=name, link=link, tags=set(tags), hits=hits, added_on=added_on)
 
     def serialize(self) -> dict:
-        return {"link": self.link, "tags": list(self.tags)}
+        return {"link": self.link, "tags": list(self.tags), "hits": self.hits, "added_on": self.added_on.isoformat()}
 
 
 @dataclass

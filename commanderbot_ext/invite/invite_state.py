@@ -19,9 +19,9 @@ class InviteState(CogState[InviteOptions, InviteStore, InviteGuildState]):
         if guild_state := await self.get_guild_state(ctx.guild):
             await guild_state.show_invite(ctx, invite)
 
-    async def add_invite(self, ctx: Context, name: str, link: str):
+    async def add_invite(self, ctx: Context, link: str):
         if guild_state := await self.get_guild_state(ctx.guild):
-            await guild_state.add_invite(ctx, name, link)
+            await guild_state.add_invite(ctx, link)
 
     async def update_invite(self, ctx: Context, name: str, link: str):
         if guild_state := await self.get_guild_state(ctx.guild):

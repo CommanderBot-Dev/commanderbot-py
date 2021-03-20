@@ -73,7 +73,7 @@ class InviteStore(
         if name in guild_data.entries:
             return guild_data.entries[name]
         else:
-            guild_data.entries[name] = InviteEntry(name=name, link=link, tags=set())
+            guild_data.entries[name] = InviteEntry(name=name, link=link, tags=set(), hits=0, added_on=datetime.utcnow())
             await self.dirty()
 
     async def update_invite(self, guild: Guild, name: str, link: str) -> bool:

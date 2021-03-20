@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from commanderbot_lib.guild_state.abc.cog_guild_state import CogGuildState
-from discord import Message
+from discord import Client, Message
 from discord.ext.commands import Context
 
 from commanderbot_ext.invite.invite_cache import InviteEntry
@@ -31,14 +31,17 @@ class InviteGuildState(CogGuildState[InviteOptions, InviteStore]):
 
     async def show_invite(self, ctx: Context, invite_query: str):
         if invite := self.store.get_invite_by_name(self.guild, invite_query):
+            invite.hits += 1
             await ctx.send(invite.link)
         elif invites := self.store.get_invites_by_tag(self.guild, invite_query):
             for invite in invites:
+                invite.hits += 1
                 await ctx.send(invite.link)
         else:
             await ctx.send(f"No invite or tag exists called `{invite_query}`")
 
-    async def add_invite(self, ctx: Context, name: str, link: str):
+    async def add_invite(self, ctx: Context, link: str):
+        name = (await ctx.bot.fetch_invite(link)).guild.name
         if existing_entry := await self.store.add_invite(self.guild, name, link):
             await ctx.send(
                 f"An invite already exists under the name `{name}`:\n{existing_entry.link}"
@@ -64,6 +67,8 @@ class InviteGuildState(CogGuildState[InviteOptions, InviteStore]):
                 fr"""```{name}
 
 Tags: {', '.join(invite.tags)}
+Hits: {invite.hits}
+Added On: {invite.added_on}
 ```
 {invite.link}"""
             )
