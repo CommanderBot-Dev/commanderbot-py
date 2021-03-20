@@ -24,3 +24,11 @@ class RolesState(GuildPartitionedCogState[RolesGuildState]):
     async def leave_roles(self, ctx: Context, roles: List[Role]):
         if guild := self.ack_guild(ctx.guild):
             await self.guild_states[guild].leave_roles(ctx, roles)
+
+    async def add_role(self, ctx: Context, role: Role, joinable: bool):
+        if guild := self.ack_guild(ctx.guild):
+            await self.guild_states[guild].add_role(ctx, role, joinable)
+
+    async def remove_role(self, ctx: Context, role: Role):
+        if guild := self.ack_guild(ctx.guild):
+            await self.guild_states[guild].remove_role(ctx, role)

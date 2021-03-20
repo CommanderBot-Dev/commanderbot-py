@@ -108,6 +108,14 @@ class RolesGuildState(CogGuildState):
         response_content = "\n".join(response_lines)
         await ctx.reply(response_content)
 
+    async def add_role(self, ctx: Context, role: Role, joinable: bool):
+        if self.store.add_role(role, joinable):
+            await ctx.reply(f"Added `{role}` to opt-in roles.")
+
+    async def remove_role(self, ctx: Context, role: Role):
+        if self.store.remove_role(role):
+            await ctx.reply(f"Removed `{role}` from opt-in roles.")
+
     # @@ HANDLERS
 
     # DELETEME
