@@ -42,9 +42,9 @@ class RolesGuildState(CogGuildState):
             else:
                 heading = "There is *but a single* role available:"
             content = f"{heading}\n```\n{lines_str}\n```"
-            await ctx.reply(content)
+            await ctx.send(content)
         else:
-            await ctx.reply(f"There are no roles available.")
+            await ctx.send(f"There are no roles available.")
 
     async def join_roles(self, ctx: Context, roles: List[Role]):
         member = ctx.author
@@ -110,8 +110,8 @@ class RolesGuildState(CogGuildState):
 
     async def add_role(self, ctx: Context, role: Role, joinable: bool):
         if self.store.add_role(role, joinable):
-            await ctx.reply(f"Added `{role}` to opt-in roles.")
+            await ctx.send(f"Added `{role}` to opt-in roles.")
 
     async def remove_role(self, ctx: Context, role: Role):
         if self.store.remove_role(role):
-            await ctx.reply(f"Removed `{role}` from opt-in roles.")
+            await ctx.send(f"Removed `{role}` from opt-in roles.")
