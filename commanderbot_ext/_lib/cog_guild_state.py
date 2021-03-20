@@ -25,12 +25,8 @@ class CogGuildState:
         The parent discord.py bot instance.
     cog: :class:`Cog`
         The parent discord.py cog instance.
-    options: :class:`OptionsType`
-        A set of static configuration options for the cog.
     guild: :class:`Guild`
         The discord.py guild being managed.
-    store: :class:`StoreType`
-        The store being used to manage data.
     """
 
     bot: Bot
