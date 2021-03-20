@@ -9,11 +9,17 @@ from commanderbot_lib.store.abc.versioned_cached_store import VersionedCachedSto
 from discord import Guild, Message
 
 from commanderbot_ext.invite import invite_migrations as migrations
-from commanderbot_ext.invite.invite_cache import InviteCache, InviteEntry, InviteGuildData
+from commanderbot_ext.invite.invite_cache import (
+    InviteCache,
+    InviteEntry,
+    InviteGuildData,
+)
 from commanderbot_ext.invite.invite_options import InviteOptions
 
 
-class InviteStore(VersionedCachedStore[InviteOptions, VersionedFileDatabase, InviteCache]):
+class InviteStore(
+    VersionedCachedStore[InviteOptions, VersionedFileDatabase, InviteCache]
+):
     # @implements CachedStore
     async def _build_cache(self, data: dict) -> InviteCache:
         return await InviteCache.deserialize(data)
@@ -37,15 +43,32 @@ class InviteStore(VersionedCachedStore[InviteOptions, VersionedFileDatabase, Inv
     def data_version(self) -> int:
         return 1
 
-    def get_guild_data(self, guild: Guild) -> Optional[InviteGuildData]:
-        return self._cache.guilds.get(guild.id)
+    # Using an improved version of this method that will create the guild data if there is none
+    def guild_data(self, guild: Guild) -> InviteGuildData:
+        if guild.id not in self._cache.guilds:
+            self._cache.add_guild(guild.id)
+        return self._cache.guilds[guild.id]
 
-    async def iter_guild_Invites(self, guild: Guild) -> Optional[Iterable[InviteEntry]]:
-        if guild_data := self.get_guild_data(guild):
-            return guild_data.entries.values()
+    async def iter_guild_invites(self, guild: Guild) -> Iterable[InviteEntry]:
+        return self.guild_data(guild).entries.values()
 
-    async def get_guild_Invite_by_name(
+    async def get_guild_invite_by_name(
         self, guild: Guild, Invite_name: str
     ) -> Optional[InviteEntry]:
-        if guild_data := self.get_guild_data(guild):
-            return guild_data.entries.get(Invite_name)
+        return self.guild_data(guild).entries.get(Invite_name)
+
+    async def add_invite(
+        self, guild: Guild, name: str, link: str
+    ) -> Optional[InviteEntry]:
+        guild_data = self.guild_data(guild)
+        if name in guild_data.entries:
+            return guild_data.entries[name]
+        else:
+            guild_data.entries[name] = InviteEntry(name=name, link=link, tags=set())
+
+    async def remove_invite(self, guild: Guild, name: str) -> bool:
+        guild_data = self.guild_data(guild)
+        if name not in guild_data.entries:
+            return False
+        del guild_data.entries[name]
+        return True

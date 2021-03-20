@@ -37,19 +37,22 @@ class InviteCog(Cog, name="commanderbot_ext.invite"):
 
     # @@ COMMANDS
 
-    @command(name="invites")
+    @group(name="invites")
     async def cmd_invites(self, ctx: Context):
-        await self.state.list_invites(ctx)
+        if not ctx.invoked_subcommand:
+            await self.state.list_invites(ctx)
 
     @cmd_invites.command(name="add")
-    async def cmd_add(self, ctx: Context, name: str, link: str):
-        pass
+    @checks.is_administrator()
+    async def cmd_add(self, ctx: Context, *, args: str):
+        words = args.split(" ")
+        await self.state.add_invite(ctx, " ".join(words[:-1]), words[-1])
 
     @cmd_invites.command(name="remove")
-    async def cmd_add(self, ctx: Context, name: str):
-        pass
+    async def cmd_remove(self, ctx: Context, *, name: str):
+        await self.state.remove_invite(ctx, name)
 
-    @cmd_invites.command(name="tag")
+    @cmd_invites.group(name="tag")
     async def cmd_tag(self, ctx: Context):
         pass
 

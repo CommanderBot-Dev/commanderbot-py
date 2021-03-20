@@ -12,70 +12,33 @@ class InviteEntry:
     name: str
     link: str
     tags: Set[str]
-    added_on: datetime
-    updated_on: datetime
-    hits: int
 
     @staticmethod
     async def deserialize(data: dict, name: str) -> "InviteEntry":
         if not isinstance(data, dict):
             raise ValueError(f"Invalid INVITE data: {type(data)}")
 
-        # content
-        content: str = data["content"]
+        # link
+        link: str = data["link"]
         assert isinstance(content, str)
 
-        # message_link
-        message_link = data["message_link"]
-        assert message_link is None or isinstance(message_link, str)
-
-        # aliases
-        aliases = data["aliases"]
-        assert isinstance(aliases, list)
-        for alias in aliases:
+        # tags
+        tags = data["tags"]
+        assert isinstance(tags, list)
+        for tag in tags:
             assert isinstance(alias, str)
 
-        # added_on
-        raw_added_on = data["added_on"]
-        assert isinstance(raw_added_on, str)
-        added_on = datetime.fromisoformat(raw_added_on)
-
-        # updated_on
-        raw_updated_on = data["updated_on"]
-        assert isinstance(raw_updated_on, str)
-        updated_on = datetime.fromisoformat(raw_updated_on)
-
-        # hits
-        hits = data["hits"]
-        assert isinstance(hits, int)
-
-        return InviteEntry(
-            name=name,
-            content=content,
-            message_link=message_link,
-            aliases=set(aliases),
-            added_on=added_on,
-            updated_on=updated_on,
-            hits=hits,
-        )
+        return InviteEntry(name=name, link=link, tags=set(tags))
 
     def serialize(self) -> dict:
-        return {
-            "content": self.content,
-            "message_link": self.message_link,
-            "aliases": list(self.aliases),
-            "added_on": self.added_on.isoformat(),
-            "updated_on": self.updated_on.isoformat(),
-            "hits": self.hits,
-        }
+        return {"link": self.link, "tags": list(self.tags)}
 
 
 @dataclass
 class InviteGuildData:
     guild_id: GuildID
     entries: Dict[str, InviteEntry]
-    aliases: Dict[str, InviteEntry]
-    confirmation: Dict[int, Tuple[Message, InviteEntry]]
+    tags: Dict[str, Set[InviteEntry]]
 
     @staticmethod
     async def deserialize(data: dict, guild_id: GuildID) -> "InviteGuildData":
@@ -88,13 +51,13 @@ class InviteGuildData:
         for invite_name, raw_invite_entry in raw_entries.items():
             invite_entry = await InviteEntry.deserialize(raw_invite_entry, invite_name)
             entries[invite_name] = invite_entry
-        aliases = {}
+        tags = {}
         for _, entry in entries.items():
-            for alias in entry.aliases:
-                aliases[alias] = entry
-        return InviteGuildData(
-            guild_id=guild_id, entries=entries, aliases=aliases, confirmation={}
-        )
+            for tag in entry.tags:
+                if tag not in tags:
+                    tags[tag] = set()
+                tags[tag].add(entry)
+        return InviteGuildData(guild_id=guild_id, entries=entries, tags=tags)
 
     def serialize(self) -> dict:
         return {
@@ -132,3 +95,6 @@ class InviteCache:
                 for guild_id, guild_data in self.guilds.items()
             }
         }
+
+    def add_guild(self, guild_id: GuildID):
+        self.guilds[guild_id] = InviteGuildData(guild_id=guild_id, entries={}, tags={})

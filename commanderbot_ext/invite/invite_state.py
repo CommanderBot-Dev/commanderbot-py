@@ -18,3 +18,11 @@ class InviteState(CogState[InviteOptions, InviteStore, InviteGuildState]):
     async def show_invite(self, ctx: Context, invite_query: str):
         if guild_state := await self.get_guild_state(ctx.guild):
             pass
+
+    async def add_invite(self, ctx: Context, name: str, link: str):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.add_invite(ctx, name, link)
+
+    async def remove_invite(self, ctx: Context, name: str):
+        if guild_state := await self.get_guild_state(ctx.guild):
+            await guild_state.remove_invite(ctx, name)
