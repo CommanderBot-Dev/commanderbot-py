@@ -1,5 +1,5 @@
 from commanderbot_lib import checks
-from discord import Role
+from discord import Member, Role
 from discord.ext.commands import Bot, Cog, Context, command, group
 
 from commanderbot_ext._lib.cog_guild_state_manager import CogGuildStateManager
@@ -30,7 +30,7 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
     @group(name="roles")
     async def cmd_roles(self, ctx: Context):
         if not ctx.invoked_subcommand:
-            await self.state.list_roles(ctx)
+            await self.state.show_relevant_roles(ctx)
 
     @cmd_roles.command(name="register")
     @checks.is_administrator()
@@ -47,11 +47,11 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
     @cmd_roles.command(name="all")
     @checks.is_administrator()
     async def cmd_roles_all(self, ctx: Context):
-        await self.state.all_roles(ctx)
+        await self.state.show_all_roles(ctx)
 
-    @cmd_roles.command(name="list")
-    async def cmd_roles_list(self, ctx: Context):
-        await self.state.list_roles(ctx)
+    @cmd_roles.command(name="show")
+    async def cmd_roles_show(self, ctx: Context):
+        await self.state.show_relevant_roles(ctx)
 
     @cmd_roles.command(name="join")
     async def cmd_roles_join(self, ctx: Context, role: Role):

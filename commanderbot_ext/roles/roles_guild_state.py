@@ -166,7 +166,37 @@ class RolesGuildState(CogGuildState):
             lines.append(f"- {role_title_line}")
         return "\n".join(lines)
 
-    async def all_roles(self, ctx: Context):
+    async def register_role(
+        self, ctx: Context, role: Role, joinable: bool, leavable: bool
+    ):
+        # Check whether this is a role that should be registered.
+        if await self._should_register_role(ctx, role):
+            role_entry = self.store.add_role(role, joinable=joinable, leavable=leavable)
+            if role_entry.joinable and role_entry.leavable:
+                await ctx.send(f"✅ `{role}` has been registered as opt-in/opt-out.")
+            elif role_entry.joinable:
+                await ctx.send(
+                    f"✅ `{role}` has been registered as **opt-in only** (not leavable)."
+                )
+            elif role_entry.leavable:
+                await ctx.send(
+                    f"✅ `{role}` has been registered as **opt-out only** (not joinable)."
+                )
+            else:
+                await ctx.send(
+                    f"✅ `{role}` has been registered, but is **neither opt-in nor opt-out**."
+                )
+        else:
+            await ctx.send(f"❌ `{role}` has **not** been registered.")
+
+    async def deregister_role(self, ctx: Context, role: Role):
+        # Any role can always be deregistered.
+        if self.store.remove_role(role):
+            await ctx.send(f"✅ `{role}` has been deregistered.")
+        else:
+            await ctx.send(f"🤷 `{role}` is not registered.")
+
+    async def show_all_roles(self, ctx: Context):
         if role_pairs := self._get_all_role_pairs():
             role_pairs_str = self._stringify_role_pairs(ctx, role_pairs)
             await ctx.send(
@@ -175,7 +205,7 @@ class RolesGuildState(CogGuildState):
         else:
             await ctx.send(f"🤷 There are no roles registered.")
 
-    async def list_roles(self, ctx: Context):
+    async def show_relevant_roles(self, ctx: Context):
         # We ought to have a [Member].
         member = ctx.author
         assert isinstance(member, Member)
@@ -223,35 +253,5 @@ class RolesGuildState(CogGuildState):
             # Otherwise, they can't leave it.
             else:
                 await ctx.reply(f"❌ You cannot leave `{role}`.")
-        else:
-            await ctx.send(f"🤷 `{role}` is not registered.")
-
-    async def register_role(
-        self, ctx: Context, role: Role, joinable: bool, leavable: bool
-    ):
-        # Check whether this is a role that should be registered.
-        if await self._should_register_role(ctx, role):
-            role_entry = self.store.add_role(role, joinable=joinable, leavable=leavable)
-            if role_entry.joinable and role_entry.leavable:
-                await ctx.send(f"✅ `{role}` has been registered as opt-in/opt-out.")
-            elif role_entry.joinable:
-                await ctx.send(
-                    f"✅ `{role}` has been registered as **opt-in only** (not leavable)."
-                )
-            elif role_entry.leavable:
-                await ctx.send(
-                    f"✅ `{role}` has been registered as **opt-out only** (not joinable)."
-                )
-            else:
-                await ctx.send(
-                    f"✅ `{role}` has been registered, but is **neither opt-in nor opt-out**."
-                )
-        else:
-            await ctx.send(f"❌ `{role}` has **not** been registered.")
-
-    async def deregister_role(self, ctx: Context, role: Role):
-        # Any role can always be deregistered.
-        if self.store.remove_role(role):
-            await ctx.send(f"✅ `{role}` has been deregistered.")
         else:
             await ctx.send(f"🤷 `{role}` is not registered.")

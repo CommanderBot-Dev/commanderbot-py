@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import List
 
-from discord import Role
+from discord import Member, Role
 from discord.ext.commands import Context
 
 from commanderbot_ext._lib.guild_partitioned_cog_state import GuildPartitionedCogState
@@ -25,13 +24,13 @@ class RolesState(GuildPartitionedCogState[RolesGuildState]):
         if guild := self.ack_guild(ctx.guild):
             await self.guild_states[guild].deregister_role(ctx, role)
 
-    async def all_roles(self, ctx: Context):
+    async def show_all_roles(self, ctx: Context):
         if guild := self.ack_guild(ctx.guild):
-            await self.guild_states[guild].all_roles(ctx)
+            await self.guild_states[guild].show_all_roles(ctx)
 
-    async def list_roles(self, ctx: Context):
+    async def show_relevant_roles(self, ctx: Context):
         if guild := self.ack_guild(ctx.guild):
-            await self.guild_states[guild].list_roles(ctx)
+            await self.guild_states[guild].show_relevant_roles(ctx)
 
     async def join_role(self, ctx: Context, role: Role):
         if guild := self.ack_guild(ctx.guild):
