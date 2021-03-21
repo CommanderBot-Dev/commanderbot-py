@@ -13,22 +13,30 @@ from commanderbot_ext.roles.roles_store import RolesStore
 class RolesState(GuildPartitionedCogState[RolesGuildState]):
     store: RolesStore
 
+    async def register_role(
+        self, ctx: Context, role: Role, joinable: bool, leavable: bool
+    ):
+        if guild := self.ack_guild(ctx.guild):
+            await self.guild_states[guild].register_role(
+                ctx, role, joinable=joinable, leavable=leavable
+            )
+
+    async def deregister_role(self, ctx: Context, role: Role):
+        if guild := self.ack_guild(ctx.guild):
+            await self.guild_states[guild].deregister_role(ctx, role)
+
+    async def all_roles(self, ctx: Context):
+        if guild := self.ack_guild(ctx.guild):
+            await self.guild_states[guild].all_roles(ctx)
+
     async def list_roles(self, ctx: Context):
         if guild := self.ack_guild(ctx.guild):
             await self.guild_states[guild].list_roles(ctx)
 
-    async def join_roles(self, ctx: Context, roles: List[Role]):
+    async def join_role(self, ctx: Context, role: Role):
         if guild := self.ack_guild(ctx.guild):
-            await self.guild_states[guild].join_roles(ctx, roles)
+            await self.guild_states[guild].join_role(ctx, role)
 
-    async def leave_roles(self, ctx: Context, roles: List[Role]):
+    async def leave_role(self, ctx: Context, role: Role):
         if guild := self.ack_guild(ctx.guild):
-            await self.guild_states[guild].leave_roles(ctx, roles)
-
-    async def add_role(self, ctx: Context, role: Role, joinable: bool):
-        if guild := self.ack_guild(ctx.guild):
-            await self.guild_states[guild].add_role(ctx, role, joinable)
-
-    async def remove_role(self, ctx: Context, role: Role):
-        if guild := self.ack_guild(ctx.guild):
-            await self.guild_states[guild].remove_role(ctx, role)
+            await self.guild_states[guild].leave_role(ctx, role)

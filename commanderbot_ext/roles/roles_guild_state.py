@@ -1,117 +1,257 @@
+import asyncio
 from dataclasses import dataclass
-from typing import List, Set
+from typing import Iterable, List, Optional, Tuple
 
-from discord import Member, Message, Role
+from discord import Member, Role
 from discord.ext.commands import Context
+from discord.message import Message
+from discord.permissions import Permissions
+from discord.reaction import Reaction
 
 from commanderbot_ext._lib.cog_guild_state import CogGuildState
-from commanderbot_ext.roles.roles_store import RolesStore
+from commanderbot_ext._lib.types import RoleID
+from commanderbot_ext.roles.roles_store import RolesRoleEntry, RolesStore
+
+REACTION_YES = "✅"
+REACTION_NO = "❌"
+
+SAFE_PERMS = Permissions.none()
+# general
+SAFE_PERMS.read_messages = True
+# membership
+SAFE_PERMS.change_nickname = True
+# text channel
+SAFE_PERMS.send_messages = True
+SAFE_PERMS.embed_links = True
+SAFE_PERMS.attach_files = True
+SAFE_PERMS.add_reactions = True
+SAFE_PERMS.external_emojis = True
+SAFE_PERMS.read_message_history = True
+# voice channel
+SAFE_PERMS.connect = True
+SAFE_PERMS.speak = True
+SAFE_PERMS.stream = True
+SAFE_PERMS.use_voice_activation = True
+
+
+RoleEntryPair = Tuple[Role, RolesRoleEntry]
 
 
 @dataclass
 class RolesGuildState(CogGuildState):
     store: RolesStore
 
-    async def can_join_role(self, ctx: Context, role: Role) -> bool:
-        if role_entry := self.store.get_role_entry(role):
-            # Only roles that are configured to be joinable are... joinable.
-            return role_entry.joinable
+    def _resolve_role(self, role_id: RoleID) -> Optional[Role]:
+        # Attempt to resolve the role from the given ID.
+        role = self.guild.get_role(role_id)
+        # If the role resolves correctly, return it.
+        if isinstance(role, Role):
+            return role
+        # Otherwise skip it, but log so the role can be fixed.
+        self.log.exception(f"Failed to resolve role ID: {role_id}")
+
+    def _sort_role_pairs(self, role_pairs: List[RoleEntryPair]) -> List[RoleEntryPair]:
+        # Sort by stringified role name.
+        return sorted(role_pairs, key=lambda role_pair: str(role_pair[0]))
+
+    def _get_all_role_pairs(self) -> List[RoleEntryPair]:
+        # Flatten the full list of role entry pairs.
+        role_pairs: List[RoleEntryPair] = []
+        for role_entry in self.store.iter_role_entries(self.guild):
+            # If the role was resolved, add it to the list.
+            if role := self._resolve_role(role_entry.role_id):
+                role_pairs.append((role, role_entry))
+        # Sort and return.
+        return self._sort_role_pairs(role_pairs)
+
+    def _get_relevant_role_for(
+        self, role_entry: RolesRoleEntry, member: Member
+    ) -> Optional[Role]:
+        # If the role didn't resolve, it certainly isn't relevant.
+        if role := self._resolve_role(role_entry.role_id):
+            # A role is relevant to the user if:
+            # 1. it's joinable; or
+            # 2. it's leavable and present on the user.
+            if role_entry.joinable or (role_entry.leavable and role in member.roles):
+                return role
+
+    def _get_relevant_role_pairs(self, member: Member) -> List[RoleEntryPair]:
+        # Build a list of relevant role entry pairs.
+        role_pairs: List[RoleEntryPair] = []
+        for role_entry in self.store.iter_role_entries(self.guild):
+            # If the role is relevant to the user, add it to the list.
+            if role := self._get_relevant_role_for(role_entry, member):
+                role_pairs.append((role, role_entry))
+        # Sort and return.
+        return self._sort_role_pairs(role_pairs)
+
+    async def _confirm_register_unsafe_role(
+        self, ctx: Context, role: Role, unsafe_perms: Permissions
+    ) -> bool:
+        # Build and send a confirmation message.
+        unsafe_perms_str = "\n".join(
+            f"- `{pname}`" for pname, pvalue in unsafe_perms if pvalue
+        )
+        message_str = "\n".join(
+            [
+                f"`{role}` contains potentially unsafe permissions:",
+                unsafe_perms_str,
+                f"Do you want to register `{role}` anyway?",
+            ]
+        )
+        conf_message: Message = await ctx.reply(message_str)
+
+        # Have the bot pre-fill the possible choices for convenience.
+        await conf_message.add_reaction(REACTION_YES)
+        await conf_message.add_reaction(REACTION_NO)
+
+        # Define a callback to listen for a reaction to the confirmation message.
+        def reacted_to_conf_message(reaction: Reaction, user: Member):
+            return (
+                reaction.message == conf_message
+                and user == ctx.author
+                and str(reaction.emoji) in (REACTION_YES, REACTION_NO)
+            )
+
+        # Attempt to wait for a reaction to the confirmation message.
+        try:
+            conf_reaction, conf_user = await self.bot.wait_for(
+                "reaction_add", timeout=60.0, check=reacted_to_conf_message
+            )
+        # If an appropriate reaction is not received soon enough, assume "no."
+        except asyncio.TimeoutError:
+            pass
+        # Otherwise, check which reaction was applied.
+        else:
+            assert isinstance(conf_reaction, Reaction)
+            if str(conf_reaction.emoji) == REACTION_YES:
+                await conf_message.remove_reaction(REACTION_NO, self.bot.user)
+                return True
+        # If we get this far, the answer is "no."
+        await conf_message.remove_reaction(REACTION_YES, self.bot.user)
         return False
 
-    async def can_leave_role(self, ctx: Context, role: Role) -> bool:
-        if self.store.get_role_entry(role):
-            # Every configured role is implicitly leavable.
-            return True
-        return False
+    def _get_unsafe_role_perms(self, role: Role) -> Optional[Permissions]:
+        # Start with an empty set of unsafe permissions.
+        unsafe_perms = Permissions.none()
+        # Collect all of the enabled permissions.
+        unsafe_pnames = [pname for (pname, pvalue) in role.permissions if pvalue]
+        for pname in unsafe_pnames:
+            # If this permission is not safe, add it to the set of unsafe permissions.
+            if not getattr(SAFE_PERMS, pname):
+                setattr(unsafe_perms, pname, True)
+        # Only return a [Permissions] object if there's actually something in it.
+        if unsafe_perms != Permissions.none():
+            return unsafe_perms
+
+    async def _should_register_role(self, ctx: Context, role: Role) -> bool:
+        # If the role contains unsafe permissions, ask for confirmation.
+        if unsafe_perms := self._get_unsafe_role_perms(role):
+            return await self._confirm_register_unsafe_role(ctx, role, unsafe_perms)
+        # Otherwise, the role can be registered right away.
+        return True
+
+    def _stringify_role_pairs(
+        self, ctx: Context, role_pairs: List[RoleEntryPair]
+    ) -> str:
+        lines = []
+        for role, role_entry in role_pairs:
+            # Build the role title line.
+            role_title_parts = [f"`{role}`"]
+            if not role_entry.joinable:
+                role_title_parts.append(" (not joinable)")
+            if not role_entry.leavable:
+                role_title_parts.append(" (not leavable)")
+            role_title_line = "".join(role_title_parts)
+            lines.append(f"- {role_title_line}")
+        return "\n".join(lines)
+
+    async def all_roles(self, ctx: Context):
+        if role_pairs := self._get_all_role_pairs():
+            role_pairs_str = self._stringify_role_pairs(ctx, role_pairs)
+            await ctx.send(
+                f"There are {len(role_pairs)} roles registered:\n{role_pairs_str}"
+            )
+        else:
+            await ctx.send(f"🤷 There are no roles registered.")
 
     async def list_roles(self, ctx: Context):
-        # List roles in sorted order.
-        if sorted_role_pairs := self.store.get_sorted_role_pairs(self.guild):
-            lines = []
-            count_roles = len(sorted_role_pairs)
-            for role, role_entry in sorted_role_pairs:
-                # Build the role title line.
-                role_title_parts = [str(role)]
-                if not role_entry.joinable:
-                    role_title_parts.append(" (not joinable)")
-                role_title_line = "".join(role_title_parts)
-                lines.append(role_title_line)
-            lines_str = "\n".join(lines)
-            if count_roles > 1:
-                heading = f"There are {count_roles} roles available:"
-            else:
-                heading = "There is *but a single* role available:"
-            content = f"{heading}\n```\n{lines_str}\n```"
-            await ctx.send(content)
-        else:
-            await ctx.send(f"There are no roles available.")
-
-    async def join_roles(self, ctx: Context, roles: List[Role]):
+        # We ought to have a [Member].
         member = ctx.author
         assert isinstance(member, Member)
-        # Summarize what happens with each role so we can print a full response later.
-        passed_roles: Set[Role] = set()
-        failed_roles: Set[Role] = set()
-        # Process one role at a time...
-        for role in roles:
-            # Check whether the user can join this role.
-            if self.can_join_role(ctx, role):
-                passed_roles.add(role)
-            else:
-                failed_roles.add(role)
-        # Build a response out of several lines.
-        response_lines = []
-        # Add them to and let them know about any roles they have joined.
-        if passed_roles:
-            await member.add_roles(passed_roles, reason="User opted-in to roles")
-            passed_roles_str = "`, `".join(str(r) for r in passed_roles)
-            response_lines.append(f"You have joined `{passed_roles_str}`")
-        # Let them know about any roles they tried to join but could not.
-        if failed_roles:
-            failed_roles_str = "`, `".join(str(r) for r in failed_roles)
-            response_lines.append(f"You cannot join `{failed_roles_str}`")
-        # Let them know if their roles have not changed.
+        # List only roles that are relevant to this user.
+        if role_pairs := self._get_relevant_role_pairs(member):
+            role_pairs_str = self._stringify_role_pairs(ctx, role_pairs)
+            await ctx.reply(
+                f"There are {len(role_pairs)} roles available to you:\n{role_pairs_str}"
+            )
         else:
-            response_lines.append(f"Your roles have not changed.")
-        # Send the final response.
-        response_content = "\n".join(response_lines)
-        await ctx.reply(response_content)
+            await ctx.reply(f"🤷 There are no roles available to you.")
 
-    async def leave_roles(self, ctx: Context, roles: List[Role]):
+    async def join_role(self, ctx: Context, role: Role):
+        # We ought to have a [Member].
         member = ctx.author
         assert isinstance(member, Member)
-        # Summarize what happens with each role so we can print a full response later.
-        passed_roles: Set[Role] = set()
-        failed_roles: Set[Role] = set()
-        # Process one role at a time...
-        for role in roles:
-            # Check whether the user can leave this role.
-            if self.can_leave_role(ctx, role):
-                passed_roles.add(role)
+        # Only consider roles that have actually been registered.
+        if role_entry := self.store.get_role_entry(role):
+            # First, check if they already have the role.
+            if role in member.roles:
+                await ctx.reply(f"🤔 You're already in `{role}`.")
+            # Then, check if the role is indeed joinable.
+            elif role_entry.joinable:
+                await member.add_roles(role, reason="User opted-in to role")
+                await ctx.reply(f"✅ You have joined `{role}`.")
+            # Otherwise, they can't join it.
             else:
-                failed_roles.add(role)
-        # Build a response out of several lines.
-        response_lines = []
-        # Remove them from and let them know about any roles they have left.
-        if passed_roles:
-            await member.remove_roles(passed_roles, reason="User opted-out of roles")
-            passed_roles_str = "`, `".join(str(r) for r in passed_roles)
-            response_lines.append(f"You have left `{passed_roles_str}`")
-        # Let them know about any roles they tried to leave but could not.
-        if failed_roles:
-            failed_roles_str = "`, `".join(str(r) for r in failed_roles)
-            response_lines.append(f"You cannot leave `{failed_roles_str}`")
-        # Let them know if their roles have not changed.
+                await ctx.reply(f"❌ You cannot join `{role}`.")
         else:
-            response_lines.append(f"Your roles have not changed.")
-        # Send the final response.
-        response_content = "\n".join(response_lines)
-        await ctx.reply(response_content)
+            await ctx.send(f"🤷 `{role}` is not registered.")
 
-    async def add_role(self, ctx: Context, role: Role, joinable: bool):
-        if self.store.add_role(role, joinable):
-            await ctx.send(f"Added `{role}` to opt-in roles.")
+    async def leave_role(self, ctx: Context, role: Role):
+        # We ought to have a [Member].
+        member = ctx.author
+        assert isinstance(member, Member)
+        # Only consider roles that have actually been registered.
+        if role_entry := self.store.get_role_entry(role):
+            # First, check if they don't already have the role.
+            if role not in member.roles:
+                await ctx.reply(f"🤔 You aren't in `{role}`.")
+            # Then, check if the role is indeed leavable.
+            elif role_entry.leavable:
+                await member.remove_roles(role, reason="User opted-out of role")
+                await ctx.reply(f"✅ You have left `{role}`.")
+            # Otherwise, they can't leave it.
+            else:
+                await ctx.reply(f"❌ You cannot leave `{role}`.")
+        else:
+            await ctx.send(f"🤷 `{role}` is not registered.")
 
-    async def remove_role(self, ctx: Context, role: Role):
+    async def register_role(
+        self, ctx: Context, role: Role, joinable: bool, leavable: bool
+    ):
+        # Check whether this is a role that should be registered.
+        if await self._should_register_role(ctx, role):
+            role_entry = self.store.add_role(role, joinable=joinable, leavable=leavable)
+            if role_entry.joinable and role_entry.leavable:
+                await ctx.send(f"✅ `{role}` has been registered as opt-in/opt-out.")
+            elif role_entry.joinable:
+                await ctx.send(
+                    f"✅ `{role}` has been registered as **opt-in only** (not leavable)."
+                )
+            elif role_entry.leavable:
+                await ctx.send(
+                    f"✅ `{role}` has been registered as **opt-out only** (not joinable)."
+                )
+            else:
+                await ctx.send(
+                    f"✅ `{role}` has been registered, but is **neither opt-in nor opt-out**."
+                )
+        else:
+            await ctx.send(f"❌ `{role}` has **not** been registered.")
+
+    async def deregister_role(self, ctx: Context, role: Role):
+        # Any role can always be deregistered.
         if self.store.remove_role(role):
-            await ctx.send(f"Removed `{role}` from opt-in roles.")
+            await ctx.send(f"✅ `{role}` has been deregistered.")
+        else:
+            await ctx.send(f"🤷 `{role}` is not registered.")
