@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from commanderbot_lib import checks
 from discord import Member, Role
 from discord.ext.commands import Bot, Cog, Context, command, group
@@ -43,6 +45,16 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
     @checks.is_administrator()
     async def cmd_roles_deregister(self, ctx: Context, role: Role):
         await self.state.deregister_role(ctx, role)
+
+    @cmd_roles.command(name="add")
+    @checks.is_administrator()
+    async def cmd_roles_add(self, ctx: Context, role: Role, *members: Member):
+        await self.state.add_role_to_members(ctx, role, list(members))
+
+    @cmd_roles.command(name="remove")
+    @checks.is_administrator()
+    async def cmd_roles_remove(self, ctx: Context, role: Role, *members: Member):
+        await self.state.remove_role_from_members(ctx, role, list(members))
 
     @cmd_roles.command(name="all")
     @checks.is_administrator()

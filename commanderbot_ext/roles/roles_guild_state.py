@@ -196,6 +196,48 @@ class RolesGuildState(CogGuildState):
         else:
             await ctx.send(f"🤷 `{role}` is not registered.")
 
+    async def add_role_to_members(
+        self, ctx: Context, role: Role, members: List[Member]
+    ):
+        # The acting user ought to be a [Member].
+        acting_user = ctx.author
+        assert isinstance(acting_user, Member)
+        # Add the role to each member who does not already have it.
+        added_members: List[Member] = []
+        for member in members:
+            if role not in member.roles:
+                await member.add_roles(role, reason=f"{acting_user} added role to user")
+                added_members.append(member)
+        # Send a response with edit-mentions.
+        if added_members:
+            members_str = " ".join(f"{member.mention}" for member in added_members)
+            message: Message = await ctx.reply("\\🤖")
+            await message.edit(content=f"Added role `{role}` to: {members_str}")
+        else:
+            await ctx.reply("🤷 All of those users already have that role.")
+
+    async def remove_role_from_members(
+        self, ctx: Context, role: Role, members: List[Member]
+    ):
+        # The acting user ought to be a [Member].
+        acting_user = ctx.author
+        assert isinstance(acting_user, Member)
+        # Remove the role from each member who has it.
+        removed_members: List[Member] = []
+        for member in members:
+            if role in member.roles:
+                await member.remove_roles(
+                    role, reason=f"{acting_user} removed role from user"
+                )
+                removed_members.append(member)
+        # Send a response with edit-mentions.
+        if removed_members:
+            members_str = " ".join(f"{member.mention}" for member in removed_members)
+            message: Message = await ctx.reply("`🤖`")
+            await message.edit(content=f"Removed role `{role}` from: {members_str}")
+        else:
+            await ctx.reply("🤷 None of those users have that role.")
+
     async def show_all_roles(self, ctx: Context):
         if role_pairs := self._get_all_role_pairs():
             role_pairs_str = self._stringify_role_pairs(ctx, role_pairs)

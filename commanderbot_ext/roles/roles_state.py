@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 from discord import Member, Role
 from discord.ext.commands import Context
@@ -23,6 +24,18 @@ class RolesState(GuildPartitionedCogState[RolesGuildState]):
     async def deregister_role(self, ctx: Context, role: Role):
         if guild := self.ack_guild(ctx.guild):
             await self.guild_states[guild].deregister_role(ctx, role)
+
+    async def add_role_to_members(
+        self, ctx: Context, role: Role, members: List[Member]
+    ):
+        if guild := self.ack_guild(ctx.guild):
+            await self.guild_states[guild].add_role_to_members(ctx, role, members)
+
+    async def remove_role_from_members(
+        self, ctx: Context, role: Role, members: List[Member]
+    ):
+        if guild := self.ack_guild(ctx.guild):
+            await self.guild_states[guild].remove_role_from_members(ctx, role, members)
 
     async def show_all_roles(self, ctx: Context):
         if guild := self.ack_guild(ctx.guild):
