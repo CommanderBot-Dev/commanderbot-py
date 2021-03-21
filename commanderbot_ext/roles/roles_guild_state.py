@@ -1,15 +1,11 @@
 import asyncio
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
-from discord import Member, Role
-from discord.ext.commands import Context
-from discord.message import Message
-from discord.permissions import Permissions
-from discord.reaction import Reaction
+from discord import Member, Message, Permissions, Reaction, Role
 
 from commanderbot_ext._lib.cog_guild_state import CogGuildState
-from commanderbot_ext._lib.types import RoleID
+from commanderbot_ext._lib.types import GuildContext, RoleID
 from commanderbot_ext.roles.roles_store import RolesRoleEntry, RolesStore
 
 REACTION_YES = "✅"
@@ -86,7 +82,7 @@ class RolesGuildState(CogGuildState):
         return self._sort_role_pairs(role_pairs)
 
     async def _confirm_register_unsafe_role(
-        self, ctx: Context, role: Role, unsafe_perms: Permissions
+        self, ctx: GuildContext, role: Role, unsafe_perms: Permissions
     ) -> bool:
         # Build and send a confirmation message.
         unsafe_perms_str = "\n".join(
@@ -144,7 +140,7 @@ class RolesGuildState(CogGuildState):
         if unsafe_perms != Permissions.none():
             return unsafe_perms
 
-    async def _should_register_role(self, ctx: Context, role: Role) -> bool:
+    async def _should_register_role(self, ctx: GuildContext, role: Role) -> bool:
         # If the role contains unsafe permissions, ask for confirmation.
         if unsafe_perms := self._get_unsafe_role_perms(role):
             return await self._confirm_register_unsafe_role(ctx, role, unsafe_perms)
@@ -152,7 +148,7 @@ class RolesGuildState(CogGuildState):
         return True
 
     def _stringify_role_pairs(
-        self, ctx: Context, role_pairs: List[RoleEntryPair]
+        self, ctx: GuildContext, role_pairs: List[RoleEntryPair]
     ) -> str:
         lines = []
         for role, role_entry in role_pairs:
@@ -167,7 +163,7 @@ class RolesGuildState(CogGuildState):
         return "\n".join(lines)
 
     async def register_role(
-        self, ctx: Context, role: Role, joinable: bool, leavable: bool
+        self, ctx: GuildContext, role: Role, joinable: bool, leavable: bool
     ):
         # Check whether this is a role that should be registered.
         if await self._should_register_role(ctx, role):
@@ -189,7 +185,7 @@ class RolesGuildState(CogGuildState):
         else:
             await ctx.send(f"❌ `{role}` has **not** been registered.")
 
-    async def deregister_role(self, ctx: Context, role: Role):
+    async def deregister_role(self, ctx: GuildContext, role: Role):
         # Any role can always be deregistered.
         if self.store.remove_role(role):
             await ctx.send(f"✅ `{role}` has been deregistered.")
@@ -197,7 +193,7 @@ class RolesGuildState(CogGuildState):
             await ctx.send(f"🤷 `{role}` is not registered.")
 
     async def add_role_to_members(
-        self, ctx: Context, role: Role, members: List[Member]
+        self, ctx: GuildContext, role: Role, members: List[Member]
     ):
         # The acting user ought to be a [Member].
         acting_user = ctx.author
@@ -217,7 +213,7 @@ class RolesGuildState(CogGuildState):
             await ctx.reply("🤷 All of those users already have that role.")
 
     async def remove_role_from_members(
-        self, ctx: Context, role: Role, members: List[Member]
+        self, ctx: GuildContext, role: Role, members: List[Member]
     ):
         # The acting user ought to be a [Member].
         acting_user = ctx.author
@@ -238,7 +234,7 @@ class RolesGuildState(CogGuildState):
         else:
             await ctx.reply("🤷 None of those users have that role.")
 
-    async def show_all_roles(self, ctx: Context):
+    async def show_all_roles(self, ctx: GuildContext):
         if role_pairs := self._get_all_role_pairs():
             role_pairs_str = self._stringify_role_pairs(ctx, role_pairs)
             await ctx.send(
@@ -247,7 +243,7 @@ class RolesGuildState(CogGuildState):
         else:
             await ctx.send(f"🤷 There are no roles registered.")
 
-    async def show_relevant_roles(self, ctx: Context):
+    async def show_relevant_roles(self, ctx: GuildContext):
         # We ought to have a [Member].
         member = ctx.author
         assert isinstance(member, Member)
@@ -260,7 +256,7 @@ class RolesGuildState(CogGuildState):
         else:
             await ctx.reply(f"🤷 There are no roles available to you.")
 
-    async def join_role(self, ctx: Context, role: Role):
+    async def join_role(self, ctx: GuildContext, role: Role):
         # We ought to have a [Member].
         member = ctx.author
         assert isinstance(member, Member)
@@ -279,7 +275,7 @@ class RolesGuildState(CogGuildState):
         else:
             await ctx.send(f"🤷 `{role}` is not registered.")
 
-    async def leave_role(self, ctx: Context, role: Role):
+    async def leave_role(self, ctx: GuildContext, role: Role):
         # We ought to have a [Member].
         member = ctx.author
         assert isinstance(member, Member)

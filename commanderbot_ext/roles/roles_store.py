@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Iterable, Optional
 
-from discord import Guild, Member, Role
+from discord import Guild, Role
 
 from commanderbot_ext._lib.cog_store import CogStore
 from commanderbot_ext._lib.types import GuildID, RoleID

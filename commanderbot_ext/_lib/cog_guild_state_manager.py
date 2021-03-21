@@ -32,6 +32,7 @@ class CogGuildStateManager(Generic[GuildStateType]):
     factory: CogGuildStateFactory[GuildStateType]
 
     log: Logger = field(init=False)
+
     _state_by_id: Dict[GuildID, GuildStateType] = field(init=False)
 
     def __post_init__(self):
@@ -48,12 +49,13 @@ class CogGuildStateManager(Generic[GuildStateType]):
         yield from self._state_by_id.values()
 
     def set_state(self, guild: Guild, state: GuildStateType):
+        self.log.debug(f"Setting state for guild: {guild}")
         if guild.id in self._state_by_id:
             raise KeyError(f"Attempted to overwrite state for guild: {guild}")
         self._state_by_id[guild.id] = state
 
     def init_state(self, guild: Guild) -> GuildStateType:
-        self.log.info(f"Initializing state for guild: {guild}")
+        self.log.debug(f"Initializing state for guild: {guild}")
         guild_state = self.factory(guild)
         self.set_state(guild, guild_state)
         return guild_state
