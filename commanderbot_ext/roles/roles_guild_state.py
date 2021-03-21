@@ -212,7 +212,7 @@ class RolesGuildState(CogGuildState):
         if added_members:
             members_str = " ".join(f"{member.mention}" for member in added_members)
             message: Message = await ctx.reply("\\🤖")
-            await message.edit(content=f"Added role `{role}` to: {members_str}")
+            await message.edit(content=f"✅ Added role `{role}` to: {members_str}")
         else:
             await ctx.reply("🤷 All of those users already have that role.")
 
@@ -234,7 +234,7 @@ class RolesGuildState(CogGuildState):
         if removed_members:
             members_str = " ".join(f"{member.mention}" for member in removed_members)
             message: Message = await ctx.reply("`🤖`")
-            await message.edit(content=f"Removed role `{role}` from: {members_str}")
+            await message.edit(content=f"✅ Removed role `{role}` from: {members_str}")
         else:
             await ctx.reply("🤷 None of those users have that role.")
 
