@@ -54,7 +54,7 @@ class InviteStore(
         expected_version: int,
     ) -> Iterable[DataMigration]:
         if actual_version < 1:
-            yield migrations.m_1a_init_aliases_dates_hits
+            yield from ()
 
     # @implements VersionedCachedStore
     @property
