@@ -62,8 +62,6 @@ class PackCog(Cog, name="commanderbot_ext.pack"):
             return
 
         if exception:
-            message += f"\n```{format_exc(exception)}```"
-        else:
-            message = f"```{message}```"
+            message += f"\n\n{format_exc(exception)}"
 
-        await ctx.send(message)
+        await ctx.send(f"```{message}```")
