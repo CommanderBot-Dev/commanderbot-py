@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from commanderbot_lib import checks
-from discord import Guild, Member, Role
+from discord import Guild, Member
 from discord.ext.commands import Bot, Cog, command, group
 
 from commanderbot_ext._lib.cog_guild_state_manager import CogGuildStateManager
-from commanderbot_ext._lib.types import GuildContext
+from commanderbot_ext._lib.types import GuildContext, GuildRole
 from commanderbot_ext.roles.roles_guild_state import RolesGuildState
 from commanderbot_ext.roles.roles_state import RolesState
 from commanderbot_ext.roles.roles_store import RolesStore
@@ -52,7 +52,7 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
     async def cmd_roles_register(
         self,
         ctx: GuildContext,
-        role: Role,
+        role: GuildRole,
         joinable: bool = True,
         leavable: bool = True,
     ):
@@ -62,17 +62,19 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
 
     @cmd_roles.command(name="deregister")
     @checks.is_administrator()
-    async def cmd_roles_deregister(self, ctx: GuildContext, role: Role):
+    async def cmd_roles_deregister(self, ctx: GuildContext, role: GuildRole):
         await self.state[ctx.guild].deregister_role(ctx, role)
 
     @cmd_roles.command(name="add")
     @checks.is_administrator()
-    async def cmd_roles_add(self, ctx: GuildContext, role: Role, *members: Member):
+    async def cmd_roles_add(self, ctx: GuildContext, role: GuildRole, *members: Member):
         await self.state[ctx.guild].add_role_to_members(ctx, role, list(members))
 
     @cmd_roles.command(name="remove")
     @checks.is_administrator()
-    async def cmd_roles_remove(self, ctx: GuildContext, role: Role, *members: Member):
+    async def cmd_roles_remove(
+        self, ctx: GuildContext, role: GuildRole, *members: Member
+    ):
         await self.state[ctx.guild].remove_role_from_members(ctx, role, list(members))
 
     @cmd_roles.command(name="all")
@@ -85,19 +87,19 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
         await self.state[ctx.guild].show_relevant_roles(ctx)
 
     @cmd_roles.command(name="join")
-    async def cmd_roles_join(self, ctx: GuildContext, role: Role):
+    async def cmd_roles_join(self, ctx: GuildContext, role: GuildRole):
         await self.state[ctx.guild].join_role(ctx, role)
 
     @cmd_roles.command(name="leave")
-    async def cmd_roles_leave(self, ctx: GuildContext, role: Role):
+    async def cmd_roles_leave(self, ctx: GuildContext, role: GuildRole):
         await self.state[ctx.guild].leave_role(ctx, role)
 
     @command(name="join")
     @checks.guild_only()
-    async def cmd_join(self, ctx: GuildContext, role: Role):
+    async def cmd_join(self, ctx: GuildContext, role: GuildRole):
         await self.state[ctx.guild].join_role(ctx, role)
 
     @command(name="leave")
     @checks.guild_only()
-    async def cmd_leave(self, ctx: GuildContext, role: Role):
+    async def cmd_leave(self, ctx: GuildContext, role: GuildRole):
         await self.state[ctx.guild].leave_role(ctx, role)

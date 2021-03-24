@@ -1,6 +1,6 @@
 from typing import Any, Union
 
-from discord import Guild, Member, Message, Reaction, TextChannel, User
+from discord import Guild, Member, Message, Reaction, Role, TextChannel, User
 from discord.ext.commands import Context
 
 IDType = int
@@ -40,6 +40,19 @@ class TextReaction(Reaction):
     """
 
     message: TextMessage
+
+
+class GuildRole(Role):
+    """
+    A [Role] from within a [Guild].
+
+    This is a dummy class that can be used in casts to convince static analysis that
+    this [Role] does indeed contain a [Guild].
+
+    This is not intended to be used anywhere other than type-hinting.
+    """
+
+    guild: Guild
 
 
 class GuildContext(Context):
