@@ -5,7 +5,7 @@ from discord import Guild
 
 from commanderbot_ext._lib.cog_guild_state import CogGuildState
 
-GuildStateType = TypeVar("GuildStateType", bound=CogGuildState)
+GuildStateType = TypeVar("GuildStateType", bound=CogGuildState, covariant=True)
 
 
 class CogGuildStateFactory(Protocol[GuildStateType]):
