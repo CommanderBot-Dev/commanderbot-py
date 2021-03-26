@@ -1,7 +1,7 @@
-from typing import Any, Union
+from typing import Any, Union, cast
 
 from discord import Guild, Member, Message, Reaction, Role, TextChannel, User
-from discord.ext.commands import Context
+from discord.ext.commands import Context, RoleConverter
 
 IDType = int
 
@@ -53,6 +53,17 @@ class GuildRole(Role):
     """
 
     guild: Guild
+
+    @classmethod
+    async def convert(cls, ctx: Context, argument: Any):
+        """
+        Attempt to convert the given argument into a `Role` from within a `Guild`.
+
+        Note that discord.py's built-in `Role` is special-cased, so what we do here is
+        explicitly make this subclass convertible and then just return the underlying
+        `Role` anyway.
+        """
+        return await RoleConverter().convert(ctx, argument)
 
 
 class GuildContext(Context):
