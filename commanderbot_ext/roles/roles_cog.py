@@ -1,27 +1,26 @@
-from dataclasses import dataclass
-from typing import Any, Optional
-
 from commanderbot_lib import checks
 from discord import Guild, Member
 from discord.ext.commands import Bot, Cog, command, group
 
 from commanderbot_ext._lib.cog_guild_state_manager import CogGuildStateManager
+from commanderbot_ext._lib.database_options import (
+    InMemoryDatabaseOptions,
+    JsonFileDatabaseOptions,
+    UnsupportedDatabaseOptions,
+)
 from commanderbot_ext._lib.types import GuildContext, GuildRole
 from commanderbot_ext.roles.roles_guild_state import RolesGuildState
+from commanderbot_ext.roles.roles_json_store import RolesJsonStore
+from commanderbot_ext.roles.roles_options import RolesOptions
 from commanderbot_ext.roles.roles_state import RolesState
 from commanderbot_ext.roles.roles_store import RolesStore
-
-
-@dataclass
-class RolesOptions:
-    database: Optional[Any]
 
 
 class RolesCog(Cog, name="commanderbot_ext.roles"):
     def __init__(self, bot: Bot, **options):
         self.bot = bot
-        self.options = RolesOptions(**options)
-        self.store = RolesStore(bot=self.bot, cog=self, database=self.options.database)
+        self.options = RolesOptions.from_dict(options)
+        self.store: RolesStore = self._make_store()
         self.state = RolesState(
             bot=self.bot,
             cog=self,
@@ -33,13 +32,16 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
             store=self.store,
         )
 
+    def _make_store(self) -> RolesStore:
+        db_options = self.options.database
+        if isinstance(db_options, InMemoryDatabaseOptions):
+            return RolesJsonStore(bot=self.bot, cog=self)
+        if isinstance(db_options, JsonFileDatabaseOptions):
+            return RolesJsonStore(bot=self.bot, cog=self, db_options=db_options)
+        raise UnsupportedDatabaseOptions(db_options)
+
     def _make_guild_state(self, guild: Guild) -> RolesGuildState:
-        return RolesGuildState(
-            bot=self.bot,
-            cog=self,
-            guild=guild,
-            store=self.store,
-        )
+        return RolesGuildState(bot=self.bot, cog=self, guild=guild, store=self.store)
 
     @group(name="roles")
     @checks.guild_only()

@@ -1,12 +1,12 @@
 import asyncio
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, cast
+from typing import List, Optional, cast
 
 from discord import Member, Message, Permissions, Reaction, Role
 
 from commanderbot_ext._lib.cog_guild_state import CogGuildState
 from commanderbot_ext._lib.types import GuildContext, GuildRole, RoleID
-from commanderbot_ext.roles.roles_store import RolesRoleEntry, RolesStore
+from commanderbot_ext.roles.roles_store import RoleEntry, RoleEntryPair, RolesStore
 
 REACTION_YES = "✅"
 REACTION_NO = "❌"
@@ -30,14 +30,41 @@ SAFE_PERMS.stream = True
 SAFE_PERMS.use_voice_activation = True
 
 
-RoleEntryPair = Tuple[GuildRole, RolesRoleEntry]
-
-
 @dataclass
 class RolesGuildState(CogGuildState):
+    """
+    Maintains guild-specific state for the roles cog.
+
+    Note that `store` is used to interface with persistent state in a database-agnostic
+    way, whereas transient state can simply be maintained in-memory in the form of
+    additional member attributes.
+
+    Attributes
+    -----------
+    store: :class:`RolesStore`
+        The store used to interface with persistent state in a database-agnostic way.
+    """
+
     store: RolesStore
 
-    def _resolve_role(self, role_id: RoleID) -> Optional[GuildRole]:
+    def _sort_role_pairs(self, role_pairs: List[RoleEntryPair]) -> List[RoleEntryPair]:
+        # Sort by stringified role name.
+        return sorted(role_pairs, key=lambda role_pair: str(role_pair[0]))
+
+    def _stringify_role_pairs(self, role_pairs: List[RoleEntryPair]) -> str:
+        lines = []
+        for role, role_entry in role_pairs:
+            # Build the role title line.
+            role_title_parts = [f"`{role}`"]
+            if not role_entry.joinable:
+                role_title_parts.append(" (not joinable)")
+            if not role_entry.leavable:
+                role_title_parts.append(" (not leavable)")
+            role_title_line = "".join(role_title_parts)
+            lines.append(f"- {role_title_line}")
+        return "\n".join(lines)
+
+    async def _resolve_role(self, role_id: RoleID) -> Optional[GuildRole]:
         # Attempt to resolve the role from the given ID.
         role = self.guild.get_role(role_id)
         # If the role resolves correctly, return it.
@@ -46,37 +73,33 @@ class RolesGuildState(CogGuildState):
         # Otherwise skip it, but log so the role can be fixed.
         self.log.exception(f"Failed to resolve role ID: {role_id}")
 
-    def _sort_role_pairs(self, role_pairs: List[RoleEntryPair]) -> List[RoleEntryPair]:
-        # Sort by stringified role name.
-        return sorted(role_pairs, key=lambda role_pair: str(role_pair[0]))
-
-    def _get_all_role_pairs(self) -> List[RoleEntryPair]:
+    async def _get_all_role_pairs(self) -> List[RoleEntryPair]:
         # Flatten the full list of role entry pairs.
         role_pairs: List[RoleEntryPair] = []
         async for role_id, role_entry in self.store.iter_role_entries(self.guild):
             # If the role was resolved, add it to the list.
-            if role := self._resolve_role(role_id):
+            if role := await self._resolve_role(role_id):
                 role_pairs.append((role, role_entry))
         # Sort and return.
         return self._sort_role_pairs(role_pairs)
 
-    def _get_relevant_role_for(
-        self, role_id: int, role_entry: RolesRoleEntry, member: Member
+    async def _get_relevant_role_for(
+        self, role_id: int, role_entry: RoleEntry, member: Member
     ) -> Optional[GuildRole]:
         # If the role didn't resolve, it certainly isn't relevant.
-        if role := self._resolve_role(role_id):
+        if role := await self._resolve_role(role_id):
             # A role is relevant to the user if:
             # 1. it's joinable; or
             # 2. it's leavable and present on the user.
             if role_entry.joinable or (role_entry.leavable and role in member.roles):
                 return role
 
-    def _get_relevant_role_pairs(self, member: Member) -> List[RoleEntryPair]:
+    async def _get_relevant_role_pairs(self, member: Member) -> List[RoleEntryPair]:
         # Build a list of relevant role entry pairs.
         role_pairs: List[RoleEntryPair] = []
         async for role_id, role_entry in self.store.iter_role_entries(self.guild):
             # If the role is relevant to the user, add it to the list.
-            if role := self._get_relevant_role_for(role_id, role_entry, member):
+            if role := await self._get_relevant_role_for(role_id, role_entry, member):
                 role_pairs.append((role, role_entry))
         # Sort and return.
         return self._sort_role_pairs(role_pairs)
@@ -127,7 +150,7 @@ class RolesGuildState(CogGuildState):
         await conf_message.remove_reaction(REACTION_YES, self.bot.user)
         return False
 
-    def _get_unsafe_role_perms(self, role: GuildRole) -> Optional[Permissions]:
+    async def _get_unsafe_role_perms(self, role: GuildRole) -> Optional[Permissions]:
         # Start with an empty set of unsafe permissions.
         unsafe_perms = Permissions.none()
         # Collect all of the enabled permissions.
@@ -142,25 +165,10 @@ class RolesGuildState(CogGuildState):
 
     async def _should_register_role(self, ctx: GuildContext, role: GuildRole) -> bool:
         # If the role contains unsafe permissions, ask for confirmation.
-        if unsafe_perms := self._get_unsafe_role_perms(role):
+        if unsafe_perms := await self._get_unsafe_role_perms(role):
             return await self._confirm_register_unsafe_role(ctx, role, unsafe_perms)
         # Otherwise, the role can be registered right away.
         return True
-
-    def _stringify_role_pairs(
-        self, ctx: GuildContext, role_pairs: List[RoleEntryPair]
-    ) -> str:
-        lines = []
-        for role, role_entry in role_pairs:
-            # Build the role title line.
-            role_title_parts = [f"`{role}`"]
-            if not role_entry.joinable:
-                role_title_parts.append(" (not joinable)")
-            if not role_entry.leavable:
-                role_title_parts.append(" (not leavable)")
-            role_title_line = "".join(role_title_parts)
-            lines.append(f"- {role_title_line}")
-        return "\n".join(lines)
 
     async def register_role(
         self, ctx: GuildContext, role: GuildRole, joinable: bool, leavable: bool
@@ -200,6 +208,10 @@ class RolesGuildState(CogGuildState):
         # The acting user ought to be a [Member].
         acting_user = ctx.author
         assert isinstance(acting_user, Member)
+        # Make sure we actually have some members.
+        if not members:
+            await ctx.reply("🤔 You didn't provide any members.")
+            return
         # Add the role to each member who does not already have it.
         added_members: List[Member] = []
         for member in members:
@@ -220,6 +232,10 @@ class RolesGuildState(CogGuildState):
         # The acting user ought to be a [Member].
         acting_user = ctx.author
         assert isinstance(acting_user, Member)
+        # Make sure we actually have some members.
+        if not members:
+            await ctx.reply("🤔 You didn't provide any members.")
+            return
         # Remove the role from each member who has it.
         removed_members: List[Member] = []
         for member in members:
@@ -237,8 +253,8 @@ class RolesGuildState(CogGuildState):
             await ctx.reply("🤷 None of those users have that role.")
 
     async def show_all_roles(self, ctx: GuildContext):
-        if role_pairs := self._get_all_role_pairs():
-            role_pairs_str = self._stringify_role_pairs(ctx, role_pairs)
+        if role_pairs := await self._get_all_role_pairs():
+            role_pairs_str = self._stringify_role_pairs(role_pairs)
             await ctx.send(
                 f"There are {len(role_pairs)} roles registered:\n{role_pairs_str}"
             )
@@ -250,8 +266,8 @@ class RolesGuildState(CogGuildState):
         member = ctx.author
         assert isinstance(member, Member)
         # List only roles that are relevant to this user.
-        if role_pairs := self._get_relevant_role_pairs(member):
-            role_pairs_str = self._stringify_role_pairs(ctx, role_pairs)
+        if role_pairs := await self._get_relevant_role_pairs(member):
+            role_pairs_str = self._stringify_role_pairs(role_pairs)
             await ctx.reply(
                 f"There are {len(role_pairs)} roles available to you:\n{role_pairs_str}"
             )
