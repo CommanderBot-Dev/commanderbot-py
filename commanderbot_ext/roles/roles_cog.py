@@ -31,18 +31,6 @@ def make_roles_store(bot: Bot, cog: Cog, options: RolesOptions) -> RolesStore:
     raise UnsupportedDatabaseOptions(db_options)
 
 
-@dataclass
-class RolesGuildStateFactory:
-    bot: Bot
-    cog: Cog
-    store: RolesStore
-
-    def __call__(self, guild: Guild) -> RolesGuildState:
-        return RolesGuildState(
-            bot=self.bot, cog=self.cog, guild=guild, store=self.store
-        )
-
-
 class RolesCog(Cog, name="commanderbot_ext.roles"):
     def __init__(self, bot: Bot, **options):
         self.bot = bot
@@ -54,7 +42,9 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
             guilds=CogGuildStateManager(
                 bot=self.bot,
                 cog=self,
-                factory=RolesGuildStateFactory(bot, self, self.store),
+                factory=lambda guild: RolesGuildState(
+                    bot=bot, cog=self, guild=guild, store=self.store
+                ),
             ),
             store=self.store,
         )
