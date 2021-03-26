@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+
 from commanderbot_lib import checks
 from discord import Guild, Member
 from discord.ext.commands import Bot, Cog, command, group
 
+from commanderbot_ext._lib.cog_guild_state_factory import CogGuildStateFactory
 from commanderbot_ext._lib.cog_guild_state_manager import CogGuildStateManager
 from commanderbot_ext._lib.database_adapter import JsonFileDatabaseAdapter
 from commanderbot_ext._lib.database_options import (
@@ -17,34 +20,41 @@ from commanderbot_ext.roles.roles_state import RolesState
 from commanderbot_ext.roles.roles_store import RolesStore
 
 
+def make_roles_store(bot: Bot, cog: Cog, options: RolesOptions) -> RolesStore:
+    db_options = options.database
+    if isinstance(db_options, InMemoryDatabaseOptions):
+        return RolesJsonStore(bot=bot, cog=cog)
+    if isinstance(db_options, JsonFileDatabaseOptions):
+        return RolesJsonStore(
+            bot=bot, cog=cog, db=JsonFileDatabaseAdapter(options=db_options)
+        )
+    raise UnsupportedDatabaseOptions(db_options)
+
+
+def make_guild_state_factory(
+    bot: Bot, cog: Cog, store: RolesStore
+) -> CogGuildStateFactory:
+    def _make_guild_state(guild: Guild) -> RolesGuildState:
+        return RolesGuildState(bot=bot, cog=cog, guild=guild, store=store)
+
+    return _make_guild_state
+
+
 class RolesCog(Cog, name="commanderbot_ext.roles"):
     def __init__(self, bot: Bot, **options):
         self.bot = bot
         self.options = RolesOptions.from_dict(options)
-        self.store: RolesStore = self._make_store()
+        self.store: RolesStore = make_roles_store(bot, self, self.options)
         self.state = RolesState(
             bot=self.bot,
             cog=self,
             guilds=CogGuildStateManager(
                 bot=self.bot,
                 cog=self,
-                factory=self._make_guild_state,
+                factory=make_guild_state_factory(bot, self, self.store),
             ),
             store=self.store,
         )
-
-    def _make_store(self) -> RolesStore:
-        db_options = self.options.database
-        if isinstance(db_options, InMemoryDatabaseOptions):
-            return RolesJsonStore(bot=self.bot, cog=self)
-        if isinstance(db_options, JsonFileDatabaseOptions):
-            return RolesJsonStore(
-                bot=self.bot, cog=self, db=JsonFileDatabaseAdapter(options=db_options)
-            )
-        raise UnsupportedDatabaseOptions(db_options)
-
-    def _make_guild_state(self, guild: Guild) -> RolesGuildState:
-        return RolesGuildState(bot=self.bot, cog=self, guild=guild, store=self.store)
 
     @group(name="roles")
     @checks.guild_only()
