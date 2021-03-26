@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
 from commanderbot_lib import checks
-from discord import Guild, Member
+from discord import Member
 from discord.ext.commands import Bot, Cog, command, group
 
-from commanderbot_ext._lib.cog_guild_state_factory import CogGuildStateFactory
 from commanderbot_ext._lib.cog_guild_state_manager import CogGuildStateManager
 from commanderbot_ext._lib.database_adapter import JsonFileDatabaseAdapter
 from commanderbot_ext._lib.database_options import (

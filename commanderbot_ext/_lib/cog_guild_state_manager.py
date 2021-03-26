@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, Generic, Iterable, TypeVar
+from typing import Callable, Dict, Generic, Iterable, TypeVar
 
 from commanderbot_lib.logging import Logger, get_logger
 from commanderbot_lib.types import GuildID
@@ -7,7 +7,6 @@ from discord import Guild
 from discord.ext.commands import Bot, Cog
 
 from commanderbot_ext._lib.cog_guild_state import CogGuildState
-from commanderbot_ext._lib.cog_guild_state_factory import CogGuildStateFactory
 
 GuildStateType = TypeVar("GuildStateType", bound=CogGuildState)
 
@@ -17,19 +16,19 @@ class CogGuildStateManager(Generic[GuildStateType]):
     """
     A glorified dictionary that handles the lazy-initialization of guild states.
 
-    Attributes
-    -----------
-    bot: :class:`Bot`
-        The parent discord.py bot instance.
-    cog: :class:`Cog`
-        The parent discord.py cog instance.
-    factory: :class:`CogGuildStateFactory`
-        The factory to use in creating new guild states.
+    Attributes:
+        bot: The parent discord.py bot instance.
+        cog: The parent discord.py cog instance.
+        factory: A callable object that creates new guild states.
+            There are several ways to provide such an object:
+            1. a lambda, function, or bound method with a matching signature; or
+            2. an instance of a class that implements `__call__` with a matching
+            signature.
     """
 
     bot: Bot
     cog: Cog
-    factory: CogGuildStateFactory[GuildStateType]
+    factory: Callable[[Guild], GuildStateType]
 
     log: Logger = field(init=False)
 
