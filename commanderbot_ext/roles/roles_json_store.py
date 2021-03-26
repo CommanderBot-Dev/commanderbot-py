@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import AsyncIterable, Dict, Iterable, Optional, Tuple
@@ -6,7 +5,7 @@ from typing import AsyncIterable, Dict, Iterable, Optional, Tuple
 from discord import Guild
 
 from commanderbot_ext._lib.cog_store import CogStore
-from commanderbot_ext._lib.database_options import JsonFileDatabaseOptions
+from commanderbot_ext._lib.database_adapter import JsonFileDatabaseAdapter
 from commanderbot_ext._lib.types import GuildID, GuildRole, RoleID
 
 
@@ -150,7 +149,7 @@ class RolesJsonStore(CogStore):
     effectively turning this class into an in-memory database.
     """
 
-    db_options: Optional[JsonFileDatabaseOptions] = None
+    db: Optional[JsonFileDatabaseAdapter] = None
 
     # Lazily-initialized in-memory representation of state. The reason this is lazy is
     # because it needs to be asynchronously initialized from within an async method.
@@ -158,38 +157,29 @@ class RolesJsonStore(CogStore):
     __cache: Optional[_RolesJson] = field(init=False, default=None)
 
     async def _create_cache(self) -> _RolesJson:
-        if self.db_options:
-            try:
-                # TODO Async file I/O. #optimize
-                with open(self.db_options.path) as fp:
-                    data = json.load(fp)
-                return _RolesJson.deserialize(data)
-            except FileNotFoundError as ex:
-                if self.db_options.auto_create:
-                    self.log.warning(
-                        f"Creating database file because it doesn't already exist: {self.db_options.path}"
-                    )
-                    # TODO Async file I/O. #optimize
-                    self.db_options.path.parent.mkdir(parents=True, exist_ok=True)
-                    with open(self.db_options.path, "w") as fp:
-                        json.dump({}, fp)
-                    return _RolesJson.deserialize({})
-                else:
-                    raise ex
-        return _RolesJson.deserialize({})
+        """ Construct the initial cache from the database. """
+        if not self.db:
+            self.log.warning(
+                "No database configured; using transient in-memory storage instead."
+            )
+            return _RolesJson({})
+        data = await self.db.read()
+        assert isinstance(data, dict)
+        return _RolesJson.deserialize(data)
 
     async def _get_cache(self) -> _RolesJson:
-        # Create the cache if it doesn't already exist, and then return it.
+        """ Create the cache if it doesn't already exist, and then return it. """
         if not self.__cache:
             self.__cache = await self._create_cache()
         return self.__cache
 
     async def _dirty(self):
+        """ Mark the cache as dirty, forcing a write to the database. """
+        if not self.db:
+            return
         cache = await self._get_cache()
         data = cache.serialize()
-        # TODO Async file I/O. #optimize
-        with open(self.db_options.path, "w") as fp:
-            json.dump(data, fp, indent=2)
+        await self.db.write(data)
 
     # @implements RolesStore
     async def iter_role_entries(

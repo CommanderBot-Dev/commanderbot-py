@@ -3,6 +3,7 @@ from discord import Guild, Member
 from discord.ext.commands import Bot, Cog, command, group
 
 from commanderbot_ext._lib.cog_guild_state_manager import CogGuildStateManager
+from commanderbot_ext._lib.database_adapter import JsonFileDatabaseAdapter
 from commanderbot_ext._lib.database_options import (
     InMemoryDatabaseOptions,
     JsonFileDatabaseOptions,
@@ -37,7 +38,9 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
         if isinstance(db_options, InMemoryDatabaseOptions):
             return RolesJsonStore(bot=self.bot, cog=self)
         if isinstance(db_options, JsonFileDatabaseOptions):
-            return RolesJsonStore(bot=self.bot, cog=self, db_options=db_options)
+            return RolesJsonStore(
+                bot=self.bot, cog=self, db=JsonFileDatabaseAdapter(options=db_options)
+            )
         raise UnsupportedDatabaseOptions(db_options)
 
     def _make_guild_state(self, guild: Guild) -> RolesGuildState:
