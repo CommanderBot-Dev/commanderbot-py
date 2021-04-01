@@ -33,16 +33,12 @@ SAFE_PERMS.use_voice_activation = True
 @dataclass
 class RolesGuildState(CogGuildState):
     """
-    Maintains guild-specific state for the roles cog.
-
-    Note that `store` is used to interface with persistent state in a database-agnostic
-    way, whereas transient state can simply be maintained in-memory in the form of
-    additional member attributes.
+    Encapsulates the state and logic of the roles cog, at the guild level.
 
     Attributes
     -----------
-    store: :class:`RolesStore`
-        The store used to interface with persistent state in a database-agnostic way.
+    store
+        The store used to interface with persistent data in a database-agnostic way.
     """
 
     store: RolesStore

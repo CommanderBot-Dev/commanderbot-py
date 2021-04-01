@@ -13,19 +13,25 @@ GuildStateType = TypeVar("GuildStateType", bound=CogGuildState)
 @dataclass
 class GuildPartitionedCogState(CogState, Generic[GuildStateType]):
     """
-    Extend to maintain global state in addition to guild-specific sub-states, all for a
-    particular cog.
+    Encapsulates the state and logic of a particular cog, for each guild.
 
-    Implements `__getitem__` as a shortcut to the underlying `CogGuildStateManager`.
+    This is intended to be used just as `CogState` is, but in addition to maintaining
+    several sub-states that each correspond to their own guild. A subclass of
+    `CogGuildState` should be defined to implement guild-specific funtionality.
+
+    Uses a `CogGuildStateManager` to manage the lazy-initialization of `CogGuildState`
+    instances, and implements `__getitem__` as a shortcut to this.
 
     Attributes
     -----------
-    bot: :class:`Bot`
-        The parent discord.py bot instance.
-    cog: :class:`Cog`
-        The parent discord.py cog instance.
-    guilds: :class:`CogGuildStateManager`
-        A lazily-initialized map of guild states, by guild ID.
+    bot
+        The bot/client instance the cog is attached to.
+    cog
+        The cog instance this state is attached to.
+    log
+        A logger named in a uniquely identifiable way.
+    guilds
+        The `CogGuildStateManager` instance to manage guild states.
     """
 
     guilds: CogGuildStateManager[GuildStateType]

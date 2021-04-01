@@ -16,14 +16,20 @@ class CogGuildStateManager(Generic[GuildStateType]):
     """
     A glorified dictionary that handles the lazy-initialization of guild states.
 
-    Attributes:
-        bot: The parent discord.py bot instance.
-        cog: The parent discord.py cog instance.
-        factory: A callable object that creates new guild states.
-            There are several ways to provide such an object:
-            1. a lambda, function, or bound method with a matching signature; or
-            2. an instance of a class that implements `__call__` with a matching
-            signature.
+    Attributes
+    ----------
+    bot
+        The bot/client instance the cog is attached to.
+    cog
+        The cog instance this state is attached to.
+    factory
+        A callable object that creates new guild states.
+
+        There are several ways to provide such an object:
+        1. a lambda, function, or bound method with a matching signature; or
+        2. an instance of a class that implements `__call__` with a matching signature.
+    log
+        A logger named in a uniquely identifiable way.
     """
 
     bot: Bot

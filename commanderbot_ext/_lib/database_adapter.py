@@ -9,6 +9,17 @@ from commanderbot_ext._lib.database_options import JsonFileDatabaseOptions
 
 @dataclass
 class JsonFileDatabaseAdapter:
+    """
+    Wraps common operations for persistent data backed by a simple JSON file.
+
+    Attributes
+    ----------
+    options
+        Immutable, pre-defined settings that define core database behaviour.
+    log
+        A logger named in a uniquely identifiable way.
+    """
+
     options: JsonFileDatabaseOptions
 
     log: Logger = field(init=False)

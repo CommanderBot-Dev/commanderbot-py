@@ -7,17 +7,20 @@ from discord.ext.commands import Bot, Cog
 @dataclass
 class CogState:
     """
-    Extend to maintain global state for a particular cog.
+    Encapsulates the state and logic of a particular cog.
 
-    The overarching idea here is to keep state separate, as a component of the cog, to
-    help clean-up the cog's namespace for other things like listeners and commands.
+    This is intended to be used as a starting point for a class that separates the cog's
+    in-memory/persistent state and business logic from its top-level definitions, such
+    as event listeners and command definitions.
 
     Attributes
     -----------
-    bot: :class:`Bot`
-        The parent discord.py bot instance.
-    cog: :class:`Cog`
-        The parent discord.py cog instance.
+    bot
+        The bot/client instance the cog is attached to.
+    cog
+        The cog instance this state is attached to.
+    log
+        A logger named in a uniquely identifiable way.
     """
 
     bot: Bot

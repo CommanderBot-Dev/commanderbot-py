@@ -29,6 +29,21 @@ def make_roles_store(bot: Bot, cog: Cog, options: RolesOptions) -> RolesStore:
 
 
 class RolesCog(Cog, name="commanderbot_ext.roles"):
+    """
+    Allows users to opt-in/out to/from configurable roles.
+
+    Attributes
+    ----------
+    bot
+        The bot/client instance this cog is attached to.
+    options
+        Immutable, pre-defined settings that define core cog behaviour.
+    store
+        Abstracts the data storage and persistence of this cog.
+    state
+        Encapsulates the state and logic of this cog, for each guild.
+    """
+
     def __init__(self, bot: Bot, **options):
         self.bot = bot
         self.options = RolesOptions.from_dict(options)

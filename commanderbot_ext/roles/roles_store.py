@@ -16,6 +16,10 @@ RoleEntryPair = Tuple[GuildRole, RoleEntry]
 
 
 class RolesStore(Protocol):
+    """
+    Abstracts the data storage and persistence of the roles cog.
+    """
+
     async def iter_role_entries(
         self, guild: Guild
     ) -> AsyncIterable[Tuple[RoleID, RoleEntry]]:

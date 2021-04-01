@@ -7,21 +7,23 @@ from discord.ext.commands import Bot, Cog
 @dataclass
 class CogStore:
     """
-    Manages and operates on the data of a particular cog.
+    Abstracts the data storage and persistence of a particular cog.
 
-    This is an abstraction layer between the cog's state and its underlying data, be it
-    a simple dict or dataclass, a JSON file, or a full-blown database connection.
+    This is intended to be used as a starting point for a class that interfaces with the
+    cog's in-memory and/or persistent data, in a way that not need concern itself with
+    the underlying database.
 
-    This is a stub class that can be extended with common behaviour or operations
-    specific to a particular cog. For example: altering an in-memory dict or dataclass
-    as a cache that periodically gets serialized and flushed to disk.
+    For example: altering an in-memory dict or dataclass as a cache that periodically
+    gets serialized and flushed to disk.
 
     Attributes
     -----------
-    bot: :class:`Bot`
-        The parent discord.py bot instance.
-    cog: :class:`Cog`
-        The parent discord.py cog instance.
+    bot
+        The bot/client instance the cog is attached to.
+    cog
+        The cog instance this state is attached to.
+    log
+        A logger named in a uniquely identifiable way.
     """
 
     bot: Bot

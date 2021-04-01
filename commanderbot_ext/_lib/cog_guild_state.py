@@ -8,7 +8,7 @@ from discord.ext.commands import Bot, Cog
 @dataclass
 class CogGuildState:
     """
-    Extend to maintain guild-specific state for a particular cog.
+    Encapsulates the state and logic of a particular cog, at the guild level.
 
     This is a thin abstraction that affords us two main conveniences:
     1. keeping guild-based logic separate from global logic; and
@@ -16,12 +16,14 @@ class CogGuildState:
 
     Attributes
     -----------
-    bot: :class:`Bot`
-        The parent discord.py bot instance.
-    cog: :class:`Cog`
-        The parent discord.py cog instance.
-    guild: :class:`Guild`
-        The discord.py guild being managed.
+    bot
+        The bot/client instance the cog is attached to.
+    cog
+        The cog instance this state is attached to.
+    guild
+        The guild instance being managed.
+    log
+        A logger named in a uniquely identifiable way.
     """
 
     bot: Bot

@@ -54,6 +54,9 @@ class UnsupportedDatabaseOptions(Exception):
 
 
 def make_database_options(obj: Any) -> DatabaseOptions:
+    """
+    Create an instance of `DatabaseOptions` based on an arbitrary input object.
+    """
     try:
         if not obj:
             return InMemoryDatabaseOptions()
