@@ -10,6 +10,7 @@ class RoleEntry(Protocol):
     added_on: datetime
     joinable: bool
     leavable: bool
+    description: Optional[str]
 
 
 RoleEntryPair = Tuple[GuildRole, RoleEntry]
@@ -28,10 +29,14 @@ class RolesStore(Protocol):
     async def get_role_entry(self, role: GuildRole) -> Optional[RoleEntry]:
         ...
 
-    async def add_role(
-        self, role: GuildRole, joinable: bool, leavable: bool
+    async def register_role(
+        self,
+        role: GuildRole,
+        joinable: bool,
+        leavable: bool,
+        description: Optional[str],
     ) -> Optional[RoleEntry]:
         ...
 
-    async def remove_role(self, role: GuildRole) -> Optional[RoleEntry]:
+    async def deregister_role(self, role: GuildRole) -> Optional[RoleEntry]:
         ...

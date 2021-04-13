@@ -14,6 +14,7 @@ class _RolesJsonRoleEntry:
     added_on: datetime
     joinable: bool
     leavable: bool
+    description: Optional[str] = None
 
     @staticmethod
     def deserialize(data: dict) -> "_RolesJsonRoleEntry":
@@ -21,6 +22,7 @@ class _RolesJsonRoleEntry:
             added_on=datetime.fromisoformat(data["added_on"]),
             joinable=bool(data["joinable"]),
             leavable=bool(data["leavable"]),
+            description=data.get("description"),
         )
 
     def serialize(self) -> dict:
@@ -28,6 +30,7 @@ class _RolesJsonRoleEntry:
             "added_on": self.added_on.isoformat(),
             "joinable": self.joinable,
             "leavable": self.leavable,
+            "description": self.description,
         }
 
 
@@ -61,8 +64,12 @@ class _RolesJsonGuildData:
         # Return the corresponding role entry, if any.
         return self.role_entries.get(role.id)
 
-    def add_role(
-        self, role: GuildRole, joinable: bool, leavable: bool
+    def register_role(
+        self,
+        role: GuildRole,
+        joinable: bool,
+        leavable: bool,
+        description: Optional[str],
     ) -> _RolesJsonRoleEntry:
         # Create a new role entry and add it to the map. If the role is already present,
         # just replace it with the new information.
@@ -70,12 +77,13 @@ class _RolesJsonGuildData:
             added_on=datetime.utcnow(),
             joinable=joinable,
             leavable=leavable,
+            description=description,
         )
         self.role_entries[role.id] = added_role_entry
         # Return the newly-added role entry.
         return added_role_entry
 
-    def remove_role(self, role: GuildRole) -> Optional[_RolesJsonRoleEntry]:
+    def deregister_role(self, role: GuildRole) -> Optional[_RolesJsonRoleEntry]:
         # Pop and return the corresponding role entry, if any.
         return self.role_entries.pop(role.id, None)
 
@@ -121,8 +129,12 @@ class _RolesJson:
             # Return the corresponding role entry, if any.
             return guild_data.get_role_entry(role)
 
-    def add_role(
-        self, role: GuildRole, joinable: bool, leavable: bool
+    def register_role(
+        self,
+        role: GuildRole,
+        joinable: bool,
+        leavable: bool,
+        description: Optional[str],
     ) -> _RolesJsonRoleEntry:
         # Get this guild's data, if any.
         guild_data = self.guilds.get(role.guild.id)
@@ -131,13 +143,13 @@ class _RolesJson:
             guild_data = _RolesJsonGuildData({})
             self.guilds[role.guild.id] = guild_data
         # Add and return the role to the guild's role entries.
-        return guild_data.add_role(role, joinable, leavable)
+        return guild_data.register_role(role, joinable, leavable, description)
 
-    def remove_role(self, role: GuildRole) -> Optional[_RolesJsonRoleEntry]:
+    def deregister_role(self, role: GuildRole) -> Optional[_RolesJsonRoleEntry]:
         # Get this guild's data, if any.
         if guild_data := self.guilds.get(role.guild.id):
             # Remove and return the role from the guild's role entries, if it's there.
-            return guild_data.remove_role(role)
+            return guild_data.deregister_role(role)
 
 
 @dataclass
@@ -195,22 +207,28 @@ class RolesJsonStore(CogStore):
         return cache.get_role_entry(role)
 
     # @implements RolesStore
-    async def add_role(
-        self, role: GuildRole, joinable: bool, leavable: bool
+    async def register_role(
+        self,
+        role: GuildRole,
+        joinable: bool,
+        leavable: bool,
+        description: Optional[str],
     ) -> Optional[_RolesJsonRoleEntry]:
         # Attempt to add the role to the cache.
         cache = await self._get_cache()
-        if added_role_entry := cache.add_role(role, joinable, leavable):
+        if added_role_entry := cache.register_role(
+            role, joinable, leavable, description
+        ):
             # If the role was indeed added to the cache, mark as dirty and return the
             # added role entry so the caller knows the operation was successful.
             await self._dirty()
             return added_role_entry
 
     # @implements RolesStore
-    async def remove_role(self, role: GuildRole) -> Optional[_RolesJsonRoleEntry]:
+    async def deregister_role(self, role: GuildRole) -> Optional[_RolesJsonRoleEntry]:
         # Attempt to remove the role entry from the cache.
         cache = await self._get_cache()
-        if removed_role_entry := cache.remove_role(role):
+        if removed_role_entry := cache.deregister_role(role):
             # If the role was indeed removed from the cache, mark as dirty and return
             # the removed role entry so the caller know the operation was successful.
             await self._dirty()

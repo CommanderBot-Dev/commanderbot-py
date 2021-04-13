@@ -1,3 +1,5 @@
+from typing import Optional
+
 from commanderbot_lib import checks
 from discord import Member
 from discord.ext.commands import Bot, Cog, command, group
@@ -75,9 +77,15 @@ class RolesCog(Cog, name="commanderbot_ext.roles"):
         role: GuildRole,
         joinable: bool = True,
         leavable: bool = True,
+        *,
+        description: Optional[str],
     ):
         await self.state[ctx.guild].register_role(
-            ctx, role, joinable=joinable, leavable=leavable
+            ctx,
+            role,
+            joinable=joinable,
+            leavable=leavable,
+            description=description,
         )
 
     @cmd_roles.command(name="deregister")
