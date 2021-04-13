@@ -278,10 +278,10 @@ class RolesGuildState(CogGuildState):
         if role_pairs := await self._get_relevant_role_pairs(member):
             role_pairs_str = self._stringify_role_pairs(role_pairs)
             await ctx.reply(
-                f"There are {len(role_pairs)} roles available to you:\n{role_pairs_str}"
+                f"There are {len(role_pairs)} roles relevant to you:\n{role_pairs_str}"
             )
         else:
-            await ctx.reply(f"🤷 There are no roles available to you.")
+            await ctx.reply(f"🤷 There are no roles relevant to you.")
 
     async def join_role(self, ctx: GuildContext, role: GuildRole):
         # We ought to have a [Member].
