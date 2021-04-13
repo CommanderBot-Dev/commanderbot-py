@@ -300,7 +300,7 @@ class RolesGuildState(CogGuildState):
             else:
                 await ctx.reply(f"❌ You cannot join `{role}`.")
         else:
-            await ctx.send(f"🤷 `{role}` is not registered.")
+            await ctx.reply(f"🤷 `{role}` is not registered.")
 
     async def leave_role(self, ctx: GuildContext, role: GuildRole):
         # We ought to have a [Member].
@@ -319,4 +319,4 @@ class RolesGuildState(CogGuildState):
             else:
                 await ctx.reply(f"❌ You cannot leave `{role}`.")
         else:
-            await ctx.send(f"🤷 `{role}` is not registered.")
+            await ctx.reply(f"🤷 `{role}` is not registered.")
