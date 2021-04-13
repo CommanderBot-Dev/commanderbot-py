@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Added `pack` command that runs a `beet` build and uses `lectern`
 - Partial implementation of the new `help_chat` system
 
 ## [0.6.0] - 2021-01-08
