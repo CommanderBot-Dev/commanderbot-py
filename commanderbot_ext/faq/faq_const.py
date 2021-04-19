@@ -1,2 +1,0 @@
-confirm: str = "✅"
-reject: str = "❌"
