@@ -11,8 +11,10 @@ keywords = ['discord', 'bot']
 
 [tool.poetry.dependencies]
 python = "^3.8"
-commanderbot-lib = "^0.6.0"
-"discord.py" = "^1.6.0"
+"discord.py" = "^1.7.1"
+commanderbot = "^0.7.0"
+SQLAlchemy = "^1.4.9"
+aiosqlite = "^0.17.0"
 lectern = "^0.9.1"
 beet = "^0.17.2"
 
