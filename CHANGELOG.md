@@ -8,8 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Added `jira` command for checking Mojira bug reports
+- Added `ping` command with bot latency
+- Added `invite` command to list server invites
 - Added `pack` command that runs a `beet` build and uses `lectern`
+- Added `roles` command to join/leave certain roles
 - Partial implementation of the new `help_chat` system
+
+### Changed
+
+- Merged commanderbot-lib repo with this one to simplify project structure
 
 ## [0.6.0] - 2021-01-08
 
