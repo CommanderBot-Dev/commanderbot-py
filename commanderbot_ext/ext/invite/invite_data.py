@@ -32,6 +32,7 @@ class InviteDataInviteEntry:
     hits: int
     link: str
     tags: Set[str]
+    description: str
 
     @staticmethod
     def deserialize(data: JsonObject, key: str) -> "InviteDataInviteEntry":
@@ -42,6 +43,7 @@ class InviteDataInviteEntry:
             hits=data["hits"],
             link=data["link"],
             tags=set(data["tags"]),
+            description=data["description"]
         )
 
     def serialize(self) -> JsonObject:
@@ -51,6 +53,7 @@ class InviteDataInviteEntry:
             "hits": self.hits,
             "link": self.link,
             "tags": list(self.tags),
+            "description": self.description
         }
 
     # @implements InviteEntry
@@ -142,6 +145,7 @@ class InviteDataGuild:
             hits=0,
             link=link,
             tags=set(),
+            description=""
         )
         self.invite_entries[invite_key] = invite_entry
         # Return the newly-created invite entry.
@@ -159,29 +163,33 @@ class InviteDataGuild:
         raise NoSuchInvite(invite_key)
 
     def modify_invite_link(self, invite_key: str, link: str) -> InviteDataInviteEntry:
-        if invite_entry := self.require_invite_entry(invite_key):
-            invite_entry.update_modified_on()
-            invite_entry.link = link
-            return invite_entry
-        raise NoSuchInvite(invite_key)
-
+        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry.update_modified_on()
+        invite_entry.link = link
+        return invite_entry
+        
     def modify_invite_tags(
         self, invite_key: str, tags: Tuple[str, ...]
     ) -> InviteDataInviteEntry:
-        if invite_entry := self.require_invite_entry(invite_key):
-            invite_entry.tags = set(tags)
-            return invite_entry
-        raise NoSuchInvite(invite_key)
-
+        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry.tags = set(tags)
+        return invite_entry
+        
+    def modify_invite_description(
+        self, invite_key: str, description: str
+    ) -> InviteDataInviteEntry:
+        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry.description = description
+        return invite_entry
+        
     def configure_guild_key(self, invite_key: Optional[str]) -> Optional[InviteEntry]:
         if not invite_key:
             self.guild_key = None
             return
-        if invite_entry := self.require_invite_entry(invite_key):
-            self.guild_key = invite_key
-            return invite_entry
-        raise NoSuchInvite(invite_key)
-
+        invite_entry = self.require_invite_entry(invite_key):
+        self.guild_key = invite_key
+        return invite_entry
+        
 
 def _guilds_defaultdict_factory() -> DefaultDict[GuildID, InviteDataGuild]:
     return defaultdict(lambda: InviteDataGuild())
@@ -265,6 +273,12 @@ class InviteData:
         self, guild: Guild, invite_key: str, tags: Tuple[str, ...]
     ) -> InviteEntry:
         return self.guilds[guild.id].modify_invite_tags(invite_key, tags)
+
+    # @implements InviteStore
+    async def modify_invite_description(
+        self, guild: Guild, invite_key: str, description: str
+    ) -> InviteEntry:
+        return self.guilds[guild.id].modify_invite_description(invite_key, description)
 
     # @implements InviteStore
     async def configure_guild_key(
