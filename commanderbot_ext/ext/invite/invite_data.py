@@ -163,37 +163,33 @@ class InviteDataGuild:
         raise NoSuchInvite(invite_key)
 
     def modify_invite_link(self, invite_key: str, link: str) -> InviteDataInviteEntry:
-        if invite_entry := self.require_invite_entry(invite_key):
-            invite_entry.update_modified_on()
-            invite_entry.link = link
-            return invite_entry
-        raise NoSuchInvite(invite_key)
-
+        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry.update_modified_on()
+        invite_entry.link = link
+        return invite_entry
+        
     def modify_invite_tags(
         self, invite_key: str, tags: Tuple[str, ...]
     ) -> InviteDataInviteEntry:
-        if invite_entry := self.require_invite_entry(invite_key):
-            invite_entry.tags = set(tags)
-            return invite_entry
-        raise NoSuchInvite(invite_key)
-
+        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry.tags = set(tags)
+        return invite_entry
+        
     def modify_invite_description(
         self, invite_key: str, description: str
     ) -> InviteDataInviteEntry:
-        if invite_entry := self.require_invite_entry(invite_key):
-            invite_entry.description = description
-            return invite_entry
-        raise NoSuchInvite(invite_key)
-
+        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry.description = description
+        return invite_entry
+        
     def configure_guild_key(self, invite_key: Optional[str]) -> Optional[InviteEntry]:
         if not invite_key:
             self.guild_key = None
             return
-        if invite_entry := self.require_invite_entry(invite_key):
-            self.guild_key = invite_key
-            return invite_entry
-        raise NoSuchInvite(invite_key)
-
+        invite_entry = self.require_invite_entry(invite_key):
+        self.guild_key = invite_key
+        return invite_entry
+        
 
 def _guilds_defaultdict_factory() -> DefaultDict[GuildID, InviteDataGuild]:
     return defaultdict(lambda: InviteDataGuild())
