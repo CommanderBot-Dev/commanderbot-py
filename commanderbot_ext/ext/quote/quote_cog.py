@@ -27,12 +27,13 @@ class QuoteCog(Cog, name="commanderbot_ext.ext.quote"):
     @command(name="quote")
     async def cmd_quote(self, ctx: Context, msg_link: str):
         quote_embed = await self.construct_embed(msg_link)
-        await ctx.send(f"{ctx.author.mention}\n{msg_link}", embed=quote_embed)
+        await ctx.send(f"{msg_link}", embed=quote_embed, reference=ctx.message)
 
     @command(name="quotem")
     async def cmd_quotem(self, ctx: Context, msg_link: str):
         quote_embed = await self.construct_embed(msg_link, quotem=True)
         await ctx.send(
-            f"{ctx.author.mention} {quote_embed[1].mention}\n{msg_link}",
+            f"{quote_embed[1].mention}\n{msg_link}",
             embed=quote_embed[0],
+            reference=ctx.message
         )
