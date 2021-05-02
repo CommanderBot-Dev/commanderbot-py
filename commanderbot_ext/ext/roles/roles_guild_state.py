@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional, cast
 
-from discord import Member, Message, Permissions, Role
+from discord import Member, Message, Permissions, Role, PartialEmoji, User
 
 from commanderbot_ext.ext.roles.roles_store import (
     RoleEntry,
@@ -46,6 +46,11 @@ class RolesGuildState(CogGuildState):
     """
 
     store: RolesStore
+
+    def on_reaction_add(self, member: Member, emoji: PartialEmoji, msg: Message):
+        if role := self.store.process_reaction(self.guild, emoji, msg):
+            member.add_roles(role, reason="Joined via reaction")
+
 
     def _sort_role_pairs(self, role_pairs: List[RoleEntryPair]) -> List[RoleEntryPair]:
         # Sort by stringified role name.
@@ -190,6 +195,14 @@ class RolesGuildState(CogGuildState):
         try:
             await self.store.deregister_role(role)
             await ctx.send(f"✅ `{role}` has been deregistered.")
+        except RolesException as ex:
+            await ex.respond(ctx)
+
+    async def react_role(self, ctx: GuildContext, role: GuildRole, msg: Message, emoji: str):
+        try:
+            await self.store.react_role(role, msg, emoji)
+            await msg.add_reaction(emoji)
+            await ctx.send(f"✅ `{role}` set up to track message `{msg.id}` with reaction {emoji}")
         except RolesException as ex:
             await ex.respond(ctx)
 

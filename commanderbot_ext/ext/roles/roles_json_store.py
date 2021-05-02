@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import AsyncIterable, Optional, Tuple
 
-from discord import Guild
+from discord import Guild, Message, PartialEmoji, User, Role
 
 from commanderbot_ext.ext.roles.roles_data import RolesData
 from commanderbot_ext.ext.roles.roles_store import RoleEntry
@@ -16,6 +16,14 @@ class RolesJsonStore(CogStore):
     """
 
     db: JsonFileDatabaseAdapter[RolesData]
+    
+    # @implements RolesStore
+    async def process_reaction(self, guild: Guild, emoji: PartialEmoji, msg: Message) -> Optional[Role]:
+        async for role_id, entry in self.iter_role_entries(guild):
+            print(f"{role_id}, {entry}")
+            if entry.is_reaction_targeted(str(emoji), msg.id):
+                return guild.get_role(role_id)
+        return None
 
     # @implements RolesStore
     async def iter_role_entries(
@@ -52,5 +60,11 @@ class RolesJsonStore(CogStore):
     async def deregister_role(self, role: GuildRole) -> RoleEntry:
         cache = await self.db.get_cache()
         role_entry = await cache.deregister_role(role)
+        await self.db.dirty()
+        return role_entry
+
+    async def react_role(self, role: GuildRole, msg: Message, emoji: str) -> RoleEntry:
+        cache = await self.db.get_cache()
+        role_entry = await cache.react_role(role, msg, emoji)
         await self.db.dirty()
         return role_entry

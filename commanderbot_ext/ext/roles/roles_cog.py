@@ -1,6 +1,6 @@
 from typing import Optional
 
-from discord import Member
+from discord import Member, Message, Reaction, User, RawReactionActionEvent
 from discord.ext.commands import Bot, Cog, command, group
 
 from commanderbot_ext.ext.roles.roles_data import RolesData
@@ -70,6 +70,17 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
             ),
             store=self.store,
         )
+
+    # @@ LISTENERS
+
+    @Cog.listener()
+    async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
+        guild = await self.bot.get_guild(payload.guild_id)
+        member = await guild.get_member(payload.user_id)
+        channel = await guild.get_channel(payload.channel_id)
+        msg = await channel.get_message(payload.message_id)
+        raise Exception("oh noes")
+        await self.state[guild].on_reaction_add(member, payload.emoji, msg)
 
     # @@ COMMANDS
 
@@ -177,7 +188,7 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
         joinable: bool = True,
         leavable: bool = True,
         *,
-        description: Optional[str],
+        description: Optional[str] = None,
     ):
         await self.state[ctx.guild].register_role(
             ctx,
@@ -196,3 +207,11 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
     @checks.is_administrator()
     async def cmd_roles_deregister(self, ctx: GuildContext, role: GuildRole):
         await self.state[ctx.guild].deregister_role(ctx, role)
+
+    @cmd_roles.command(
+        name="react",
+        brief="Make a role reaction-based."
+    )
+    @checks.is_administrator()
+    async def cmd_roles_react(self, ctx: GuildContext, role: GuildRole, msg: Message, emoji: str):
+        await self.state[ctx.guild].react_role(ctx, role, msg, emoji)

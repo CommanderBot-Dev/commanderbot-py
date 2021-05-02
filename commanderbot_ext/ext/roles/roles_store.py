@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import AsyncIterable, Optional, Protocol, Tuple
 
-from discord import Guild
+from discord import Guild, Message, PartialEmoji, User, Role
 from discord.ext.commands import Context
 
 from commanderbot_ext.lib import GuildRole, ResponsiveException, RoleID
@@ -40,6 +40,9 @@ class RolesStore(Protocol):
     ) -> AsyncIterable[Tuple[RoleID, RoleEntry]]:
         ...
 
+    async def process_reaction(self, guild: Guild, emoji: PartialEmoji, msg: Message) -> Optional[Role]:
+        ...
+
     async def get_role_entry(self, role: GuildRole) -> Optional[RoleEntry]:
         ...
 
@@ -53,4 +56,7 @@ class RolesStore(Protocol):
         ...
 
     async def deregister_role(self, role: GuildRole) -> RoleEntry:
+        ...
+
+    async def react_role(self, role: GuildRole, msg: Message, emoji: str) -> RoleEntry:
         ...

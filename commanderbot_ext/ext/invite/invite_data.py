@@ -163,7 +163,7 @@ class InviteDataGuild:
         raise NoSuchInvite(invite_key)
 
     def modify_invite_link(self, invite_key: str, link: str) -> InviteDataInviteEntry:
-        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry = self.require_invite_entry(invite_key)
         invite_entry.update_modified_on()
         invite_entry.link = link
         return invite_entry
@@ -171,14 +171,14 @@ class InviteDataGuild:
     def modify_invite_tags(
         self, invite_key: str, tags: Tuple[str, ...]
     ) -> InviteDataInviteEntry:
-        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry = self.require_invite_entry(invite_key)
         invite_entry.tags = set(tags)
         return invite_entry
         
     def modify_invite_description(
         self, invite_key: str, description: str
     ) -> InviteDataInviteEntry:
-        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry = self.require_invite_entry(invite_key)
         invite_entry.description = description
         return invite_entry
         
@@ -186,7 +186,7 @@ class InviteDataGuild:
         if not invite_key:
             self.guild_key = None
             return
-        invite_entry = self.require_invite_entry(invite_key):
+        invite_entry = self.require_invite_entry(invite_key)
         self.guild_key = invite_key
         return invite_entry
         

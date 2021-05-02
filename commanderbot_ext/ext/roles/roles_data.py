@@ -1,9 +1,9 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import AsyncIterable, DefaultDict, Dict, Optional, Tuple
+from typing import AsyncIterable, DefaultDict, Dict, Optional, Tuple, Set
 
-from discord import Guild
+from discord import Guild, Message, Reaction
 
 from commanderbot_ext.ext.roles.roles_store import RoleNotRegistered
 from commanderbot_ext.lib import GuildID, GuildRole, JsonObject, RoleID
@@ -16,6 +16,7 @@ class RolesDataRoleEntry:
     added_on: datetime
     joinable: bool
     leavable: bool
+    messages: Set[Tuple[int, str]]
     description: Optional[str] = None
 
     @staticmethod
@@ -25,6 +26,7 @@ class RolesDataRoleEntry:
             joinable=bool(data["joinable"]),
             leavable=bool(data["leavable"]),
             description=data.get("description"),
+            messages=set((tuple(m) for m in data.get("messages")))
         )
 
     def serialize(self) -> JsonObject:
@@ -33,7 +35,14 @@ class RolesDataRoleEntry:
             "joinable": self.joinable,
             "leavable": self.leavable,
             "description": self.description,
+            "messages": list(self.messages)
         }
+
+    def is_reaction_targeted(self, emoji: str, msg: int) -> bool:
+        for target in self.messages:
+            if msg == target[0] and emoji == target[1]:
+                return True
+        return False
 
 
 @dataclass
@@ -75,6 +84,7 @@ class RolesDataGuild:
             joinable=joinable,
             leavable=leavable,
             description=description,
+            messages=set()
         )
         self.role_entries[role.id] = added_role_entry
         # Return the newly-added role entry.
@@ -85,6 +95,12 @@ class RolesDataGuild:
         if role_entry := self.role_entries.pop(role.id, None):
             return role_entry
         # Otherwise, if it does not exist, raise.
+        raise RoleNotRegistered(role)
+
+    def react_role(self, role: GuildRole, msg: Message, emoji: str) -> RolesDataRoleEntry:
+        if role_entry := self.get_role_entry(role):
+            role_entry.messages.add((msg.id, emoji))
+            return role_entry
         raise RoleNotRegistered(role)
 
 
@@ -154,3 +170,6 @@ class RolesData:
     # @implements RolesStore
     async def deregister_role(self, role: GuildRole) -> RolesDataRoleEntry:
         return self.guilds[role.guild.id].deregister_role(role)
+
+    async def react_role(self, role: GuildRole, msg: Message, emoji: str):
+        return self.guilds[role.guild.id].react_role(role, msg, emoji)
