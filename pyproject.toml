@@ -15,8 +15,8 @@ python = "^3.8"
 commanderbot = "^0.7.0"
 SQLAlchemy = "^1.4.9"
 aiosqlite = "^0.17.0"
-lectern = "^0.9.1"
-beet = "^0.17.2"
+lectern = ">=0.11.1"
+beet = ">=0.22.1"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
