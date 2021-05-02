@@ -1,50 +1,98 @@
 import io
 import os
-from typing import Dict
+from multiprocessing import Process, Queue
+from queue import Empty
+from typing import Dict, List, Tuple
 from zipfile import ZipFile
 
-from beet import Context, ProjectConfig, config_error_handler, run_beet
+from beet import (
+    Context,
+    FormattedPipelineException,
+    ProjectConfig,
+    config_error_handler,
+    run_beet,
+)
 from beet.core.utils import JsonDict
+from beet.toolchain.utils import format_exc
 from lectern import Document
+
+BuildResult = Tuple[List[str], Dict[str, bytes]]
 
 
 def generate_packs(
+    project_config: JsonDict,
+    build_timeout: float,
+    project_name: str,
+    message_content: str,
+) -> BuildResult:
+    q: "Queue[BuildResult]" = Queue()
+
+    p = Process(target=worker, args=(q, project_name, project_config, message_content))
+    p.start()
+    p.join(timeout=build_timeout)
+
+    try:
+        return q.get_nowait()
+    except Empty:
+        p.kill()
+        return [
+            f"Timeout exceeded. The message took more than {build_timeout} seconds to process."
+        ], {}
+
+
+def worker(
+    q: "Queue[BuildResult]",
     project_name: str,
     project_config: JsonDict,
     message_content: str,
-) -> Dict[str, bytes]:
+):
     project_directory = os.getcwd()
-    packs: Dict[str, bytes] = {}
 
-    message_config = {
+    base_config = {
         "name": project_name,
         "pipeline": [__name__],
         "meta": {
             "source": message_content,
+            "build_output": [],
+            "build_attachments": {},
         },
     }
 
-    with config_error_handler():
-        config = (
-            ProjectConfig(**project_config)
-            .resolve(project_directory)
-            .with_defaults(ProjectConfig(**message_config).resolve(project_directory))
-        )
+    try:
+        with config_error_handler():
+            config = (
+                ProjectConfig(**project_config)
+                .resolve(project_directory)
+                .with_defaults(ProjectConfig(**base_config).resolve(project_directory))
+            )
 
-    with run_beet(config) as ctx:
-        for pack in ctx.packs:
-            if not pack:
-                continue
+        with run_beet(config) as ctx:
+            build_output = ctx.meta["build_output"]
+            attachments = ctx.meta["build_attachments"]
 
-            fp = io.BytesIO()
+            for pack in ctx.packs:
+                if pack:
+                    fp = io.BytesIO()
 
-            with ZipFile(fp, mode="w") as output:
-                pack.dump(output)
-                output.writestr("source.md", message_content)
+                    with ZipFile(fp, mode="w") as output:
+                        pack.dump(output)
+                        output.writestr("source.md", message_content)
 
-            packs[f"{pack.name}.zip"] = fp.getvalue()
+                    attachments[f"{pack.name}.zip"] = fp.getvalue()
 
-    return packs
+            q.put((build_output, attachments))
+            return
+    except FormattedPipelineException as exc:
+        build_output = [exc.message]
+        exception = exc.__cause__ if exc.format_cause else None
+    except Exception as exc:
+        build_output = ["An unhandled exception occurred. This could be a bug."]
+        exception = exc
+
+    if exception:
+        build_output.append(format_exc(exception))
+
+    q.put((build_output, {}))
 
 
 def beet_default(ctx: Context):
