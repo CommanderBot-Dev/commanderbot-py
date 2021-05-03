@@ -79,10 +79,13 @@ class InviteGuildState(CogGuildState):
                 invite_entries, key=lambda invite_entry: invite_entry.key
             )
             count = len(sorted_invite_entries)
-            invites = (f"{invite_entry.key} - {invite_entry.description}" for invite_entry in sorted_invite_entries)
+            invites = (
+                f"{invite_entry.key} - {invite_entry.description} {'['+', '.join(invite_entry.tags)+']' if len(invite_entry.tags) else ''}"
+                for invite_entry in sorted_invite_entries
+            )
             text = (
                 f"There are {count} invites available: ```"
-                + "` `".join(invites)
+                + "\n".join(invites)
                 + "```"
             )
             await ctx.send(text)
