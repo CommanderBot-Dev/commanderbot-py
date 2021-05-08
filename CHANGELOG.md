@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Added configurable descriptions to `invite` command
 - Added `pack` command timeout and updated `beet` and `lectern`
 
 ## [0.7.0] - 2021-04-23
