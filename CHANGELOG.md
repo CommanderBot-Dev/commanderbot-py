@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Fixed
 
 - Fixed `kick` command not being guild-only
+- Fixed an issue where `invite` descriptions weren't displayed correctly (#29)
 - Fixed an issue where JSON database files weren't being initialized correctly (#28)
 
 ## [0.8.0] - 2021-05-08
