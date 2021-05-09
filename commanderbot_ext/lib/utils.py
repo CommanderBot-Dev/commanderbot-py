@@ -64,7 +64,7 @@ def json_dump(
     indent: int = None,
 ):
     if mkdir:
-        path.mkdir(parents=True, exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as fp:
         json.dump(data, fp, indent=indent)
 
