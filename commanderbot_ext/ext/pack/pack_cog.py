@@ -38,7 +38,7 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
             message_content,
         )
 
-        content = f"```{joined}```" if (joined := "\n\n".join(build_output)) else ""
+        content = f"```\n{joined}\n```" if (joined := "\n\n".join(build_output)) else ""
         files = [
             File(io.BytesIO(data), filename=filename)
             for filename, data in attachments.items()
