@@ -14,6 +14,7 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
         self.log: Logger = getLogger(self.qualified_name)
         self.project_config = options
         self.build_timeout = options.pop("timeout", 5)
+        self.show_stacktraces = options.pop("stacktraces", False)
 
     @command(name="pack")
     async def cmd_pack(self, ctx: Context):
@@ -34,6 +35,7 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
             generate_packs,
             self.project_config,
             self.build_timeout,
+            self.show_stacktraces,
             author,
             message_content,
         )
