@@ -17,7 +17,10 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
         self.build_timeout = options.pop("timeout", 5)
         self.show_stacktraces = options.pop("stacktraces", False)
 
-    @command(name="pack")
+    @command(
+        name="pack",
+        brief="Generate a data pack or a resource pack.",
+    )
     async def cmd_pack(self, ctx: Context, name: Optional[str]):
         if not ctx.message:
             self.log.warn("Command executed without message.")
