@@ -2,7 +2,9 @@ import logging
 from typing import Optional
 
 from discord import Member
-from discord.ext.commands import Bot, Cog, Context, command
+from discord.ext.commands import Bot, Cog, Context, command, has_permissions
+
+from commanderbot_ext.lib import checks
 
 LOG = logging.getLogger(__name__)
 
@@ -12,6 +14,8 @@ class KickCog(Cog, name="commanderbot_ext.ext.kick"):
         self.bot: Bot = bot
 
     @command(name="kick")
+    @checks.guild_only()
+    @has_permissions(kick_members=True)
     async def cmd_kick(
         self,
         ctx: Context,
