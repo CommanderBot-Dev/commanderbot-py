@@ -1,6 +1,7 @@
 import asyncio
 import io
 from logging import Logger, getLogger
+from typing import Optional
 
 from discord import File, Message
 from discord.ext.commands import Bot, Cog, Context, command
@@ -17,7 +18,7 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
         self.show_stacktraces = options.pop("stacktraces", False)
 
     @command(name="pack")
-    async def cmd_pack(self, ctx: Context):
+    async def cmd_pack(self, ctx: Context, name: Optional[str]):
         if not ctx.message:
             self.log.warn("Command executed without message.")
             return
@@ -36,7 +37,7 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
             self.project_config,
             self.build_timeout,
             self.show_stacktraces,
-            author,
+            name or author,
             message_content,
         )
 
