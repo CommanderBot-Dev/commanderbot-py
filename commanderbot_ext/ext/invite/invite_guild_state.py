@@ -27,7 +27,10 @@ class InviteGuildState(CogGuildState):
 
     async def _show_invite_entry(self, ctx: GuildContext, invite_entry: InviteEntry):
         await self.store.increment_invite_hits(invite_entry)
-        await ctx.send(f"{invite_entry.description} - {invite_entry.link}")
+        text = invite_entry.link
+        if invite_entry.description:
+            text = f"{invite_entry.description} - {invite_entry.link}"
+        await ctx.send(text)
 
     async def show_invite(self, ctx: GuildContext, invite_query: str):
         if invite_entries := await async_expand(
@@ -79,12 +82,14 @@ class InviteGuildState(CogGuildState):
                 invite_entries, key=lambda invite_entry: invite_entry.key
             )
             count = len(sorted_invite_entries)
-            invites = (f"{invite_entry.key} - {invite_entry.description}" for invite_entry in sorted_invite_entries)
-            text = (
-                f"There are {count} invites available: ```"
-                + "` `".join(invites)
-                + "```"
-            )
+            lines = [f"There are {count} invites available:", "```"]
+            for invite_entry in sorted_invite_entries:
+                if invite_entry.description:
+                    lines.append(f"{invite_entry.key} - {invite_entry.description}")
+                else:
+                    lines.append(f"{invite_entry.key}")
+            lines.append("```")
+            text = "\n".join(lines)
             await ctx.send(text)
         else:
             await ctx.send(f"No invites available")
@@ -150,13 +155,18 @@ class InviteGuildState(CogGuildState):
             await ex.respond(ctx)
 
     async def modify_invite_description(
-        self, ctx: GuildContext, invite_key: str, description: str
+        self, ctx: GuildContext, invite_key: str, description: Optional[str]
     ):
         try:
-            invite_entry = await self.store.modify_invite_description(self.guild, invite_key, description)
-            await ctx.send(
-                f"Set description for invite `{invite_entry.key}` to `{description}`"
+            invite_entry = await self.store.modify_invite_description(
+                self.guild, invite_key, description
             )
+            if description:
+                await ctx.send(
+                    f"Set description for invite `{invite_entry.key}` to: `{description}`"
+                )
+            else:
+                await ctx.send(f"Removed description for invite `{invite_entry.key}`")
         except InviteException as ex:
             await ex.respond(ctx)
 

@@ -79,10 +79,12 @@ class InviteJsonStore(CogStore):
         return invite_entry
 
     async def modify_invite_description(
-        self, guild: Guild, invite_key: str, description: str
+        self, guild: Guild, invite_key: str, description: Optional[str]
     ) -> InviteEntry:
         cache = await self.db.get_cache()
-        invite_entry = await cache.modify_invite_description(guild, invite_key, description)
+        invite_entry = await cache.modify_invite_description(
+            guild, invite_key, description
+        )
         await self.db.dirty()
         return invite_entry
 

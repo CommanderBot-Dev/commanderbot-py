@@ -29,7 +29,7 @@ class InviteEntry(Protocol):
     hits: int
     link: str
     tags: Set[str]
-    description: str
+    description: Optional[str]
 
     @property
     def sorted_tags(self) -> List[str]:
@@ -75,7 +75,7 @@ class InviteStore(Protocol):
         ...
 
     async def modify_invite_description(
-        self, guild: Guild, invite_key: str, description: str
+        self, guild: Guild, invite_key: str, description: Optional[str]
     ) -> InviteEntry:
         ...
 

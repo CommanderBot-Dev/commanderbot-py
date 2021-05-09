@@ -156,13 +156,14 @@ class InviteCog(Cog, name="commanderbot_ext.ext.invite"):
         await self.state[ctx.guild].modify_invite_tags(ctx, invite_key, tags)
 
     @cmd_invites_modify.command(
-        name="description",
-        brief="Modify an invite's description"
+        name="description", brief="Modify an invite's description"
     )
     async def cmd_invites_modify_description(
-        self, ctx: GuildContext, invite_key: str, *, description: str
+        self, ctx: GuildContext, invite_key: str, *, description: Optional[str]
     ):
-        await self.state[ctx.guild].modify_invite_description(ctx, invite_key, description)
+        await self.state[ctx.guild].modify_invite_description(
+            ctx, invite_key, description
+        )
 
     # @@ invites configure
 
