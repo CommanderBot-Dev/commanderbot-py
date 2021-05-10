@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Changed
 
 - Fix name argument for `pack` command and add custom help text
+- Updated `jira` command to use `aiohttp` instead of `requests`
 
 ## [0.10.0] - 2021-05-09
 
