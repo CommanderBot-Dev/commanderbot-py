@@ -129,4 +129,5 @@ def worker(
 
 def beet_default(ctx: Context):
     document = ctx.inject(Document)
+    document.cache = None
     document.add_markdown(ctx.meta["source"])
