@@ -1,5 +1,5 @@
 import discord
-import requests
+import aiohttp
 from discord.ext.commands import Bot, Cog, command
 
 
@@ -28,6 +28,12 @@ class JiraCog(Cog, name="commanderbot_ext.ext.jira"):
             "https://bugs.mojang.com/rest/api/2/status/10200": "Postponed",
         }
 
+    # TODO think about keeping a global `session` object for the cog
+    async def _request_data(self, url):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.json()
+
     # TODO remove hardcoded status and resolve values and add config for JIRA URL and bug ID format
     @command(name="jira", aliases=["bug"])
     async def cmd_jira(self, ctx: discord.Message, bug_id: str):
@@ -36,18 +42,21 @@ class JiraCog(Cog, name="commanderbot_ext.ext.jira"):
             bug_id = bug_id.split("/")[-1]
 
         try:
-            report_data = requests.get(
+            data = await self._request_data(
                 f"https://bugs.mojang.com/rest/api/latest/issue/{bug_id}"
-            ).json()["fields"]
+            )
+            report_data = data["fields"]
+
         # Bug report doesn't exist
         except KeyError:
             await ctx.send(
-                f"**{bug_id.upper()}** is not accessible. This may be due to it being private or it may not exist."
+                f"**{bug_id.upper()}** is not accessible."
+                " This may be due to it being private or it may not exist."
             )
             return
 
         title = f"[{bug_id.upper()}] {report_data['summary']}"
-        if report_data["assignee"] == None:
+        if report_data["assignee"] is None:
             assignee = "Unassigned"
         else:
             assignee = report_data["assignee"]["name"]
@@ -64,7 +73,7 @@ class JiraCog(Cog, name="commanderbot_ext.ext.jira"):
         jira_embed.add_field(name="Since Version", value=since_version, inline=True)
 
         # The bug report is still open
-        if report_data["resolution"] == None:
+        if report_data["resolution"] is None:
             status = self.status_table[report_data["status"]["self"]]
             votes = report_data["votes"]["votes"]
 
