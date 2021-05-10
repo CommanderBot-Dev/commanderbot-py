@@ -46,25 +46,25 @@ class JsonFileDatabaseAdapter(Generic[CacheType]):
         )
 
     async def _create_cache(self) -> CacheType:
-        """ Construct the initial cache from the database. """
+        """Construct the initial cache from the database."""
         data = await self.read()
         assert isinstance(data, dict)
         return self.deserializer(data)
 
     async def get_cache(self) -> CacheType:
-        """ Create the cache if it doesn't already exist, and then return it. """
+        """Create the cache if it doesn't already exist, and then return it."""
         if not self.__cache:
             self.__cache = await self._create_cache()
         return self.__cache
 
     async def dirty(self):
-        """ Mark the cache as dirty, forcing a write to the database. """
+        """Mark the cache as dirty, forcing a write to the database."""
         cache = await self.get_cache()
         data = self.serializer(cache)
         await self.write(data)
 
     async def read(self) -> JsonObject:
-        """ Read and return the data from the database file. """
+        """Read and return the data from the database file."""
         try:
             # Attempt to async load the file.
             return await json_load_async(self.options.path)
@@ -83,5 +83,5 @@ class JsonFileDatabaseAdapter(Generic[CacheType]):
                 return {}
 
     async def write(self, data: JsonObject):
-        """ Write the given data to the database file. """
+        """Write the given data to the database file."""
         await json_dump_async(data, self.options.path, indent=self.options.indent)

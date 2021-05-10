@@ -254,7 +254,7 @@ class HelpChatReportBuildContext:
         )
 
         status_text = ""
-        if (states_in_progress := self.get_states_in_progress()) :
+        if states_in_progress := self.get_states_in_progress():
             status_text = "Scanning: " + " ".join(
                 state.status_text for state in states_in_progress
             )

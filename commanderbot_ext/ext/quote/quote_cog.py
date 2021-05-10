@@ -35,5 +35,5 @@ class QuoteCog(Cog, name="commanderbot_ext.ext.quote"):
         await ctx.send(
             f"{quote_embed[1].mention}\n{msg_link}",
             embed=quote_embed[0],
-            reference=ctx.message
+            reference=ctx.message,
         )
