@@ -14,6 +14,7 @@ from beet import (
 )
 from beet.core.utils import JsonDict
 from beet.toolchain.utils import format_exc
+from jinja2 import TemplateError
 from lectern import Document
 
 BuildResult = Tuple[List[str], Dict[str, bytes]]
@@ -22,12 +23,23 @@ BuildResult = Tuple[List[str], Dict[str, bytes]]
 def generate_packs(
     project_config: JsonDict,
     build_timeout: float,
+    show_stacktraces: bool,
     project_name: str,
     message_content: str,
 ) -> BuildResult:
     q: "Queue[BuildResult]" = Queue()
 
-    p = Process(target=worker, args=(q, project_name, project_config, message_content))
+    p = Process(
+        target=worker,
+        args=(
+            q,
+            project_name,
+            project_config,
+            message_content,
+            show_stacktraces,
+        ),
+    )
+
     p.start()
     p.join(timeout=build_timeout)
 
@@ -45,6 +57,7 @@ def worker(
     project_name: str,
     project_config: JsonDict,
     message_content: str,
+    show_stacktraces: bool,
 ):
     project_directory = os.getcwd()
 
@@ -90,7 +103,26 @@ def worker(
         exception = exc
 
     if exception:
-        build_output.append(format_exc(exception))
+        exc_name = type(exception).__name__
+
+        if show_stacktraces:
+            build_output.append(format_exc(exception))
+        elif isinstance(
+            exception,
+            (
+                TypeError,
+                ValueError,
+                AttributeError,
+                LookupError,
+                ArithmeticError,
+                TemplateError,
+            ),
+        ):
+            build_output.append(f"{exc_name}: {exception}")
+        else:
+            build_output.append(
+                f'{exc_name}: Enable the "stacktraces" option to see the full traceback.'
+            )
 
     q.put((build_output, {}))
 

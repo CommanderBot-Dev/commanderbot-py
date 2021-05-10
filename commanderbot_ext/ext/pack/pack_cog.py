@@ -1,6 +1,7 @@
 import asyncio
 import io
 from logging import Logger, getLogger
+from typing import Optional
 
 from discord import File, Message
 from discord.ext.commands import Bot, Cog, Context, command
@@ -14,9 +15,13 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
         self.log: Logger = getLogger(self.qualified_name)
         self.project_config = options
         self.build_timeout = options.pop("timeout", 5)
+        self.show_stacktraces = options.pop("stacktraces", False)
 
-    @command(name="pack")
-    async def cmd_pack(self, ctx: Context):
+    @command(
+        name="pack",
+        brief="Generate a data pack or a resource pack.",
+    )
+    async def cmd_pack(self, ctx: Context, name: Optional[str]):
         if not ctx.message:
             self.log.warn("Command executed without message.")
             return
@@ -34,11 +39,12 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
             generate_packs,
             self.project_config,
             self.build_timeout,
-            author,
+            self.show_stacktraces,
+            name or author,
             message_content,
         )
 
-        content = f"```{joined}```" if (joined := "\n\n".join(build_output)) else ""
+        content = f"```\n{joined}\n```" if (joined := "\n\n".join(build_output)) else ""
         files = [
             File(io.BytesIO(data), filename=filename)
             for filename, data in attachments.items()
