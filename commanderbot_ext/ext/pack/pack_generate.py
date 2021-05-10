@@ -12,7 +12,7 @@ from beet import (
     config_error_handler,
     run_beet,
 )
-from beet.core.utils import JsonDict
+from beet.core.utils import JsonDict, normalize_string
 from beet.toolchain.utils import format_exc
 from jinja2 import TemplateError
 from lectern import Document
@@ -62,7 +62,7 @@ def worker(
     project_directory = os.getcwd()
 
     base_config = {
-        "name": project_name,
+        "name": normalize_string(project_name) or "untitled",
         "pipeline": [__name__],
         "meta": {
             "source": message_content,

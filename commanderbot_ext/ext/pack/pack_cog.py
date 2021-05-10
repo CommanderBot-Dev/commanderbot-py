@@ -1,12 +1,26 @@
 import asyncio
 import io
 from logging import Logger, getLogger
+from textwrap import dedent
 from typing import Optional
 
 from discord import File, Message
 from discord.ext.commands import Bot, Cog, Context, command
 
 from commanderbot_ext.ext.pack.pack_generate import generate_packs
+
+PACK_HELP = """
+    Compile messages into data packs and resource packs with lectern.
+    https://github.com/mcbeet/lectern
+
+    Example usage:
+
+        .pack
+        `@function demo:foo`
+        `​`​`
+        say hello
+        `​`​`
+"""
 
 
 class PackCog(Cog, name="commanderbot_ext.ext.pack"):
@@ -20,15 +34,20 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
     @command(
         name="pack",
         brief="Generate a data pack or a resource pack.",
+        usage="[name]",
+        help=dedent(PACK_HELP).strip(),
     )
-    async def cmd_pack(self, ctx: Context, name: Optional[str]):
+    async def cmd_pack(self, ctx: Context):
         if not ctx.message:
             self.log.warn("Command executed without message.")
             return
 
         message: Message = ctx.message
         author = message.author.display_name
-        message_content = message.content.split("\n", 1)[-1]
+        first_line, _, message_content = message.content.partition("\n")
+        args = first_line.split()
+
+        name = args[1] if len(args) == 2 else ""
 
         self.log.info("%s - Running build for %s.", message.id, author)
 
