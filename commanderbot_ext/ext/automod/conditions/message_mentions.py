@@ -10,20 +10,20 @@ from commanderbot_ext.lib import JsonObject
 
 
 @dataclass
-class MessagePinged(AutomodConditionBase):
+class MessageMentions(AutomodConditionBase):
     async def check(self, event: AutomodEvent) -> bool:
         message = event.message
         # Short-circuit if there's no message or the message is empty.
         if not (message and message.content):
             return False
         # Check if the message pings a user.
-        if message.mentions:
-            event.set_metadata(
-                "stringified_mentions", "`" + "` `".join(message.mentions) + "`"
-            )
-            return True
-        return False
+        if not message.mentions:
+            return False
+        member_names = {f"{member}" for member in message.mentions}
+        stringified_mentions = "`" + "` `".join(member_names) + "`"
+        event.set_metadata("stringified_mentions", stringified_mentions)
+        return True
 
 
 def create_condition(data: JsonObject) -> AutomodCondition:
-    return MessagePinged.from_data(data)
+    return MessageMentions.from_data(data)
