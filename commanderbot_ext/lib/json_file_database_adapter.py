@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
 from typing import Callable, Generic, Optional, TypeVar
@@ -40,6 +41,10 @@ class JsonFileDatabaseAdapter(Generic[CacheType]):
     # **Do not use this member; use `_get_cache()` instead.**
     __cache: Optional[CacheType] = field(init=False, default=None)
 
+    # Lock used to avoid a potential race condition where multiple concurrent asyncio
+    # tasks initialize the cache in parallel.
+    __cache_lock = asyncio.Lock()
+
     def __post_init__(self):
         self.log = getLogger(
             f"{self.options.path.name} ({self.__class__.__name__}#{id(self)})"
@@ -53,8 +58,10 @@ class JsonFileDatabaseAdapter(Generic[CacheType]):
 
     async def get_cache(self) -> CacheType:
         """Create the cache if it doesn't already exist, and then return it."""
-        if not self.__cache:
-            self.__cache = await self._create_cache()
+        async with self.__cache_lock:
+            if self.__cache is None:
+                self.log.info("Lazily-initializing new cache...")
+                self.__cache = await self._create_cache()
         return self.__cache
 
     async def dirty(self):
