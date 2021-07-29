@@ -88,11 +88,13 @@ class AutomodEventBase:
         del self._metadata[key]
 
     def format_content(self, content: str) -> str:
-        return content.format(
+        format_args = dict(
             channel=self.channel,
             message=self.message,
             reaction=self.reaction,
             author=self.author,
             actor=self.actor,
             member=self.member,
-        ).format(**self._metadata)
+        )
+        format_args.update(self._metadata)
+        return content.format_map(format_args)
