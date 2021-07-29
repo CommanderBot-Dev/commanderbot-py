@@ -122,35 +122,10 @@ class AutomodGuildState(CogGuildState):
     async def add_rule(self, ctx: GuildContext, body: str):
         try:
             data = self._parse_body(body)
-            rules_before_adding = await async_expand(self.store.all_rules(self.guild))
             rule = await self.store.add_rule(self.guild, data)
-            rules_after_adding = await async_expand(self.store.all_rules(self.guild))
             await ctx.send(f"Added automod rule `{rule.name}`")
         except AutomodException as ex:
             await ex.respond(ctx)
-        # FIXME Why do rules sometimes disappear? Unable to reproduce reliably.
-        else:
-            await asyncio.sleep(2)
-            rules_after_waiting = await async_expand(self.store.all_rules(self.guild))
-            rule_later = await self.store.get_rule(self.guild, rule.name)
-            if not rule_later:
-                print("wtf")
-                await ctx.send(
-                    f"Uh oh! Rule disappeared:"
-                    + f" {rule.name} (#{id(rule)})"
-                    + "\nRules before adding: "
-                    + "`"
-                    + "` `".join(rule.name for rule in rules_before_adding)
-                    + "`"
-                    + "\nRules after adding: "
-                    + "`"
-                    + "` `".join(rule.name for rule in rules_after_adding)
-                    + "`"
-                    + "\nRules after waiting: "
-                    + "`"
-                    + "` `".join(rule.name for rule in rules_after_waiting)
-                    + "`"
-                )
 
     async def remove_rule(self, ctx: GuildContext, name: str):
         # Wrap this in case of multiple confirmations.
@@ -196,5 +171,3 @@ class AutomodGuildState(CogGuildState):
         await self.do_event(
             events.MessageEdited(bot=self.bot, _before=before, _after=after)
         )
-
-    # IMPL remaining triggers
