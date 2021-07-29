@@ -106,7 +106,6 @@ def deserialize_entity(
     # deserialize the action
     return deserialize_module_object(
         data=processed_data,
-        readable_name=entity_type.__name__,
         default_module_prefix=entity_type.default_module_prefix,
         function_name=entity_type.module_function_name,
     )

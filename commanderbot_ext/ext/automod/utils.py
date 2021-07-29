@@ -1,6 +1,6 @@
 from collections import defaultdict
 from importlib import import_module
-from typing import Any, DefaultDict
+from typing import Any, DefaultDict, Tuple
 
 from commanderbot_ext.ext.automod.automod_exception import AutomodException
 from commanderbot_ext.lib import JsonObject
@@ -10,23 +10,7 @@ module_function_cache: DefaultDict[str, DefaultDict[str, Any]] = defaultdict(
 )
 
 
-def resolve_module_name(
-    type_name: str,
-    default_module_prefix: str,
-) -> str:
-    if "." in type_name:
-        return type_name
-    else:
-        return f"{default_module_prefix}.{type_name}"
-
-
-def resolve_module_function(
-    type_name: str,
-    default_module_prefix: str,
-    function_name: str,
-) -> Any:
-    # determine the module name
-    module_name = resolve_module_name(type_name, default_module_prefix)
+def resolve_module_function(module_name: str, function_name: str) -> Any:
     # check if it's already in our cache
     if func := module_function_cache[module_name][function_name]:
         return func
@@ -42,49 +26,46 @@ class ModuleObjectDeserializationError(AutomodException):
 
 
 class MissingTypeField(ModuleObjectDeserializationError):
-    def __init__(self, readable_name: str):
-        super().__init__(f"Missing {readable_name} type")
+    def __init__(self):
+        super().__init__(f"Missing `type` field")
 
 
 class InvalidModule(ModuleObjectDeserializationError):
-    def __init__(self, readable_name: str, type_name: str, function_name: str):
+    def __init__(self, module_name: str, function_name: str):
         super().__init__(
-            f"Unknown {readable_name} `{type_name}`:"
-            + " the module could not be imported, or does not contain a valid"
-            + f" `{function_name}` function"
+            f"Module `{module_name}` could not be imported,"
+            + f" or does not contain a `{function_name}` function"
         )
 
 
-class MalformedData(ModuleObjectDeserializationError):
-    def __init__(self, readable_name: str, type_name: str):
+class InvalidModuleFunction(ModuleObjectDeserializationError):
+    def __init__(self, module_name: str, function_name: str):
         super().__init__(
-            f"Malformed {readable_name} `{type_name}`:"
-            + " the data contains insufficient or malformed fields"
+            f"Function `{function_name}` in module `{module_name}` caused an error"
         )
 
 
 def deserialize_module_object(
     data: JsonObject,
-    readable_name: str,
     default_module_prefix: str,
     function_name: str,
 ) -> Any:
     # get the type name
     type_name = str(data.pop("type"))
     if not type_name:
-        raise MissingTypeField(readable_name)
+        raise MissingTypeField()
+    # determine the module name
+    module_name = type_name
+    if "." not in type_name:
+        module_name = f"{default_module_prefix}.{type_name}"
     # attempt to resolve the module function
     try:
-        func = resolve_module_function(
-            type_name=type_name,
-            default_module_prefix=default_module_prefix,
-            function_name=function_name,
-        )
+        func = resolve_module_function(module_name, function_name)
     except Exception as ex:
-        raise InvalidModule(readable_name, type_name, function_name) from ex
+        raise InvalidModule(module_name, function_name) from ex
     # attempt to call the function to create the object
     try:
         obj = func(data)
     except Exception as ex:
-        raise MalformedData(readable_name, type_name) from ex
+        raise InvalidModuleFunction(module_name, function_name) from ex
     return obj
