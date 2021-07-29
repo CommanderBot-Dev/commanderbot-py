@@ -99,7 +99,14 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
                 after=cast(TextMessage, after),
             )
 
-    # IMPL remaining triggers
+    @Cog.listener()
+    async def on_message_delete(self, message: Message):
+        if guild_state := self._guild_state_for_message(message):
+            await guild_state.on_message_delete(
+                message=cast(TextMessage, message),
+            )
+
+    # IMPL remaining events
 
     # @@ COMMANDS
 

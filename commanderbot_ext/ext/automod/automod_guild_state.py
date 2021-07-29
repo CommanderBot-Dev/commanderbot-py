@@ -171,3 +171,6 @@ class AutomodGuildState(CogGuildState):
         await self.do_event(
             events.MessageEdited(bot=self.bot, _before=before, _after=after)
         )
+
+    async def on_message_delete(self, message: TextMessage):
+        await self.do_event(events.MessageDeleted(bot=self.bot, _message=message))
