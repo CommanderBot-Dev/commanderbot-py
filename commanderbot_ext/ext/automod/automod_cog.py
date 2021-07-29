@@ -32,8 +32,8 @@ def make_automod_store(bot: Bot, cog: Cog, options: AutomodOptions) -> AutomodSt
             cog=cog,
             db=JsonFileDatabaseAdapter(
                 options=db_options,
-                serializer=lambda cache: cache.serialize(),
-                deserializer=AutomodData.deserialize,
+                serializer=lambda cache: cache.to_data(),
+                deserializer=AutomodData.from_data,
             ),
         )
     raise UnsupportedDatabaseOptions(db_options)

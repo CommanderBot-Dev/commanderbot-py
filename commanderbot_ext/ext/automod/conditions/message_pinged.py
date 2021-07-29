@@ -10,23 +10,20 @@ from commanderbot_ext.lib import JsonObject
 
 
 @dataclass
-class MessageContains(AutomodConditionBase):
-    content: str
-    ignore_case: Optional[bool] = None
-
+class MessagePinged(AutomodConditionBase):
     async def check(self, event: AutomodEvent) -> bool:
         message = event.message
         # Short-circuit if there's no message or the message is empty.
         if not (message and message.content):
             return False
-        lhs, rhs = str(message.content), self.content
-        # Short-circuit if LHS is too short to contain RHS.
-        if len(lhs) < len(rhs):
-            return False
-        if self.ignore_case:
-            lhs, rhs = lhs.lower(), rhs.lower()
-        return rhs in lhs
+        # Check if the message pings a user.
+        if message.mentions:
+            event.set_metadata(
+                "stringified_mentions", "`" + "` `".join(message.mentions) + "`"
+            )
+            return True
+        return False
 
 
 def create_condition(data: JsonObject) -> AutomodCondition:
-    return MessageContains.from_data(data)
+    return MessagePinged.from_data(data)

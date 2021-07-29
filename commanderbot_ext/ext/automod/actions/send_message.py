@@ -6,14 +6,14 @@ from commanderbot_ext.lib import JsonObject
 
 
 @dataclass
-class ReplyToMessage(AutomodActionBase):
+class SendMessage(AutomodActionBase):
     content: str
 
     async def apply(self, event: AutomodEvent):
-        if message := event.message:
+        if channel := event.channel:
             content = event.format_content(self.content)
-            await message.reply(content)
+            await channel.send(content)
 
 
 def create_action(data: JsonObject) -> AutomodAction:
-    return ReplyToMessage.from_data(data)
+    return SendMessage.from_data(data)

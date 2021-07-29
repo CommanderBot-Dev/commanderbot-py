@@ -3,17 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import (
-    Any,
-    AsyncIterable,
-    ClassVar,
-    DefaultDict,
-    Dict,
-    Iterable,
-    Optional,
-    Set,
-    Type,
-)
+from typing import Any, AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
 
 from discord import Guild
 
@@ -21,7 +11,7 @@ from commanderbot_ext.ext.automod.automod_event import AutomodEvent
 from commanderbot_ext.ext.automod.automod_exception import AutomodException
 from commanderbot_ext.ext.automod.automod_rule import AutomodRule
 from commanderbot_ext.lib import GuildID, JsonObject
-from commanderbot_ext.lib.utils import dict_without_falsies
+from commanderbot_ext.lib.utils import dict_without_ellipsis
 
 RulesByEventType = DefaultDict[Type[AutomodEvent], Set[AutomodRule]]
 
@@ -59,9 +49,9 @@ class AutomodUnmodifiableFields(AutomodException):
 
 
 @dataclass
-class AutomodDataGuild:
+class AutomodGuildData:
     # Index rules by name for fast look-up in commands.
-    rules: Dict[str, AutomodRule] = field(default_factory=dict)
+    rules: Dict[str, AutomodRule] = field(init=False, default_factory=dict)
 
     # Index rules by event type for faster initial access.
     rules_by_event_type: RulesByEventType = field(
@@ -69,34 +59,16 @@ class AutomodDataGuild:
     )
 
     @staticmethod
-    def deserialize(data: JsonObject) -> AutomodDataGuild:
-        rules: Dict[str, AutomodRule] = {}
+    def from_data(data: JsonObject) -> AutomodGuildData:
+        guild_data = AutomodGuildData()
         for rule_data in data.get("rules", []):
-            rule = AutomodRule.deserialize(rule_data)
-            rules[rule.name] = rule
-        return AutomodDataGuild(rules=rules)
+            rule = AutomodRule.from_data(rule_data)
+            guild_data.add_rule(rule)
+        return guild_data
 
-    def __post_init__(self):
-        self._rebuild_cache()
-
-    def _rebuild_cache(self):
-        self.rules_by_event_type = defaultdict(lambda: set())
-        for rule in self.rules.values():
-            self._add_rule_to_cache(rule)
-
-    def _add_rule_to_cache(self, rule: AutomodRule):
-        for trigger in rule.triggers:
-            for event_type in trigger.event_types:
-                self.rules_by_event_type[event_type].add(rule)
-
-    def _remove_rule_from_cache(self, rule: AutomodRule):
-        for rules in self.rules_by_event_type.values():
-            if rule in rules:
-                rules.remove(rule)
-
-    def serialize(self) -> JsonObject:
-        return dict_without_falsies(
-            rules=[rule.serialize() for rule in self.rules.values()],
+    def to_data(self) -> JsonObject:
+        return dict_without_ellipsis(
+            rules=[rule.to_data() for rule in self.rules.values()] or ...,
         )
 
     def all_rules(self) -> Iterable[AutomodRule]:
@@ -127,8 +99,13 @@ class AutomodDataGuild:
 
     def serialize_rule(self, name: str) -> Dict[str, Any]:
         if rule := self.get_rule(name):
-            return rule.serialize()
+            return rule.to_data()
         raise AutomodNoRuleWithName(name)
+
+    def _add_rule_to_cache(self, rule: AutomodRule):
+        for trigger in rule.triggers:
+            for event_type in trigger.event_types:
+                self.rules_by_event_type[event_type].add(rule)
 
     def add_rule(self, rule: AutomodRule):
         if rule.name in self.rules:
@@ -137,9 +114,14 @@ class AutomodDataGuild:
         self._add_rule_to_cache(rule)
 
     def add_rule_from_data(self, data: JsonObject) -> AutomodRule:
-        rule = AutomodRule.deserialize(data)
+        rule = AutomodRule.from_data(data)
         self.add_rule(rule)
         return rule
+
+    def _remove_rule_from_cache(self, rule: AutomodRule):
+        for rules in self.rules_by_event_type.values():
+            if rule in rules:
+                rules.remove(rule)
 
     def remove_rule(self, rule: AutomodRule):
         existing_rule = self.rules.get(rule.name)
@@ -156,12 +138,12 @@ class AutomodDataGuild:
     def modify_rule_raw(self, name: str, changes: JsonObject) -> AutomodRule:
         # Start with the serialized form of the original rule.
         old_rule = self.require_rule(name)
-        new_data = old_rule.serialize()
+        new_data = old_rule.to_data()
         # Update the modification timestamp. Note that it may still be overidden.
         new_data["modified_on"] = datetime.utcnow().isoformat()
         # Create a new rule by cascading the given changes over the original data.
         new_data.update(changes)
-        new_rule = AutomodRule.deserialize(new_data)
+        new_rule = AutomodRule.from_data(new_data)
         # Remove the old rule, and then add the new one.
         self.remove_rule(old_rule)
         self.add_rule(new_rule)
@@ -174,8 +156,8 @@ class AutomodDataGuild:
         return rule
 
 
-def _guilds_defaultdict_factory() -> DefaultDict[GuildID, AutomodDataGuild]:
-    return defaultdict(lambda: AutomodDataGuild())
+def _guilds_defaultdict_factory() -> DefaultDict[GuildID, AutomodGuildData]:
+    return defaultdict(lambda: AutomodGuildData())
 
 
 # @implements AutomodStore
@@ -185,30 +167,31 @@ class AutomodData:
     Implementation of `AutomodStore` using an in-memory object hierarchy.
     """
 
-    guilds: DefaultDict[GuildID, AutomodDataGuild] = field(
+    guilds: DefaultDict[GuildID, AutomodGuildData] = field(
         default_factory=_guilds_defaultdict_factory
     )
 
     @staticmethod
-    def deserialize(data: JsonObject) -> AutomodData:
+    def from_data(data: JsonObject) -> AutomodData:
         guilds = _guilds_defaultdict_factory()
         guilds.update(
             {
-                int(guild_id): AutomodDataGuild.deserialize(raw_guild_data)
+                int(guild_id): AutomodGuildData.from_data(raw_guild_data)
                 for guild_id, raw_guild_data in data.get("guilds", {}).items()
             }
         )
         return AutomodData(guilds=guilds)
 
-    def serialize(self) -> JsonObject:
+    def to_data(self) -> JsonObject:
         # Omit empty guilds, as well as an empty list of guilds.
-        return dict_without_falsies(
-            guilds=dict_without_falsies(
+        return dict_without_ellipsis(
+            guilds=dict_without_ellipsis(
                 {
-                    str(guild_id): guild_data.serialize()
+                    str(guild_id): (guild_data.to_data() or ...)
                     for guild_id, guild_data in self.guilds.items()
                 }
             )
+            or ...
         )
 
     # @implements AutomodStore

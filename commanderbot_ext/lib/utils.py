@@ -45,6 +45,11 @@ def dict_without_nones(d: Optional[Mapping[str, Any]] = None, **kwargs):
     return {k: v for k, v in dd.items() if v is not None}
 
 
+def dict_without_ellipsis(d: Optional[Mapping[str, Any]] = None, **kwargs):
+    dd = dict(d, **kwargs) if d else kwargs
+    return {k: v for k, v in dd.items() if v is not ...}
+
+
 def dict_without_falsies(d: Optional[Mapping[str, Any]] = None, **kwargs):
     dd = dict(d, **kwargs) if d else kwargs
     return {k: v for k, v in dd.items() if v}

@@ -20,7 +20,11 @@ from commanderbot_ext.ext.automod.automod_trigger import (
     deserialize_triggers,
 )
 from commanderbot_ext.lib import ChannelID, JsonObject
-from commanderbot_ext.lib.utils import color_from_hex, color_to_hex
+from commanderbot_ext.lib.utils import (
+    color_from_hex,
+    color_to_hex,
+    dict_without_ellipsis,
+)
 
 
 @dataclass
@@ -44,7 +48,7 @@ class AutomodRule:
     actions: List[AutomodAction]
 
     @staticmethod
-    def deserialize(data: JsonObject) -> AutomodRule:
+    def from_data(data: JsonObject) -> AutomodRule:
         now = datetime.utcnow()
         added_on: datetime = now
         if raw_added_on := data.get("added_on"):
@@ -76,21 +80,21 @@ class AutomodRule:
     def __hash__(self) -> int:
         return hash(self.name)
 
-    def serialize(self) -> JsonObject:
-        return {
-            "name": self.name,
-            "added_on": self.added_on.isoformat(),
-            "modified_on": self.modified_on.isoformat(),
-            "hits": self.hits,
-            "description": self.description,
-            "log_channel": self.log_channel,
-            "log_emoji": self.log_emoji,
-            "log_icon": self.log_icon,
-            "log_color": color_to_hex(self.log_color) if self.log_color else None,
-            "triggers": [trigger.serialize() for trigger in self.triggers],
-            "conditions": [condition.serialize() for condition in self.conditions],
-            "actions": [action.serialize() for action in self.actions],
-        }
+    def to_data(self) -> JsonObject:
+        return dict_without_ellipsis(
+            name=self.name,
+            added_on=self.added_on.isoformat(),
+            modified_on=self.modified_on.isoformat(),
+            hits=self.hits,
+            description=self.description or ...,
+            log_channel=self.log_channel or ...,
+            log_emoji=self.log_emoji or ...,
+            log_icon=self.log_icon or ...,
+            log_color=color_to_hex(self.log_color) if self.log_color else ...,
+            triggers=[trigger.to_data() for trigger in self.triggers] or ...,
+            conditions=[condition.to_data() for condition in self.conditions] or ...,
+            actions=[action.to_data() for action in self.actions] or ...,
+        )
 
     def poll_triggers(self, event: AutomodEvent) -> bool:
         """Check whether the event activates any triggers."""

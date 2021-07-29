@@ -12,6 +12,7 @@ from typing import (
 
 from commanderbot_ext.ext.automod.utils import deserialize_module_object
 from commanderbot_ext.lib import JsonObject
+from commanderbot_ext.lib.utils import dict_without_ellipsis
 
 SelfType = TypeVar("SelfType")
 
@@ -20,10 +21,10 @@ class AutomodEntity(Protocol):
     """Base interface for automod triggers, conditions, and actions."""
 
     @classmethod
-    def deserialize(cls: Type[SelfType], data: JsonObject) -> SelfType:
-        """Turn the data into an entity."""
+    def from_data(cls: Type[SelfType], data: JsonObject) -> SelfType:
+        """Create an entity from data."""
 
-    def serialize(self) -> JsonObject:
+    def to_data(self) -> JsonObject:
         """Turn the entity into data."""
 
 
@@ -42,19 +43,14 @@ class AutomodEntityBase:
     ST = TypeVar("ST", bound="AutomodEntityBase")
 
     @classmethod
-    def deserialize(cls: Type[ST], data: JsonObject) -> ST:
-        fields = cls.deserialize_fields(data)
-        return cls(**fields)
-
-    @classmethod
-    def deserialize_fields(cls, data: JsonObject) -> JsonObject:
+    def from_data(cls: Type[ST], data: JsonObject) -> ST:
         """Override this if any fields require special handling."""
-        return data
+        return cls(**data)
 
     def __init__(self, *args, **kwargs):
         pass
 
-    def serialize(self) -> JsonObject:
+    def to_data(self) -> JsonObject:
         data = {}
         data["type"] = self.serialize_type()
         fields = self.serialize_fields()
@@ -62,7 +58,7 @@ class AutomodEntityBase:
         return data
 
     def serialize_type(self) -> str:
-        """Override this if the type field requires special handling."""
+        """Override this if the external type field requires special handling."""
         if not self.default_module_prefix:
             raise ValueError(
                 f"Subclass of {AutomodEntityBase.__name__} lacks a"
@@ -76,8 +72,14 @@ class AutomodEntityBase:
         return long_type
 
     def serialize_fields(self) -> JsonObject:
+        data = self.__dict__.copy()
+        if (special_fields := self.serialize_special_fields()) is not None:
+            data.update(special_fields)
+        data = dict_without_ellipsis(data)
+        return data
+
+    def serialize_special_fields(self) -> Optional[JsonObject]:
         """Override this if any fields require special handling."""
-        return self.__dict__
 
 
 ET = TypeVar("ET", bound="AutomodEntityBase")
