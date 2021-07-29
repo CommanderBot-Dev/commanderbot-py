@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Set, Type, TypeVar
+from typing import Iterable, Set, Type, TypeVar
 
-from discord import Member
+from discord import Member, Role
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
 from commanderbot_ext.lib import JsonObject, RoleID
@@ -39,6 +39,20 @@ class AutomodRolesGuard:
         return bool(self.exclude) and bool(member_roles)
 
     def ignore(self, event: AutomodEvent) -> bool:
+        """Determine whether to ignore the event based on the guard."""
         if author := event.author:
             return self.ignore_by_includes(author) or self.ignore_by_excludes(author)
         return True
+
+    def matches(self, role: Role) -> bool:
+        """Check whether a role matches the guard."""
+        # Note that `include` takes precedence over `exclude`.
+        if self.include:
+            return role.id in self.include
+        if self.exclude:
+            return role.id not in self.exclude
+        return True
+
+    def filter(self, roles: Iterable[Role]) -> Set[Role]:
+        """Filter a set of roles based on the guard."""
+        return {role for role in roles if self.matches(role)}

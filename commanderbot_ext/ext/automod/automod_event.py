@@ -88,6 +88,7 @@ class AutomodEventBase:
         del self._metadata[key]
 
     def format_content(self, content: str) -> str:
+        # TODO Is this leaky? #refactor
         format_args = dict(
             channel=self.channel,
             message=self.message,

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from commanderbot_ext.ext.automod.automod_condition import (
     AutomodCondition,
@@ -10,20 +9,20 @@ from commanderbot_ext.lib import JsonObject
 
 
 @dataclass
-class MessageMentions(AutomodConditionBase):
+class MessageMentionsMembers(AutomodConditionBase):
     async def check(self, event: AutomodEvent) -> bool:
         message = event.message
         # Short-circuit if there's no message or the message is empty.
         if not (message and message.content):
             return False
-        # Check if the message pings a user.
+        # Short-circuit if the message does not mention any members.
         if not message.mentions:
             return False
         member_names = {f"{member}" for member in message.mentions}
-        stringified_mentions = "`" + "` `".join(member_names) + "`"
-        event.set_metadata("stringified_mentions", stringified_mentions)
+        mentioned_members_str = "`" + "` `".join(member_names) + "`"
+        event.set_metadata("mentioned_members", mentioned_members_str)
         return True
 
 
 def create_condition(data: JsonObject) -> AutomodCondition:
-    return MessageMentions.from_data(data)
+    return MessageMentionsMembers.from_data(data)
