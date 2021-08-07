@@ -6,6 +6,7 @@ from .database_options import *
 from .guild_partitioned_cog_state import *
 from .json_file_database_adapter import *
 from .responsive_exception import *
+from .shallow_formatter import *
 from .sql_database_adapter import *
 from .sqlite_database_adapter import *
 from .types import *

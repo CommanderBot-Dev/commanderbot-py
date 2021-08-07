@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
+from typing import AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
 
 from discord import Guild
 
@@ -11,6 +11,7 @@ from commanderbot_ext.ext.automod.automod_event import AutomodEvent
 from commanderbot_ext.ext.automod.automod_exception import AutomodException
 from commanderbot_ext.ext.automod.automod_rule import AutomodRule
 from commanderbot_ext.lib import GuildID, JsonObject
+from commanderbot_ext.lib.json import to_data
 from commanderbot_ext.lib.utils import dict_without_ellipsis
 
 RulesByEventType = DefaultDict[Type[AutomodEvent], Set[AutomodRule]]
@@ -68,7 +69,7 @@ class AutomodGuildData:
 
     def to_data(self) -> JsonObject:
         return dict_without_ellipsis(
-            rules=[rule.to_data() for rule in self.rules.values()] or ...,
+            rules=list(self.rules.values()) or ...,
         )
 
     def all_rules(self) -> Iterable[AutomodRule]:
@@ -95,11 +96,6 @@ class AutomodGuildData:
     def require_rule(self, name: str) -> AutomodRule:
         if rule := self.get_rule(name):
             return rule
-        raise AutomodNoRuleWithName(name)
-
-    def serialize_rule(self, name: str) -> Dict[str, Any]:
-        if rule := self.get_rule(name):
-            return rule.to_data()
         raise AutomodNoRuleWithName(name)
 
     def _add_rule_to_cache(self, rule: AutomodRule):
@@ -138,7 +134,7 @@ class AutomodGuildData:
     def modify_rule_raw(self, name: str, changes: JsonObject) -> AutomodRule:
         # Start with the serialized form of the original rule.
         old_rule = self.require_rule(name)
-        new_data = old_rule.to_data()
+        new_data = to_data(old_rule)
         # Update the modification timestamp. Note that it may still be overidden.
         new_data["modified_on"] = datetime.utcnow().isoformat()
         # Create a new rule by cascading the given changes over the original data.
@@ -218,10 +214,6 @@ class AutomodData:
     # @implements AutomodStore
     async def require_rule(self, guild: Guild, name: str) -> AutomodRule:
         return self.guilds[guild.id].require_rule(name)
-
-    # @implements AutomodStore
-    async def serialize_rule(self, guild: Guild, name: str) -> Dict[str, Any]:
-        return self.guilds[guild.id].serialize_rule(name)
 
     # @implements AutomodStore
     async def add_rule(self, guild: Guild, data: JsonObject) -> AutomodRule:

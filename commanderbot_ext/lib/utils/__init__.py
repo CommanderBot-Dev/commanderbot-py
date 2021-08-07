@@ -1,6 +1,3 @@
-import asyncio
-import json
-from pathlib import Path
 from typing import (
     Any,
     AsyncIterable,
@@ -19,6 +16,10 @@ from discord.ext.commands import Bot, Cog
 from discord.ext.commands.converter import ColourConverter
 
 from commanderbot_ext.lib.types import JsonObject, RoleID
+
+from .from_data import *
+
+T = TypeVar("T")
 
 
 def check_commander_bot(bot: Bot) -> Optional[CommanderBotBase]:
@@ -89,44 +90,5 @@ def member_roles_from(member: Member, role_ids: Set[RoleID]) -> Set[RoleID]:
     return matching_role_ids
 
 
-T = TypeVar("T")
-
-
 async def async_expand(it: AsyncIterable[T]) -> List[T]:
     return [value async for value in it]
-
-
-def json_load(path: Path) -> JsonObject:
-    with open(path) as fp:
-        data = json.load(fp)
-    return data
-
-
-async def json_load_async(path: Path) -> JsonObject:
-    loop = asyncio.get_running_loop()
-    data = await loop.run_in_executor(None, json_load, path)
-    return data
-
-
-def json_dump(
-    data: JsonObject,
-    path: Path,
-    mkdir: bool = False,
-    indent: int = None,
-):
-    if mkdir:
-        path.parent.mkdir(parents=True, exist_ok=True)
-    # NOTE Serialize the JSON first, otherwise invalid data may corrupt the file.
-    output = json.dumps(data, indent=indent)
-    with open(path, "w") as fp:
-        fp.write(output)
-
-
-async def json_dump_async(
-    data: JsonObject,
-    path: Path,
-    mkdir: bool = False,
-    indent: int = None,
-):
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, json_dump, data, path, mkdir, indent)

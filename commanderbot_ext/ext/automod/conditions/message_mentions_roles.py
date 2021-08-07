@@ -24,11 +24,6 @@ class MessageMentionsRoles(AutomodConditionBase):
             roles=roles,
         )
 
-    def serialize_special_fields(self) -> JsonObject:
-        return dict(
-            roles=self.roles.to_data() or ...,
-        )
-
     async def check(self, event: AutomodEvent) -> bool:
         message = event.message
         # Short-circuit if there's no message or the message is empty.
@@ -42,8 +37,11 @@ class MessageMentionsRoles(AutomodConditionBase):
         if not mentioned_roles:
             return False
         role_names = {f"{role}" for role in mentioned_roles}
-        mentioned_roles_str = "`" + "` `".join(role_names) + "`"
-        event.set_metadata("mentioned_roles", mentioned_roles_str)
+        mentioned_role_names = "`" + "` `".join(role_names) + "`"
+        event.set_metadata("mentioned_role_names", mentioned_role_names)
+        role_mentions = {f"{role.mention}" for role in mentioned_roles}
+        mentioned_role_mentions = " ".join(role_mentions)
+        event.set_metadata("mentioned_role_mentions", mentioned_role_mentions)
         return True
 
 

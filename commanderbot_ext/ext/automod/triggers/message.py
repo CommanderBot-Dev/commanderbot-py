@@ -33,12 +33,6 @@ class Message(AutomodTriggerBase):
             roles=roles,
         )
 
-    def serialize_special_fields(self) -> JsonObject:
-        return dict(
-            channels=self.channels.to_data() or ...,
-            roles=self.roles.to_data() or ...,
-        )
-
     def ignore(self, event: AutomodEvent) -> bool:
         return self.channels.ignore(event) or self.roles.ignore(event)
 

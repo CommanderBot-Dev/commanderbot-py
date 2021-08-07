@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import (
     Any,
     ClassVar,
@@ -12,7 +13,6 @@ from typing import (
 
 from commanderbot_ext.ext.automod.utils import deserialize_module_object
 from commanderbot_ext.lib import JsonObject
-from commanderbot_ext.lib.utils import dict_without_ellipsis
 
 SelfType = TypeVar("SelfType")
 
@@ -24,11 +24,9 @@ class AutomodEntity(Protocol):
     def from_data(cls: Type[SelfType], data: JsonObject) -> SelfType:
         """Create an entity from data."""
 
-    def to_data(self) -> JsonObject:
-        """Turn the entity into data."""
-
 
 # @implements AutomodEntity
+@dataclass
 class AutomodEntityBase:
     """
     Contains common base logic for automod triggers, conditions, and actions.
@@ -40,6 +38,8 @@ class AutomodEntityBase:
     default_module_prefix: ClassVar[str] = ""
     module_function_name: ClassVar[str] = ""
 
+    type: str = field(init=False)
+
     ST = TypeVar("ST", bound="AutomodEntityBase")
 
     @classmethod
@@ -47,39 +47,23 @@ class AutomodEntityBase:
         """Override this if any fields require special handling."""
         return cls(**data)
 
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def to_data(self) -> JsonObject:
-        data = {}
-        data["type"] = self.serialize_type()
-        fields = self.serialize_fields()
-        data.update(fields)
-        return data
-
-    def serialize_type(self) -> str:
+    @classmethod
+    def _get_type_string(cls) -> str:
         """Override this if the external type field requires special handling."""
-        if not self.default_module_prefix:
+        if not cls.default_module_prefix:
             raise ValueError(
                 f"Subclass of {AutomodEntityBase.__name__} lacks a"
                 + " `default_module_prefix`"
             )
-        default_check = f"{self.default_module_prefix}."
-        long_type = self.__class__.__module__
-        if long_type.startswith(default_check):
-            short_type = long_type[len(default_check) :]
+        default_check = f"{cls.default_module_prefix}."
+        full_type = cls.__module__
+        if full_type.startswith(default_check):
+            short_type = full_type[len(default_check) :]
             return short_type
-        return long_type
+        return full_type
 
-    def serialize_fields(self) -> JsonObject:
-        data = self.__dict__.copy()
-        if (special_fields := self.serialize_special_fields()) is not None:
-            data.update(special_fields)
-        data = dict_without_ellipsis(data)
-        return data
-
-    def serialize_special_fields(self) -> Optional[JsonObject]:
-        """Override this if any fields require special handling."""
+    def __post_init__(self):
+        self.type = self._get_type_string()
 
 
 ET = TypeVar("ET", bound="AutomodEntityBase")
@@ -105,7 +89,7 @@ def deserialize_entity(
         processed_data["type"] = data
     else:
         raise ValueError(data)
-    # deserialize the action
+    # deserialize the entity
     return deserialize_module_object(
         data=processed_data,
         default_module_prefix=entity_type.default_module_prefix,

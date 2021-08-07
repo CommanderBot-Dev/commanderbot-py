@@ -1,4 +1,3 @@
-import asyncio
 import json
 from dataclasses import dataclass
 from datetime import datetime
@@ -13,6 +12,7 @@ from commanderbot_ext.ext.automod.automod_exception import AutomodException
 from commanderbot_ext.ext.automod.automod_store import AutomodStore
 from commanderbot_ext.lib import CogGuildState, TextMessage
 from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
+from commanderbot_ext.lib.json import to_data
 from commanderbot_ext.lib.types import GuildContext, JsonObject
 from commanderbot_ext.lib.utils import async_expand
 
@@ -106,8 +106,8 @@ class AutomodGuildState(CogGuildState):
         rules = await async_expand(self.store.query_rules(self.guild, query))
         if rules:
             rule = rules[0]
-            serialized_rule = await self.store.serialize_rule(self.guild, rule.name)
-            rule_yaml = yaml.safe_dump(serialized_rule, sort_keys=False)
+            rule_data = to_data(rule)
+            rule_yaml = yaml.safe_dump(rule_data, sort_keys=False)
             lines = [
                 f"`{rule.name}`",
                 "```yaml",

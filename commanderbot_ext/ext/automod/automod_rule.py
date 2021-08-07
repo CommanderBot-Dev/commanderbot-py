@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
 
-from discord import Colour
-
 from commanderbot_ext.ext.automod.automod_action import (
     AutomodAction,
     deserialize_actions,
@@ -19,29 +17,45 @@ from commanderbot_ext.ext.automod.automod_trigger import (
     AutomodTrigger,
     deserialize_triggers,
 )
-from commanderbot_ext.lib import ChannelID, JsonObject
-from commanderbot_ext.lib.utils import (
-    color_from_hex,
-    color_to_hex,
-    dict_without_ellipsis,
-)
+from commanderbot_ext.lib import JsonObject
+from commanderbot_ext.lib.utils import datetime_from_data
 
 
 @dataclass
 class AutomodRule:
+    """
+    A piece of logic detailing how to perform an automated task.
+
+    Attributes
+    ----------
+    name
+        The name of the rule. Can be any arbitrary string, but snake_case tends to be
+        easier to type into Discord chat.
+    added_on
+        The datetime the rule was created.
+    modified_on
+        The last datetime the rule was modified.
+    disabled
+        Whether the rule is currently disabled.
+    hits
+        How many times the rule's conditions have passed and actions have run.
+    description
+        A human-readable description of the rule.
+    triggers
+        A list of events that may trigger the rule.
+    conditions
+        A list of conditions that must *all* pass for the actions to run.
+    actions
+        A list of actions that will all run if the conditions pass.
+    """
+
     name: str
     added_on: datetime
     modified_on: datetime
-
-    # How many times the rule has been activated. (triggers -> conditions -> actions)
+    disabled: bool
     hits: int
 
     description: Optional[str]
-
-    log_channel: Optional[ChannelID]
-    log_emoji: Optional[str]
-    log_icon: Optional[str]
-    log_color: Optional[Colour]
 
     triggers: List[AutomodTrigger]
     conditions: List[AutomodCondition]
@@ -50,51 +64,20 @@ class AutomodRule:
     @staticmethod
     def from_data(data: JsonObject) -> AutomodRule:
         now = datetime.utcnow()
-        added_on: datetime = now
-        if raw_added_on := data.get("added_on"):
-            added_on = datetime.fromisoformat(raw_added_on)
-        modified_on: datetime = now
-        if raw_modified_on := data.get("modified_on"):
-            modified_on = datetime.fromisoformat(raw_modified_on)
-        log_color: Optional[Colour] = None
-        if raw_color := data.get("log_color"):
-            log_color = color_from_hex(raw_color)
-        triggers = deserialize_triggers(data.get("triggers", []))
-        conditions = deserialize_conditions(data.get("conditions", []))
-        actions = deserialize_actions(data.get("actions", []))
         return AutomodRule(
             name=data["name"],
-            added_on=added_on,
-            modified_on=modified_on,
+            added_on=datetime_from_data(data, "added_on", now),
+            modified_on=datetime_from_data(data, "modified_on", now),
+            disabled=data.get("disabled", False),
             hits=data.get("hits", 0),
             description=data.get("description"),
-            log_channel=data.get("log_channel"),
-            log_emoji=data.get("log_emoji"),
-            log_icon=data.get("log_icon"),
-            log_color=log_color,
-            triggers=triggers,
-            conditions=conditions,
-            actions=actions,
+            triggers=deserialize_triggers(data.get("triggers", [])),
+            conditions=deserialize_conditions(data.get("conditions", [])),
+            actions=deserialize_actions(data.get("actions", [])),
         )
 
     def __hash__(self) -> int:
         return hash(self.name)
-
-    def to_data(self) -> JsonObject:
-        return dict_without_ellipsis(
-            name=self.name,
-            added_on=self.added_on.isoformat(),
-            modified_on=self.modified_on.isoformat(),
-            hits=self.hits,
-            description=self.description or ...,
-            log_channel=self.log_channel or ...,
-            log_emoji=self.log_emoji or ...,
-            log_icon=self.log_icon or ...,
-            log_color=color_to_hex(self.log_color) if self.log_color else ...,
-            triggers=[trigger.to_data() for trigger in self.triggers] or ...,
-            conditions=[condition.to_data() for condition in self.conditions] or ...,
-            actions=[action.to_data() for action in self.actions] or ...,
-        )
 
     def poll_triggers(self, event: AutomodEvent) -> bool:
         """Check whether the event activates any triggers."""

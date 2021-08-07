@@ -5,7 +5,6 @@ from discord import TextChannel
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
 from commanderbot_ext.lib import ChannelID, JsonObject
-from commanderbot_ext.lib.utils import dict_without_ellipsis
 
 ST = TypeVar("ST")
 
@@ -20,12 +19,6 @@ class AutomodChannelsGuard:
         return cls(
             include=set(data.get("include", [])),
             exclude=set(data.get("exclude", [])),
-        )
-
-    def to_data(self) -> JsonObject:
-        return dict_without_ellipsis(
-            include=list(self.include) or ...,
-            exclude=list(self.exclude) or ...,
         )
 
     def ignore_by_includes(self, channel: TextChannel) -> bool:

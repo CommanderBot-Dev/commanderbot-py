@@ -49,11 +49,6 @@ class AutomodJsonStore(CogStore):
         return await cache.require_rule(guild, name)
 
     # @implements AutomodStore
-    async def serialize_rule(self, guild: Guild, name: str) -> Dict[str, Any]:
-        cache = await self.db.get_cache()
-        return await cache.serialize_rule(guild, name)
-
-    # @implements AutomodStore
     async def add_rule(self, guild: Guild, data: JsonObject) -> AutomodRule:
         cache = await self.db.get_cache()
         added_rule = await cache.add_rule(guild, data)

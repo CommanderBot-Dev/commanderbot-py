@@ -29,9 +29,6 @@ class AutomodStore(Protocol):
     async def require_rule(self, guild: Guild, name: str) -> AutomodRule:
         ...
 
-    async def serialize_rule(self, guild: Guild, name: str) -> Dict[str, Any]:
-        ...
-
     async def add_rule(self, guild: Guild, data: JsonObject) -> AutomodRule:
         ...
 
