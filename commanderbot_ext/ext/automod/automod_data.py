@@ -146,6 +146,16 @@ class AutomodGuildData:
         # Return the new rule.
         return new_rule
 
+    def enable_rule_by_name(self, name: str) -> AutomodRule:
+        rule = self.require_rule(name)
+        rule.disabled = False
+        return rule
+
+    def disable_rule_by_name(self, name: str) -> AutomodRule:
+        rule = self.require_rule(name)
+        rule.disabled = True
+        return rule
+
     def increment_rule_hits_by_name(self, name: str) -> AutomodRule:
         rule = self.require_rule(name)
         rule.hits += 1
@@ -228,6 +238,14 @@ class AutomodData:
         self, guild: Guild, name: str, data: JsonObject
     ) -> AutomodRule:
         return self.guilds[guild.id].modify_rule_raw(name, data)
+
+    # @implements AutomodStore
+    async def enable_rule(self, guild: Guild, name: str) -> AutomodRule:
+        return self.guilds[guild.id].enable_rule_by_name(name)
+
+    # @implements AutomodStore
+    async def disable_rule(self, guild: Guild, name: str) -> AutomodRule:
+        return self.guilds[guild.id].disable_rule_by_name(name)
 
     # @implements AutomodStore
     async def increment_rule_hits(self, guild: Guild, name: str) -> AutomodRule:

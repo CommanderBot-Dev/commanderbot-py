@@ -72,6 +72,20 @@ class AutomodJsonStore(CogStore):
         return modified_rule
 
     # @implements AutomodStore
+    async def enable_rule(self, guild: Guild, name: str) -> AutomodRule:
+        cache = await self.db.get_cache()
+        modified_rule = await cache.enable_rule(guild, name)
+        await self.db.dirty()
+        return modified_rule
+
+    # @implements AutomodStore
+    async def disable_rule(self, guild: Guild, name: str) -> AutomodRule:
+        cache = await self.db.get_cache()
+        modified_rule = await cache.disable_rule(guild, name)
+        await self.db.dirty()
+        return modified_rule
+
+    # @implements AutomodStore
     async def increment_rule_hits(self, guild: Guild, name: str) -> AutomodRule:
         cache = await self.db.get_cache()
         modified_rule = await cache.increment_rule_hits(guild, name)

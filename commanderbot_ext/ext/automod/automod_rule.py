@@ -79,6 +79,15 @@ class AutomodRule:
     def __hash__(self) -> int:
         return hash(self.name)
 
+    def build_title(self) -> str:
+        parts = []
+        if self.disabled:
+            parts.append("(Disabled)")
+        parts.append(f"{self.name}:")
+        if self.description:
+            parts.append(self.description)
+        return " ".join(parts)
+
     def poll_triggers(self, event: AutomodEvent) -> bool:
         """Check whether the event activates any triggers."""
         for trigger in self.triggers:
@@ -100,7 +109,7 @@ class AutomodRule:
 
     async def run(self, event: AutomodEvent) -> bool:
         """Apply actions if conditions pass."""
-        if await self.check_conditions(event):
+        if (not self.disabled) and await self.check_conditions(event):
             await self.apply_actions(event)
             return True
         return False

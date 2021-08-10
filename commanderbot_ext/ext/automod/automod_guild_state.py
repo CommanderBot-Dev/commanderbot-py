@@ -55,11 +55,9 @@ class AutomodGuildState(CogGuildState):
         count_rules = len(rules)
         if count_rules > 1:
             lines = ["```"]
-            for rule in rules:
-                line = f"[{rule.name}]"
-                if rule.description:
-                    line += f" {rule.description}"
-                lines.append(line)
+            sorted_rules = sorted(rules, key=lambda rule: (rule.disabled, rule.name))
+            for rule in sorted_rules:
+                lines.append(rule.build_title())
             lines.append("```")
             content = "\n".join(lines)
             await ctx.send(content)
@@ -72,9 +70,7 @@ class AutomodGuildState(CogGuildState):
             modified_on_delta = now - rule.modified_on
             modified_on_timestamp = rule.modified_on.isoformat()
             modified_on_str = f"{modified_on_timestamp} ({modified_on_delta})"
-            name_line = f"[{rule.name}]"
-            if rule.description:
-                name_line += f" {rule.description}"
+            name_line = rule.build_title()
             lines = [
                 "```",
                 name_line,
@@ -157,20 +153,34 @@ class AutomodGuildState(CogGuildState):
         except AutomodException as ex:
             await ex.respond(ctx)
 
-    async def do_event(self, event: AutomodEventBase):
+    async def enable_rule(self, ctx: GuildContext, name: str):
+        try:
+            rule = await self.store.enable_rule(self.guild, name)
+            await ctx.send(f"Enabled automod rule `{rule.name}`")
+        except AutomodException as ex:
+            await ex.respond(ctx)
+
+    async def disable_rule(self, ctx: GuildContext, name: str):
+        try:
+            rule = await self.store.disable_rule(self.guild, name)
+            await ctx.send(f"Disabled automod rule `{rule.name}`")
+        except AutomodException as ex:
+            await ex.respond(ctx)
+
+    # @@ EVENT HANDLERS
+
+    async def _do_event(self, event: AutomodEventBase):
         async for rule in self.store.rules_for_event(self.guild, event):
             if await rule.run(event):
                 await self.store.increment_rule_hits(self.guild, rule.name)
 
-    # @@ EVENT HANDLERS
-
     async def on_message(self, message: TextMessage):
-        await self.do_event(events.MessageSent(bot=self.bot, _message=message))
+        await self._do_event(events.MessageSent(bot=self.bot, _message=message))
 
     async def on_message_edit(self, before: TextMessage, after: TextMessage):
-        await self.do_event(
+        await self._do_event(
             events.MessageEdited(bot=self.bot, _before=before, _after=after)
         )
 
     async def on_message_delete(self, message: TextMessage):
-        await self.do_event(events.MessageDeleted(bot=self.bot, _message=message))
+        await self._do_event(events.MessageDeleted(bot=self.bot, _message=message))

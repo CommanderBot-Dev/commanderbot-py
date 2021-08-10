@@ -172,3 +172,17 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
         self, ctx: GuildContext, name: str, *, body: str
     ):
         await self.state[ctx.guild].modify_rule(ctx, name, body)
+
+    @cmd_automod_rules.command(
+        name="enable",
+        brief="Enable an automod rule",
+    )
+    async def cmd_automod_rules_enable(self, ctx: GuildContext, name: str):
+        await self.state[ctx.guild].enable_rule(ctx, name)
+
+    @cmd_automod_rules.command(
+        name="disable",
+        brief="Disable an automod rule",
+    )
+    async def cmd_automod_rules_disable(self, ctx: GuildContext, name: str):
+        await self.state[ctx.guild].disable_rule(ctx, name)
