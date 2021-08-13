@@ -1,8 +1,9 @@
-from typing import Any, AsyncIterable, Dict, Optional, Protocol
+from typing import AsyncIterable, Optional, Protocol, Tuple
 
-from discord import Guild
+from discord import Guild, TextChannel
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
+from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot_ext.ext.automod.automod_rule import AutomodRule
 from commanderbot_ext.lib import JsonObject
 
@@ -11,6 +12,16 @@ class AutomodStore(Protocol):
     """
     Abstracts the data storage and persistence of the automod cog.
     """
+
+    async def get_default_log_options(
+        self, guild: Guild
+    ) -> Optional[AutomodLogOptions]:
+        ...
+
+    async def set_default_log_options(
+        self, guild: Guild, log_options: Optional[AutomodLogOptions]
+    ) -> Optional[AutomodLogOptions]:
+        ...
 
     def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:
         ...

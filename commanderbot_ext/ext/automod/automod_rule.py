@@ -13,12 +13,13 @@ from commanderbot_ext.ext.automod.automod_condition import (
     deserialize_conditions,
 )
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
+from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot_ext.ext.automod.automod_trigger import (
     AutomodTrigger,
     deserialize_triggers,
 )
 from commanderbot_ext.lib import JsonObject
-from commanderbot_ext.lib.utils import datetime_from_data
+from commanderbot_ext.lib.utils import datetime_from_field
 
 
 @dataclass
@@ -41,6 +42,8 @@ class AutomodRule:
         How many times the rule's conditions have passed and actions have run.
     description
         A human-readable description of the rule.
+    log
+        Override logging configuration for this rule.
     triggers
         A list of events that may trigger the rule.
     conditions
@@ -57,6 +60,8 @@ class AutomodRule:
 
     description: Optional[str]
 
+    log: Optional[AutomodLogOptions]
+
     triggers: List[AutomodTrigger]
     conditions: List[AutomodCondition]
     actions: List[AutomodAction]
@@ -66,11 +71,12 @@ class AutomodRule:
         now = datetime.utcnow()
         return AutomodRule(
             name=data["name"],
-            added_on=datetime_from_data(data, "added_on", now),
-            modified_on=datetime_from_data(data, "modified_on", now),
+            added_on=datetime_from_field(data, "added_on", now),
+            modified_on=datetime_from_field(data, "modified_on", now),
             disabled=data.get("disabled", False),
             hits=data.get("hits", 0),
             description=data.get("description"),
+            log=AutomodLogOptions.from_field(data, "log", None),
             triggers=deserialize_triggers(data.get("triggers", [])),
             conditions=deserialize_conditions(data.get("conditions", [])),
             actions=deserialize_actions(data.get("actions", [])),

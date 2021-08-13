@@ -1,6 +1,6 @@
 from typing import Optional, cast
 
-from discord import Guild, Message, TextChannel
+from discord import Color, Guild, Message, TextChannel
 from discord.ext.commands import Bot, Cog, group
 
 from commanderbot_ext.ext.automod.automod_data import AutomodData
@@ -123,6 +123,52 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_automod)
 
+    # @@ automod options
+
+    @cmd_automod.group(
+        name="options",
+        brief="Configure various automod options.",
+    )
+    async def cmd_automod_options(self, ctx: GuildContext):
+        if not ctx.invoked_subcommand:
+            await ctx.send_help(self.cmd_automod_options)
+
+    @cmd_automod_options.group(
+        name="log",
+        brief="Configure the default logging behaviour.",
+    )
+    async def cmd_automod_options_log(self, ctx: GuildContext):
+        if not ctx.invoked_subcommand:
+            if ctx.subcommand_passed:
+                await ctx.send_help(self.cmd_automod_options)
+            else:
+                await self.state[ctx.guild].show_default_log_options(ctx)
+
+    @cmd_automod_options_log.command(
+        name="set",
+        brief="Set the default logging behaviour.",
+    )
+    async def cmd_automod_options_log_set(
+        self,
+        ctx: GuildContext,
+        channel: TextChannel,
+        emoji: Optional[str],
+        color: Optional[Color],
+    ):
+        await self.state[ctx.guild].set_default_log_options(
+            ctx,
+            channel=channel,
+            emoji=emoji,
+            color=color,
+        )
+
+    @cmd_automod_options_log.command(
+        name="remove",
+        brief="Remove the default logging behaviour.",
+    )
+    async def cmd_automod_options_log_remove(self, ctx: GuildContext):
+        await self.state[ctx.guild].remove_default_log_options(ctx)
+
     # @@ automod rules
 
     @cmd_automod.group(
@@ -132,7 +178,7 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
     async def cmd_automod_rules(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
             if ctx.subcommand_passed:
-                await ctx.send_help(self.cmd_automod)
+                await ctx.send_help(self.cmd_automod_rules)
             else:
                 await self.state[ctx.guild].show_rules(ctx)
 

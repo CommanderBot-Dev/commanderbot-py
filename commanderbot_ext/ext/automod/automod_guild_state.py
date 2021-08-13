@@ -2,13 +2,17 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from json.decoder import JSONDecodeError
+from typing import Optional, cast
 
 import yaml
+from discord import Color, TextChannel
 from yaml.error import YAMLError
 
 from commanderbot_ext.ext.automod import events
 from commanderbot_ext.ext.automod.automod_event import AutomodEventBase
 from commanderbot_ext.ext.automod.automod_exception import AutomodException
+from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
+from commanderbot_ext.ext.automod.automod_rule import AutomodRule
 from commanderbot_ext.ext.automod.automod_store import AutomodStore
 from commanderbot_ext.lib import CogGuildState, TextMessage
 from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
@@ -30,6 +34,37 @@ class AutomodGuildState(CogGuildState):
 
     store: AutomodStore
 
+    async def _get_log_options_for_rule(
+        self, rule: AutomodRule
+    ) -> Optional[AutomodLogOptions]:
+        # First try to grab the rule's specific logging configuration, if any.
+        if rule.log:
+            return rule.log
+        # If it doesn't have any, return the guild-wide logging configuration. This may
+        # also not exist, hence why it's optional.
+        return await self.store.get_default_log_options(self.guild)
+
+    async def _log_rule_error(self, rule: AutomodRule, error: Exception) -> bool:
+        try:
+            if log_options := await self._get_log_options_for_rule(rule):
+                channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
+                # TODO Fancy-up the error message sent by the bot. #enhance
+                content = f"Rule `{rule.name}` caused an error: {error}"
+                await channel.send(content)
+                return True
+        except:
+            self.log.exception("Failed to log message to error channel:")
+        return False
+
+    async def _do_event(self, event: AutomodEventBase):
+        async for rule in self.store.rules_for_event(self.guild, event):
+            try:
+                if await rule.run(event):
+                    await self.store.increment_rule_hits(self.guild, rule.name)
+            except Exception as error:
+                if not await self._log_rule_error(rule, error):
+                    self.log.exception("Automod rule caused an error:")
+
     def _parse_body(self, body: str) -> JsonObject:
         content = body.strip("\n").strip("`")
         kind, _, content = content.partition("\n")
@@ -46,6 +81,58 @@ class AutomodGuildState(CogGuildState):
         else:
             raise AutomodException("Missing code block declared as `json` or `yaml`")
         return data
+
+    async def show_default_log_options(self, ctx: GuildContext):
+        try:
+            if log_options := await self.store.get_default_log_options(self.guild):
+                channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
+                await ctx.send(f"Default logging is configured for {channel.mention}")
+            else:
+                await ctx.send(f"No default logging configured")
+        except AutomodException as ex:
+            await ex.respond(ctx)
+
+    async def set_default_log_options(
+        self,
+        ctx: GuildContext,
+        channel: TextChannel,
+        emoji: Optional[str],
+        color: Optional[Color],
+    ):
+        try:
+            new_log_options = AutomodLogOptions(
+                channel=channel.id,
+                emoji=emoji,
+                color=color,
+            )
+            old_log_options = await self.store.set_default_log_options(
+                self.guild, new_log_options
+            )
+            if old_log_options:
+                old_log_channel = cast(
+                    TextChannel, self.bot.get_channel(old_log_options.channel)
+                )
+                await ctx.send(
+                    f"Moved default logging from {old_log_channel.mention}"
+                    + f" to {channel.mention}"
+                )
+            else:
+                await ctx.send(f"Configured default logging for {channel.mention}")
+        except AutomodException as ex:
+            await ex.respond(ctx)
+
+    async def remove_default_log_options(self, ctx: GuildContext):
+        try:
+            old_log_options = await self.store.set_default_log_options(self.guild, None)
+            if old_log_options:
+                channel = cast(
+                    TextChannel, self.bot.get_channel(old_log_options.channel)
+                )
+                await ctx.send(f"Removed default logging from {channel.mention}")
+            else:
+                await ctx.send(f"No default logging configured")
+        except AutomodException as ex:
+            await ex.respond(ctx)
 
     async def show_rules(self, ctx: GuildContext, query: str = ""):
         if query:
@@ -168,11 +255,6 @@ class AutomodGuildState(CogGuildState):
             await ex.respond(ctx)
 
     # @@ EVENT HANDLERS
-
-    async def _do_event(self, event: AutomodEventBase):
-        async for rule in self.store.rules_for_event(self.guild, event):
-            if await rule.run(event):
-                await self.store.increment_rule_hits(self.guild, rule.name)
 
     async def on_message(self, message: TextMessage):
         await self._do_event(events.MessageSent(bot=self.bot, _message=message))

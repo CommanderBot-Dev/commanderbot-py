@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, AsyncIterable, Dict, Optional, Type
+from typing import AsyncIterable, Optional
 
-from discord import Guild
+from discord import Guild, TextChannel
 
 from commanderbot_ext.ext.automod.automod_data import AutomodData
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
+from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot_ext.ext.automod.automod_store import AutomodRule
 from commanderbot_ext.lib import CogStore, JsonFileDatabaseAdapter, JsonObject
 
@@ -17,6 +18,22 @@ class AutomodJsonStore(CogStore):
     """
 
     db: JsonFileDatabaseAdapter[AutomodData]
+
+    # @implements AutomodStore
+    async def get_default_log_options(
+        self, guild: Guild
+    ) -> Optional[AutomodLogOptions]:
+        cache = await self.db.get_cache()
+        return await cache.get_default_log_options(guild)
+
+    # @implements AutomodStore
+    async def set_default_log_options(
+        self, guild: Guild, log_options: Optional[AutomodLogOptions]
+    ) -> Optional[AutomodLogOptions]:
+        cache = await self.db.get_cache()
+        old_log_options = await cache.set_default_log_options(guild, log_options)
+        await self.db.dirty()
+        return old_log_options
 
     # @implements AutomodStore
     async def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:

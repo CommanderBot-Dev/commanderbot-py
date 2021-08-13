@@ -5,10 +5,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
 
-from discord import Guild
+from discord import Guild, TextChannel
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
 from commanderbot_ext.ext.automod.automod_exception import AutomodException
+from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot_ext.ext.automod.automod_rule import AutomodRule
 from commanderbot_ext.lib import GuildID, JsonObject
 from commanderbot_ext.lib.json import to_data
@@ -51,6 +52,8 @@ class AutomodUnmodifiableFields(AutomodException):
 
 @dataclass
 class AutomodGuildData:
+    default_log_options: Optional[AutomodLogOptions] = None
+
     # Index rules by name for fast look-up in commands.
     rules: Dict[str, AutomodRule] = field(init=False, default_factory=dict)
 
@@ -61,7 +64,9 @@ class AutomodGuildData:
 
     @staticmethod
     def from_data(data: JsonObject) -> AutomodGuildData:
-        guild_data = AutomodGuildData()
+        guild_data = AutomodGuildData(
+            default_log_options=AutomodLogOptions.from_field(data, "log", None),
+        )
         for rule_data in data.get("rules", []):
             rule = AutomodRule.from_data(rule_data)
             guild_data.add_rule(rule)
@@ -69,8 +74,16 @@ class AutomodGuildData:
 
     def to_data(self) -> JsonObject:
         return dict_without_ellipsis(
+            log=self.default_log_options or ...,
             rules=list(self.rules.values()) or ...,
         )
+
+    def set_default_log_options(
+        self, log_options: Optional[AutomodLogOptions]
+    ) -> Optional[AutomodLogOptions]:
+        old_log_options = self.default_log_options
+        self.default_log_options = log_options
+        return old_log_options
 
     def all_rules(self) -> Iterable[AutomodRule]:
         yield from self.rules.values()
@@ -199,6 +212,18 @@ class AutomodData:
             )
             or ...
         )
+
+    # @implements AutomodStore
+    async def get_default_log_options(
+        self, guild: Guild
+    ) -> Optional[AutomodLogOptions]:
+        return self.guilds[guild.id].default_log_options
+
+    # @implements AutomodStore
+    async def set_default_log_options(
+        self, guild: Guild, log_options: Optional[AutomodLogOptions]
+    ) -> Optional[AutomodLogOptions]:
+        return self.guilds[guild.id].set_default_log_options(log_options)
 
     # @implements AutomodStore
     async def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:
