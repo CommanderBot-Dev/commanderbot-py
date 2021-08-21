@@ -9,20 +9,22 @@ from commanderbot_ext.lib import JsonObject
 
 
 @dataclass
-class MessageMentionsMembers(AutomodConditionBase):
+class MessageMentionsUsers(AutomodConditionBase):
+    """Check if the message contains user mentions."""
+
     async def check(self, event: AutomodEvent) -> bool:
         message = event.message
         # Short-circuit if there's no message or the message is empty.
         if not (message and message.content):
             return False
-        # Short-circuit if the message does not mention any members.
+        # Short-circuit if the message does not mention any users.
         if not message.mentions:
             return False
-        member_names = {f"{member}" for member in message.mentions}
-        mentioned_members_str = "`" + "` `".join(member_names) + "`"
-        event.set_metadata("mentioned_members", mentioned_members_str)
+        user_names = {f"{user}" for user in message.mentions}
+        mentioned_users_str = "`" + "` `".join(user_names) + "`"
+        event.set_metadata("mentioned_users", mentioned_users_str)
         return True
 
 
 def create_condition(data: JsonObject) -> AutomodCondition:
-    return MessageMentionsMembers.from_data(data)
+    return MessageMentionsUsers.from_data(data)

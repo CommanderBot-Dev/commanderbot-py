@@ -10,7 +10,18 @@ from commanderbot_ext.lib import JsonObject
 
 
 @dataclass
-class MessageContains(AutomodConditionBase):
+class MessageContentContains(AutomodConditionBase):
+    """
+    Check if message content contains a string.
+
+    Attributes
+    ----------
+    content
+        The string to check for.
+    ignore_case
+        Whether to ignore upper vs lower case.
+    """
+
     content: str
     ignore_case: Optional[bool] = None
 
@@ -29,4 +40,4 @@ class MessageContains(AutomodConditionBase):
 
 
 def create_condition(data: JsonObject) -> AutomodCondition:
-    return MessageContains.from_data(data)
+    return MessageContentContains.from_data(data)

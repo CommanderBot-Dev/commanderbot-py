@@ -41,7 +41,12 @@ class ExtendedJsonEncoder(json.JSONEncoder):
         return obj.isoformat()
 
     def convert_dataclass(self, obj: Any) -> Any:
-        return dataclasses.asdict(obj)
+        # NOTE We can't use `dataclasses.asdict` because it recurses implicitly.
+        # Which means there's no way to intercept the serialization of nested
+        # dataclasses, so e.g. the `to_json()` of any nested dataclasses will be
+        # bypassed entirely. Instead, we use `__dict__` to serialize one layer of
+        # dataclass at a time.
+        return obj.__dict__
 
     def convert_color(self, obj: Color) -> Any:
         return color_to_hex(obj)

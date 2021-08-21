@@ -7,6 +7,15 @@ from commanderbot_ext.lib import JsonObject
 
 @dataclass
 class ReplyToMessage(AutomodActionBase):
+    """
+    Reply to a message.
+
+    Attributes
+    ----------
+    content
+        The content of the message to send.
+    """
+
     content: str
 
     async def apply(self, event: AutomodEvent):

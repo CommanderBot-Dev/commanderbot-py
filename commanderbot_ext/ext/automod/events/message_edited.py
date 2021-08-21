@@ -1,23 +1,24 @@
 from dataclasses import dataclass
 
-from discord import Member, Message, TextChannel
+from discord import Member, TextChannel
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEventBase
+from commanderbot_ext.lib.types import TextMessage
 
 __all__ = ("MessageEdited",)
 
 
 @dataclass
 class MessageEdited(AutomodEventBase):
-    _before: Message
-    _after: Message
+    _before: TextMessage
+    _after: TextMessage
 
     @property
     def channel(self) -> TextChannel:
         return self._after.channel
 
     @property
-    def message(self) -> Message:
+    def message(self) -> TextMessage:
         return self._after
 
     @property

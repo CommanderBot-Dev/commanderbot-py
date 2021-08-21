@@ -65,7 +65,7 @@ class AutomodGuildData:
     @staticmethod
     def from_data(data: JsonObject) -> AutomodGuildData:
         guild_data = AutomodGuildData(
-            default_log_options=AutomodLogOptions.from_field(data, "log", None),
+            default_log_options=AutomodLogOptions.from_field_optional(data, "log"),
         )
         for rule_data in data.get("rules", []):
             rule = AutomodRule.from_data(rule_data)

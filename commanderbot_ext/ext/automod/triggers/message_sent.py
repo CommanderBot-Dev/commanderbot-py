@@ -8,6 +8,12 @@ from commanderbot_ext.lib import JsonObject
 
 @dataclass
 class MessageSent(Message):
+    """
+    Fires when an `on_message` event is received.
+
+    See: https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_message
+    """
+
     event_types = (events.MessageSent,)
 
 

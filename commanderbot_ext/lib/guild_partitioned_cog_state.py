@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Union
 
 from discord import Guild
 
 from commanderbot_ext.lib.cog_guild_state import CogGuildState
 from commanderbot_ext.lib.cog_guild_state_manager import CogGuildStateManager
 from commanderbot_ext.lib.cog_state import CogState
+from commanderbot_ext.lib.types import GuildID
 
 __all__ = ("GuildPartitionedCogState",)
 
@@ -39,5 +40,5 @@ class GuildPartitionedCogState(CogState, Generic[GuildStateType]):
 
     guilds: CogGuildStateManager[GuildStateType]
 
-    def __getitem__(self, key: Guild) -> GuildStateType:
+    def __getitem__(self, key: Union[Guild, GuildID]) -> GuildStateType:
         return self.guilds[key]

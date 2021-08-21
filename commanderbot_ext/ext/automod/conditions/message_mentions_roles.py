@@ -1,24 +1,32 @@
-from dataclasses import dataclass, field
-from typing import Type, TypeVar
+from dataclasses import dataclass
+from typing import Optional, Type, TypeVar
 
 from commanderbot_ext.ext.automod.automod_condition import (
     AutomodCondition,
     AutomodConditionBase,
 )
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.ext.automod.automod_roles_guard import AutomodRolesGuard
-from commanderbot_ext.lib import JsonObject
+from commanderbot_ext.lib import JsonObject, RolesGuard
 
 ST = TypeVar("ST")
 
 
 @dataclass
 class MessageMentionsRoles(AutomodConditionBase):
-    roles: AutomodRolesGuard = field(default_factory=lambda: AutomodRolesGuard())
+    """
+    Check if the message contains role mentions.
+
+    Attributes
+    ----------
+    roles
+        The roles to match against. If empty, all roles will match.
+    """
+
+    roles: Optional[RolesGuard] = None
 
     @classmethod
     def from_data(cls: Type[ST], data: JsonObject) -> ST:
-        roles = AutomodRolesGuard.from_data(data.get("roles", {}))
+        roles = RolesGuard.from_data(data.get("roles", {}))
         return cls(
             description=data.get("description"),
             roles=roles,
@@ -33,7 +41,10 @@ class MessageMentionsRoles(AutomodConditionBase):
         if not message.role_mentions:
             return False
         # Check if we care about any of the mentioned roles.
-        mentioned_roles = self.roles.filter(message.role_mentions)
+        if self.roles is not None:
+            mentioned_roles = self.roles.filter(message.role_mentions)
+        else:
+            mentioned_roles = message.role_mentions
         if not mentioned_roles:
             return False
         role_names = {f"{role}" for role in mentioned_roles}

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Optional
 
 from discord import Color
 
-from commanderbot_ext.lib import JsonObject
-from commanderbot_ext.lib.types import ChannelID
-from commanderbot_ext.lib.utils import DEFAULT, color_from_field
+from commanderbot_ext.lib import ChannelID
+from commanderbot_ext.lib.from_data_mixin import FromDataMixin
+from commanderbot_ext.lib.utils import color_from_field
 
 
 @dataclass
-class AutomodLogOptions:
+class AutomodLogOptions(FromDataMixin):
     """
     Data container for various log options.
 
@@ -31,25 +31,12 @@ class AutomodLogOptions:
     color: Optional[Color] = None
 
     @classmethod
-    def from_data(cls, data: Any) -> AutomodLogOptions:
+    def try_from_data(cls, data):
         if isinstance(data, int):
-            return AutomodLogOptions(
-                channel=data,
-            )
+            return cls(channel=data)
         elif isinstance(data, dict):
-            return AutomodLogOptions(
+            return cls(
                 channel=data["channel"],
                 emoji=data.get("emoji"),
                 color=color_from_field(data, "color", None),
             )
-        raise ValueError("Invalid log options")
-
-    @classmethod
-    def from_field(
-        cls, data: JsonObject, key: str, default: Any = DEFAULT
-    ) -> AutomodLogOptions:
-        if raw_value := data.get(key):
-            return cls.from_data(raw_value)
-        if default is not DEFAULT:
-            return default
-        raise KeyError(key)

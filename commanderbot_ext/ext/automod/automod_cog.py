@@ -1,6 +1,19 @@
-from typing import Optional, cast
+from datetime import datetime
+from typing import Optional, Union, cast
 
-from discord import Color, Guild, Message, TextChannel
+from discord import (
+    Color,
+    Guild,
+    Member,
+    Message,
+    RawMessageDeleteEvent,
+    RawMessageUpdateEvent,
+    RawReactionActionEvent,
+    Reaction,
+    TextChannel,
+    User,
+)
+from discord.abc import Messageable
 from discord.ext.commands import Bot, Cog, group
 
 from commanderbot_ext.ext.automod.automod_data import AutomodData
@@ -19,6 +32,7 @@ from commanderbot_ext.lib import (
     UnsupportedDatabaseOptions,
     checks,
 )
+from commanderbot_ext.lib.types import TextReaction
 from commanderbot_ext.lib.utils import is_bot
 
 
@@ -41,7 +55,7 @@ def make_automod_store(bot: Bot, cog: Cog, options: AutomodOptions) -> AutomodSt
 
 class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
     """
-    Setup rules to perform automated moderator actions.
+    Automate a variety of moderation tasks.
 
     Attributes
     ----------
@@ -74,25 +88,71 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
         )
 
     def _guild_state_for_message(self, message: Message) -> Optional[AutomodGuildState]:
-        # TODO Can we ignore commands here? #enhance
-        if is_bot(self.bot, message.author):
-            return
-        guild = message.guild
         channel = message.channel
-        if isinstance(guild, Guild) and isinstance(channel, TextChannel):
+        if isinstance(channel, TextChannel) and (not is_bot(self.bot, message.author)):
+            guild = cast(Guild, channel.guild)
             return self.state[guild]
 
-    # @@ LISTENERS
+    def _guild_state_for_member(self, member: Member) -> Optional[AutomodGuildState]:
+        if not is_bot(self.bot, member):
+            guild = cast(Guild, member.guild)
+            return self.state[guild]
+
+    def _guild_state_for_channel_user(
+        self, channel: Messageable, user: User
+    ) -> Optional[AutomodGuildState]:
+        if (
+            isinstance(channel, TextChannel)
+            and isinstance(user, Member)
+            and (not is_bot(self.bot, user))
+        ):
+            guild = cast(Guild, channel.guild)
+            return self.state[guild]
+
+    def _guild_state_for_reaction_actor(
+        self, reaction: Reaction, actor: User
+    ) -> Optional[AutomodGuildState]:
+        message = reaction.message
+        channel = message.channel
+        if (
+            isinstance(channel, TextChannel)
+            and isinstance(actor, Member)
+            and (not is_bot(self.bot, actor))
+        ):
+            guild = cast(Guild, channel.guild)
+            return self.state[guild]
+
+    # @@ EVENT LISTENERS
+
+    @Cog.listener()
+    async def on_typing(self, channel: Messageable, user: User, when: datetime):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_typing
+        if guild_state := self._guild_state_for_channel_user(channel, user):
+            await guild_state.on_typing(
+                channel=cast(TextChannel, channel),
+                member=cast(Member, user),
+                when=when,
+            )
 
     @Cog.listener()
     async def on_message(self, message: Message):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_message
         if guild_state := self._guild_state_for_message(message):
             await guild_state.on_message(
                 message=cast(TextMessage, message),
             )
 
     @Cog.listener()
+    async def on_message_delete(self, message: Message):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_message_delete
+        if guild_state := self._guild_state_for_message(message):
+            await guild_state.on_message_delete(
+                message=cast(TextMessage, message),
+            )
+
+    @Cog.listener()
     async def on_message_edit(self, before: Message, after: Message):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_message_edit
         if guild_state := self._guild_state_for_message(after):
             await guild_state.on_message_edit(
                 before=cast(TextMessage, before),
@@ -100,13 +160,92 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
             )
 
     @Cog.listener()
-    async def on_message_delete(self, message: Message):
-        if guild_state := self._guild_state_for_message(message):
-            await guild_state.on_message_delete(
-                message=cast(TextMessage, message),
+    async def on_reaction_add(self, reaction: Reaction, user: User):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_reaction_add
+        if guild_state := self._guild_state_for_reaction_actor(reaction, user):
+            await guild_state.on_reaction_add(
+                reaction=cast(TextReaction, reaction),
+                member=cast(Member, user),
             )
 
-    # IMPL remaining events
+    @Cog.listener()
+    async def on_reaction_remove(self, reaction: Reaction, user: User):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_reaction_remove
+        if guild_state := self._guild_state_for_reaction_actor(reaction, user):
+            await guild_state.on_reaction_remove(
+                reaction=cast(TextReaction, reaction),
+                member=cast(Member, user),
+            )
+
+    @Cog.listener()
+    async def on_member_join(self, member: Member):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_member_join
+        if guild_state := self._guild_state_for_member(member):
+            await guild_state.on_member_join(member)
+
+    @Cog.listener()
+    async def on_member_remove(self, member: Member):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_member_remove
+        if guild_state := self._guild_state_for_member(member):
+            await guild_state.on_member_remove(member)
+
+    @Cog.listener()
+    async def on_member_update(self, before: Member, after: Member):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_member_update
+        if guild_state := self._guild_state_for_member(after):
+            await guild_state.on_member_update(before, after)
+
+    @Cog.listener()
+    async def on_user_update(self, before: User, after: User):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_user_update
+        # Go through every guild we can see, and check if the user is a member there.
+        # For every guild the user is a member of, run the event handler.
+        for guild in self.bot.guilds:
+            guild: Guild
+            if member := guild.get_member(after.id):
+                if guild_state := self._guild_state_for_member(member):
+                    await guild_state.on_user_update(before, after, member)
+
+    @Cog.listener()
+    async def on_member_ban(self, guild: Guild, user: Union[User, Member]):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_member_ban
+        guild_state = self.state[guild]
+        if isinstance(user, Member):
+            await guild_state.on_member_ban(user)
+        else:
+            await guild_state.on_user_ban(user)
+
+    @Cog.listener()
+    async def on_member_unban(self, guild: Guild, user: User):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_member_unban
+        guild_state = self.state[guild]
+        await guild_state.on_user_unban(user)
+
+    # @@ RAW EVENT LISTENERS
+
+    @Cog.listener()
+    async def on_raw_message_edit(self, payload: RawMessageUpdateEvent):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_raw_message_edit
+        if (guild_id := payload.guild_id) is not None:
+            await self.state[guild_id].on_raw_message_edit(payload)
+
+    @Cog.listener()
+    async def on_raw_message_delete(self, payload: RawMessageDeleteEvent):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_raw_message_delete
+        if (guild_id := payload.guild_id) is not None:
+            await self.state[guild_id].on_raw_message_delete(payload)
+
+    @Cog.listener()
+    async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_raw_reaction_add
+        if (guild_id := payload.guild_id) is not None:
+            await self.state[guild_id].on_raw_reaction_add(payload)
+
+    @Cog.listener()
+    async def on_raw_reaction_remove(self, payload: RawReactionActionEvent):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_raw_reaction_remove
+        if (guild_id := payload.guild_id) is not None:
+            await self.state[guild_id].on_raw_reaction_remove(payload)
 
     # @@ COMMANDS
 

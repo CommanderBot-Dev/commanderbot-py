@@ -20,6 +20,15 @@ class AutomodCondition(AutomodEntity, Protocol):
 # @implements AutomodCondition
 @dataclass
 class AutomodConditionBase(AutomodEntityBase):
+    """
+    Base condition for inheriting base fields and functionality.
+
+    Attributes
+    ----------
+    description
+        A human-readable description of the condition.
+    """
+
     default_module_prefix = conditions.__name__
     module_function_name = "create_condition"
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
-from typing import Callable, Dict, Generic, Iterable, TypeVar
+from typing import Callable, Dict, Generic, Iterable, TypeVar, Union
 
 from discord import Guild
 from discord.ext.commands import Bot, Cog
@@ -49,28 +49,31 @@ class CogGuildStateManager(Generic[GuildStateType]):
         )
         self._state_by_id = {}
 
-    def __getitem__(self, key: Guild) -> GuildStateType:
+    def __getitem__(self, key: Union[Guild, GuildID]) -> GuildStateType:
         return self.get(key)
 
     @property
     def available(self) -> Iterable[GuildStateType]:
         yield from self._state_by_id.values()
 
-    def set_state(self, guild: Guild, state: GuildStateType):
+    def _set_state(self, guild: Guild, state: GuildStateType):
         self.log.debug(f"Setting state for guild: {guild}")
         if guild.id in self._state_by_id:
             raise KeyError(f"Attempted to overwrite state for guild: {guild}")
         self._state_by_id[guild.id] = state
 
-    def init_state(self, guild: Guild) -> GuildStateType:
+    def _init_state(self, guild: Guild) -> GuildStateType:
         self.log.debug(f"Initializing state for guild: {guild}")
         guild_state = self.factory(guild)
-        self.set_state(guild, guild_state)
+        self._set_state(guild, guild_state)
         return guild_state
 
-    def get(self, guild: Guild) -> GuildStateType:
+    def get(self, key: Union[Guild, GuildID]) -> GuildStateType:
         # Lazily-initialize guild states as they are accessed.
+        guild = key if isinstance(key, Guild) else self.bot.get_guild(key)
+        if not guild:
+            raise ValueError(f"Unable to initialize state for unknown guild: {key}")
         guild_state = self._state_by_id.get(guild.id)
         if guild_state is None:
-            guild_state = self.init_state(guild)
+            guild_state = self._init_state(guild)
         return guild_state

@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, Optional, Protocol, Tuple
+from typing import Any, Dict, Iterable, Optional, Protocol, Tuple, cast
 
-from discord import Member, Message, Reaction, TextChannel
+from discord import Member, TextChannel, User
 from discord.ext.commands import Bot
 
 from commanderbot_ext.lib import ShallowFormatter
+from commanderbot_ext.lib.types import TextMessage, TextReaction
 
 
 class AutomodEvent(Protocol):
@@ -15,11 +16,11 @@ class AutomodEvent(Protocol):
         """Return the relevant channel, if any."""
 
     @property
-    def message(self) -> Optional[Message]:
+    def message(self) -> Optional[TextMessage]:
         """Return the relevant message, if any."""
 
     @property
-    def reaction(self) -> Optional[Reaction]:
+    def reaction(self) -> Optional[TextReaction]:
         """Return the relevant reaction, if any."""
 
     @property
@@ -33,6 +34,10 @@ class AutomodEvent(Protocol):
     @property
     def member(self) -> Optional[Member]:
         """Return the member-in-question, if any."""
+
+    @property
+    def user(self) -> Optional[User]:
+        """Return the user-in-question, if any."""
 
     def set_metadata(self, key: str, value: Any):
         """Attach metadata to the event."""
@@ -64,11 +69,11 @@ class AutomodEventBase:
         return None
 
     @property
-    def message(self) -> Optional[Message]:
+    def message(self) -> Optional[TextMessage]:
         return None
 
     @property
-    def reaction(self) -> Optional[Reaction]:
+    def reaction(self) -> Optional[TextReaction]:
         return None
 
     @property
@@ -82,6 +87,10 @@ class AutomodEventBase:
     @property
     def member(self) -> Optional[Member]:
         return None
+
+    @property
+    def user(self) -> Optional[User]:
+        return cast(User, self.member)
 
     def set_metadata(self, key: str, value: Any):
         self._metadata[key] = value

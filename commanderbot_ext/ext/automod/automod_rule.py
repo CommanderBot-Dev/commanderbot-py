@@ -31,7 +31,7 @@ class AutomodRule:
     ----------
     name
         The name of the rule. Can be any arbitrary string, but snake_case tends to be
-        easier to type into Discord chat.
+        easier to type into chat.
     added_on
         The datetime the rule was created.
     modified_on
@@ -76,7 +76,7 @@ class AutomodRule:
             disabled=data.get("disabled", False),
             hits=data.get("hits", 0),
             description=data.get("description"),
-            log=AutomodLogOptions.from_field(data, "log", None),
+            log=AutomodLogOptions.from_field_optional(data, "log"),
             triggers=deserialize_triggers(data.get("triggers", [])),
             conditions=deserialize_conditions(data.get("conditions", [])),
             actions=deserialize_actions(data.get("actions", [])),

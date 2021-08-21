@@ -20,6 +20,15 @@ class AutomodAction(AutomodEntity, Protocol):
 # @implements AutomodAction
 @dataclass
 class AutomodActionBase(AutomodEntityBase):
+    """
+    Base action for inheriting base fields and functionality.
+
+    Attributes
+    ----------
+    description
+        A human-readable description of the action.
+    """
+
     default_module_prefix = actions.__name__
     module_function_name = "create_action"
 

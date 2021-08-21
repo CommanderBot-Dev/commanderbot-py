@@ -14,16 +14,16 @@ DEFAULT: Any = object()
 
 
 def datetime_from_field(data: JsonObject, key: str, default: Any = DEFAULT) -> Any:
-    if raw_datetime := data.get(key):
-        return datetime.fromisoformat(raw_datetime)
+    if raw_value := data.get(key):
+        return datetime.fromisoformat(raw_value)
     if default is not DEFAULT:
         return default
     raise KeyError(key)
 
 
 def color_from_field(data: JsonObject, key: str, default: Any = DEFAULT) -> Any:
-    if raw_color := data.get(key):
-        return color_from_hex(raw_color)
+    if raw_value := data.get(key):
+        return color_from_hex(raw_value)
     if default is not DEFAULT:
         return default
     raise KeyError(key)
