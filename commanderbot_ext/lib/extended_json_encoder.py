@@ -1,12 +1,12 @@
 import dataclasses
 import json
-from datetime import datetime
-from typing import Any, List, Set
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Set
 
 from discord import Color
 
 from commanderbot_ext.lib.json_serializable import JsonSerializable
-from commanderbot_ext.lib.utils import color_to_hex
+from commanderbot_ext.lib.utils import color_to_hex, datetime_to_str, timedelta_to_dict
 
 
 class ExtendedJsonEncoder(json.JSONEncoder):
@@ -28,6 +28,8 @@ class ExtendedJsonEncoder(json.JSONEncoder):
             return self.convert_set(obj)
         if isinstance(obj, datetime):
             return self.convert_datetime(obj)
+        if isinstance(obj, timedelta):
+            return self.convert_timedelta(obj)
         if dataclasses.is_dataclass(obj):
             return self.convert_dataclass(obj)
         if isinstance(obj, Color):
@@ -38,7 +40,10 @@ class ExtendedJsonEncoder(json.JSONEncoder):
         return list(obj)
 
     def convert_datetime(self, obj: datetime) -> str:
-        return obj.isoformat()
+        return datetime_to_str(obj)
+
+    def convert_timedelta(self, obj: timedelta) -> Dict[str, Any]:
+        return timedelta_to_dict(obj)
 
     def convert_dataclass(self, obj: Any) -> Any:
         # NOTE We can't use `dataclasses.asdict` because it recurses implicitly.

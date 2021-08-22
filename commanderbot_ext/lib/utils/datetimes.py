@@ -5,11 +5,21 @@ from commanderbot_ext.lib.data import MalformedData
 from commanderbot_ext.lib.types import JsonObject
 
 __all__ = (
+    "datetime_from_str",
+    "datetime_to_str",
     "try_datetime_from_data",
     "datetime_from_data",
     "datetime_from_field",
     "datetime_from_field_optional",
 )
+
+
+def datetime_from_str(s: str) -> datetime:
+    return datetime.fromisoformat(s)
+
+
+def datetime_to_str(dt: datetime) -> str:
+    return dt.isoformat()
 
 
 def try_datetime_from_data(data: Any) -> Optional[datetime]:
