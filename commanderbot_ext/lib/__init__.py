@@ -15,3 +15,4 @@ from .shallow_formatter import *
 from .sql_database_adapter import *
 from .sqlite_database_adapter import *
 from .types import *
+from .value_formatter import *
