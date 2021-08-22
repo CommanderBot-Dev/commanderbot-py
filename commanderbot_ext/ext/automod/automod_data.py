@@ -5,44 +5,43 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
 
-from discord import Guild, TextChannel
+from discord import Guild
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.ext.automod.automod_exception import AutomodException
 from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot_ext.ext.automod.automod_rule import AutomodRule
-from commanderbot_ext.lib import GuildID, JsonObject
+from commanderbot_ext.lib import GuildID, JsonObject, ResponsiveException
 from commanderbot_ext.lib.json import to_data
 from commanderbot_ext.lib.utils import dict_without_ellipsis
 
 RulesByEventType = DefaultDict[Type[AutomodEvent], Set[AutomodRule]]
 
 
-class AutomodRuleWithNameAlreadyExists(AutomodException):
+class AutomodRuleWithNameAlreadyExists(ResponsiveException):
     def __init__(self, name: str):
         self.name: str = name
         super().__init__(f"A rule with the name `{name}` already exists")
 
 
-class AutomodNoRuleWithName(AutomodException):
+class AutomodNoRuleWithName(ResponsiveException):
     def __init__(self, name: str):
         self.name: str = name
         super().__init__(f"There is no rule with the name `{name}`")
 
 
-class AutomodRuleNotRegistered(AutomodException):
+class AutomodRuleNotRegistered(ResponsiveException):
     def __init__(self, rule: AutomodRule):
         self.rule: AutomodRule = rule
         super().__init__(f"Rule `{rule.name}` is not registered")
 
 
-class AutomodInvalidFields(AutomodException):
+class AutomodInvalidFields(ResponsiveException):
     def __init__(self, names: Set[str]):
         self.names: Set[str] = names
         super().__init__("These fields are invalid: " + "`" + "` `".join(names) + "`")
 
 
-class AutomodUnmodifiableFields(AutomodException):
+class AutomodUnmodifiableFields(ResponsiveException):
     def __init__(self, names: Set[str]):
         self.names: Set[str] = names
         super().__init__(

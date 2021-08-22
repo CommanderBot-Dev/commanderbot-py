@@ -19,13 +19,13 @@ from yaml.error import YAMLError
 
 from commanderbot_ext.ext.automod import events
 from commanderbot_ext.ext.automod.automod_event import AutomodEventBase
-from commanderbot_ext.ext.automod.automod_exception import AutomodException
 from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot_ext.ext.automod.automod_rule import AutomodRule
 from commanderbot_ext.ext.automod.automod_store import AutomodStore
 from commanderbot_ext.lib import CogGuildState, TextMessage
 from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
 from commanderbot_ext.lib.json import to_data
+from commanderbot_ext.lib.responsive_exception import ResponsiveException
 from commanderbot_ext.lib.types import GuildContext, JsonObject, TextReaction
 from commanderbot_ext.lib.utils import async_expand
 
@@ -84,14 +84,14 @@ class AutomodGuildState(CogGuildState):
             try:
                 data = json.loads(content)
             except JSONDecodeError as ex:
-                raise AutomodException(str(ex)) from ex
+                raise ResponsiveException(str(ex)) from ex
         elif kind == "yaml":
             try:
                 data = yaml.safe_load(content)
             except YAMLError as ex:
-                raise AutomodException(str(ex)) from ex
+                raise ResponsiveException(str(ex)) from ex
         else:
-            raise AutomodException("Missing code block declared as `json` or `yaml`")
+            raise ResponsiveException("Missing code block declared as `json` or `yaml`")
         return data
 
     async def show_default_log_options(self, ctx: GuildContext):
@@ -101,7 +101,7 @@ class AutomodGuildState(CogGuildState):
                 await ctx.send(f"Default logging is configured for {channel.mention}")
             else:
                 await ctx.send(f"No default logging configured")
-        except AutomodException as ex:
+        except ResponsiveException as ex:
             await ex.respond(ctx)
 
     async def set_default_log_options(
@@ -130,7 +130,7 @@ class AutomodGuildState(CogGuildState):
                 )
             else:
                 await ctx.send(f"Configured default logging for {channel.mention}")
-        except AutomodException as ex:
+        except ResponsiveException as ex:
             await ex.respond(ctx)
 
     async def remove_default_log_options(self, ctx: GuildContext):
@@ -143,7 +143,7 @@ class AutomodGuildState(CogGuildState):
                 await ctx.send(f"Removed default logging from {channel.mention}")
             else:
                 await ctx.send(f"No default logging configured")
-        except AutomodException as ex:
+        except ResponsiveException as ex:
             await ex.respond(ctx)
 
     async def show_rules(self, ctx: GuildContext, query: str = ""):
@@ -219,7 +219,7 @@ class AutomodGuildState(CogGuildState):
             data = self._parse_body(body)
             rule = await self.store.add_rule(self.guild, data)
             await ctx.send(f"Added automod rule `{rule.name}`")
-        except AutomodException as ex:
+        except ResponsiveException as ex:
             await ex.respond(ctx)
 
     async def remove_rule(self, ctx: GuildContext, name: str):
@@ -241,7 +241,7 @@ class AutomodGuildState(CogGuildState):
             elif conf == ConfirmationResult.NO:
                 await ctx.send(f"Did not remove automod rule `{rule.name}`")
         # If a known error occurred, send a response.
-        except AutomodException as ex:
+        except ResponsiveException as ex:
             await ex.respond(ctx)
 
     async def modify_rule(self, ctx: GuildContext, name: str, body: str):
@@ -249,21 +249,21 @@ class AutomodGuildState(CogGuildState):
             data = self._parse_body(body)
             rule = await self.store.modify_rule(self.guild, name, data)
             await ctx.send(f"Modified automod rule `{rule.name}`")
-        except AutomodException as ex:
+        except ResponsiveException as ex:
             await ex.respond(ctx)
 
     async def enable_rule(self, ctx: GuildContext, name: str):
         try:
             rule = await self.store.enable_rule(self.guild, name)
             await ctx.send(f"Enabled automod rule `{rule.name}`")
-        except AutomodException as ex:
+        except ResponsiveException as ex:
             await ex.respond(ctx)
 
     async def disable_rule(self, ctx: GuildContext, name: str):
         try:
             rule = await self.store.disable_rule(self.guild, name)
             await ctx.send(f"Disabled automod rule `{rule.name}`")
-        except AutomodException as ex:
+        except ResponsiveException as ex:
             await ex.respond(ctx)
 
     # @@ EVENT HANDLERS

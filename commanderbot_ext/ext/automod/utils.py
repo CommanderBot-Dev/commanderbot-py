@@ -1,9 +1,8 @@
 from collections import defaultdict
 from importlib import import_module
-from typing import Any, DefaultDict, Tuple
+from typing import Any, DefaultDict
 
-from commanderbot_ext.ext.automod.automod_exception import AutomodException
-from commanderbot_ext.lib import JsonObject
+from commanderbot_ext.lib import JsonObject, ResponsiveException
 
 module_function_cache: DefaultDict[str, DefaultDict[str, Any]] = defaultdict(
     lambda: defaultdict(lambda: None)
@@ -21,16 +20,12 @@ def resolve_module_function(module_name: str, function_name: str) -> Any:
     return func
 
 
-class ModuleObjectDeserializationError(AutomodException):
-    pass
-
-
-class MissingTypeField(ModuleObjectDeserializationError):
+class MissingTypeField(ResponsiveException):
     def __init__(self):
         super().__init__(f"Missing `type` field")
 
 
-class InvalidModule(ModuleObjectDeserializationError):
+class InvalidModule(Exception):
     def __init__(self, module_name: str, function_name: str):
         super().__init__(
             f"Module `{module_name}` could not be imported,"
@@ -38,7 +33,7 @@ class InvalidModule(ModuleObjectDeserializationError):
         )
 
 
-class InvalidModuleFunction(ModuleObjectDeserializationError):
+class InvalidModuleFunction(Exception):
     def __init__(self, module_name: str, function_name: str):
         super().__init__(
             f"Function `{function_name}` in module `{module_name}` caused an error"
