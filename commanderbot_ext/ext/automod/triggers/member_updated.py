@@ -47,7 +47,7 @@ class MemberUpdated(AutomodTriggerBase):
     def ignore_by_role(self, event: AutomodEvent) -> bool:
         if self.roles is None:
             return False
-        return self.roles.ignore(event.author)
+        return self.roles.ignore(event.member)
 
     def ignore(self, event: AutomodEvent) -> bool:
         return self.ignore_by_role(event)
