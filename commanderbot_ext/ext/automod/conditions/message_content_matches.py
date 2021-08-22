@@ -70,17 +70,21 @@ class MessageContentMatches(AutomodConditionBase):
         # Short-circuit if there's no message or the message is empty.
         if not (message and message.content):
             return False
-        # Otherwise, check for a sufficient number of matches.
-        content = message.content
+        # Grab the message content.
+        content = str(message.content)
+        # Normalize the message content, if enabled.
         if self.use_normalization:
             normalization_form = self.normalization_form or DEFAULT_NORMALIZATION_FORM
             content = unicodedata.normalize(normalization_form, content)
+        # Check for a sufficient number of matches.
         remainder = self.count or len(self.matches)
         for pattern in self.matches:
+            # If there's a match, adjust the counter and check if we're done.
             if self.is_match(pattern, content):
                 remainder -= 1
                 if remainder <= 0:
                     return True
+        # If we got this far, there weren't enough matches.
         return False
 
 
