@@ -23,7 +23,8 @@ class MessageContentMatches(AutomodConditionBase):
     Attributes
     ----------
     matches
-        The patterns (regular expressions) to match.
+        The patterns (regular expressions) to match. Unless `count` is specified, all
+        patterns must be matched in order to pass.
     count
         The number of unique patterns to match. For example: a value of 1 requires any
         of the patterns to be matched, whereas a value of requires at least 2 to be

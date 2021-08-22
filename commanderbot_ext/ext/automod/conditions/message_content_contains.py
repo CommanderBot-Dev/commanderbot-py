@@ -18,12 +18,13 @@ DEFAULT_NORMALIZATION_FORM = "NFKD"
 @dataclass
 class MessageContentContains(AutomodConditionBase):
     """
-    Check if message content contains a number of strings.
+    Check if message content contains a number of substrings.
 
     Attributes
     ----------
     contains
-        The strings to find.
+        The substrings to find. Unless `count` is specified, all substrings must be
+        found in order to pass.
     count
         The number of unique substrings to find. For example: a value of 1 requires any
         of the substrings to be found, whereas a value of 2 requires at least 2 to be
