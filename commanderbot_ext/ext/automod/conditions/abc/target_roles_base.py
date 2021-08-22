@@ -17,7 +17,7 @@ class TargetRolesBase(AutomodConditionBase):
 
     @classmethod
     def from_data(cls: Type[ST], data: JsonObject) -> ST:
-        roles = RolesGuard.from_field(data, "author_roles")
+        roles = RolesGuard.from_field(data, "roles")
         return cls(
             description=data.get("description"),
             roles=roles,
