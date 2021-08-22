@@ -17,6 +17,8 @@ class SendMessage(AutomodActionBase):
     ----------
     content
         The content of the message to send.
+    channel
+        The channel to send the message in. Defaults to the channel in context.
     """
 
     content: str
