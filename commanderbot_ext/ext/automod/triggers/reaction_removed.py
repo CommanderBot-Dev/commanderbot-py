@@ -2,12 +2,12 @@ from dataclasses import dataclass
 
 from commanderbot_ext.ext.automod import events
 from commanderbot_ext.ext.automod.automod_trigger import AutomodTrigger
-from commanderbot_ext.ext.automod.triggers._reaction_base import _ReactionBase
+from commanderbot_ext.ext.automod.triggers.reaction import Reaction
 from commanderbot_ext.lib import JsonObject
 
 
 @dataclass
-class ReactionRemoved(_ReactionBase):
+class ReactionRemoved(Reaction):
     """
     Fires when an `on_reaction_remove` event is received.
 

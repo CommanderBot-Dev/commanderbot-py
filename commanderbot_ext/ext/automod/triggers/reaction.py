@@ -1,16 +1,39 @@
 from dataclasses import dataclass
 from typing import Optional, Type, TypeVar
 
+from commanderbot_ext.ext.automod import events
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.ext.automod.automod_trigger import AutomodTriggerBase
+from commanderbot_ext.ext.automod.automod_trigger import (
+    AutomodTrigger,
+    AutomodTriggerBase,
+)
 from commanderbot_ext.lib import ChannelsGuard, JsonObject, ReactionsGuard, RolesGuard
 
 ST = TypeVar("ST")
 
 
 @dataclass
-class _ReactionBase(AutomodTriggerBase):
-    event_types = ()
+class Reaction(AutomodTriggerBase):
+    """
+    Fires when an `on_reaction_add` or `on_reaction_remove` event is received.
+
+    See:
+    - https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_reaction_add
+    - https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_reaction_remove
+
+    Attributes
+    ----------
+    reactions
+        The reactions to match against. If empty, all reactions will match.
+    channels
+        The channels to match against. If empty, all channels will match.
+    author_roles
+        The author roles to match against. If empty, all roles will match.
+    actor_roles
+        The actor roles to match against. If empty, all roles will match.
+    """
+
+    event_types = (events.ReactionAdded, events.ReactionRemoved)
 
     reactions: Optional[ReactionsGuard] = None
     channels: Optional[ChannelsGuard] = None
@@ -58,3 +81,7 @@ class _ReactionBase(AutomodTriggerBase):
             or self.ignore_by_author_role(event)
             or self.ignore_by_actor_role(event)
         )
+
+
+def create_trigger(data: JsonObject) -> AutomodTrigger:
+    return Reaction.from_data(data)
