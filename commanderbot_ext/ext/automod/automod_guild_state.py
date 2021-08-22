@@ -1,3 +1,4 @@
+import asyncio
 import json
 from dataclasses import dataclass
 from datetime import datetime
@@ -52,7 +53,7 @@ class AutomodGuildState(CogGuildState):
         # also not exist, hence why it's optional.
         return await self.store.get_default_log_options(self.guild)
 
-    async def _log_rule_error(self, rule: AutomodRule, error: Exception):
+    async def _log_rule_error_to_channel(self, rule: AutomodRule, error: Exception):
         try:
             if log_options := await self._get_log_options_for_rule(rule):
                 channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
@@ -62,14 +63,19 @@ class AutomodGuildState(CogGuildState):
         except:
             self.log.exception("Failed to log message to error channel:")
 
+    async def _do_event_for_rule(self, event: AutomodEventBase, rule: AutomodRule):
+        try:
+            if await rule.run(event):
+                await self.store.increment_rule_hits(self.guild, rule.name)
+        except Exception as error:
+            self.log.exception("Automod rule caused an error:")
+            await self._log_rule_error_to_channel(rule, error)
+
     async def _do_event(self, event: AutomodEventBase):
-        async for rule in self.store.rules_for_event(self.guild, event):
-            try:
-                if await rule.run(event):
-                    await self.store.increment_rule_hits(self.guild, rule.name)
-            except Exception as error:
-                self.log.exception("Automod rule caused an error:")
-                await self._log_rule_error(rule, error)
+        # Run rules in parallel so that they don't need to wait for one another.
+        rules = await async_expand(self.store.rules_for_event(self.guild, event))
+        tasks = [self._do_event_for_rule(event, rule) for rule in rules]
+        await asyncio.gather(*tasks)
 
     def _parse_body(self, body: str) -> JsonObject:
         content = body.strip("\n").strip("`")
