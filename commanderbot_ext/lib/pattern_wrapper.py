@@ -52,7 +52,7 @@ class PatternWrapper(JsonSerializable, FromDataMixin):
         return self.pattern.pattern
 
     def search(self, string: AnyStr) -> Optional[Match[AnyStr]]:
-        return self.pattern.match(string)
+        return self.pattern.search(string)
 
     def match(self, string: AnyStr) -> Optional[Match[AnyStr]]:
         return self.pattern.match(string)
