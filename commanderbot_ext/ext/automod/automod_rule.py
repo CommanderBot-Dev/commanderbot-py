@@ -37,7 +37,7 @@ class AutomodRule:
     modified_on
         The last datetime the rule was modified.
     disabled
-        Whether the rule is currently disabled.
+        Whether the rule is currently disabled. Defaults to false.
     hits
         How many times the rule's conditions have passed and actions have run.
     description
