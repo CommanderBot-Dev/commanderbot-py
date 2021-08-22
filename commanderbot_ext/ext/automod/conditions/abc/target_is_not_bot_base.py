@@ -16,5 +16,5 @@ class TargetIsNotBotBase(AutomodConditionBase):
 
     async def check(self, event: AutomodEvent) -> bool:
         if member := self.get_target(event):
-            return member.bot
+            return not member.bot
         return True
