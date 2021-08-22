@@ -7,7 +7,7 @@ from discord import Color
 
 from commanderbot_ext.lib import ChannelID
 from commanderbot_ext.lib.from_data_mixin import FromDataMixin
-from commanderbot_ext.lib.utils import color_from_field
+from commanderbot_ext.lib.utils import color_from_field_optional
 
 
 @dataclass
@@ -35,8 +35,9 @@ class AutomodLogOptions(FromDataMixin):
         if isinstance(data, int):
             return cls(channel=data)
         elif isinstance(data, dict):
+            color = color_from_field_optional(data, "color")
             return cls(
                 channel=data["channel"],
                 emoji=data.get("emoji"),
-                color=color_from_field(data, "color", None),
+                color=color,
             )

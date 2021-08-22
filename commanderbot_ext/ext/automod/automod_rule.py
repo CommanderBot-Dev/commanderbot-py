@@ -19,7 +19,7 @@ from commanderbot_ext.ext.automod.automod_trigger import (
     deserialize_triggers,
 )
 from commanderbot_ext.lib import JsonObject
-from commanderbot_ext.lib.utils import datetime_from_field
+from commanderbot_ext.lib.utils import datetime_from_field_optional
 
 
 @dataclass
@@ -69,10 +69,12 @@ class AutomodRule:
     @staticmethod
     def from_data(data: JsonObject) -> AutomodRule:
         now = datetime.utcnow()
+        added_on = datetime_from_field_optional(data, "added_on") or now
+        modified_on = datetime_from_field_optional(data, "modified_on") or now
         return AutomodRule(
             name=data["name"],
-            added_on=datetime_from_field(data, "added_on", now),
-            modified_on=datetime_from_field(data, "modified_on", now),
+            added_on=added_on,
+            modified_on=modified_on,
             disabled=data.get("disabled", False),
             hits=data.get("hits", 0),
             description=data.get("description"),

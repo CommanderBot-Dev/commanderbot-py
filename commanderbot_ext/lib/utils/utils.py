@@ -1,13 +1,10 @@
 from typing import Any, AsyncIterable, List, Mapping, Optional, Set, Type, TypeVar
 
 from commanderbot import CommanderBotBase
-from discord import Color, Member
-from discord.ext.commands import Bot, Cog, ColourConverter
+from discord import Member
+from discord.ext.commands import Bot, Cog
 
 from commanderbot_ext.lib.types import RoleID
-
-DEFAULT: Any = object()
-
 
 T = TypeVar("T")
 
@@ -36,18 +33,6 @@ def member_roles_from(member: Member, role_ids: Set[RoleID]) -> Set[RoleID]:
     member_role_ids = {role.id for role in member.roles}
     matching_role_ids = role_ids.intersection(member_role_ids)
     return matching_role_ids
-
-
-def color_from_hex(hex: str) -> Color:
-    if hex.startswith("#"):
-        arg = hex[1:]
-    else:
-        arg = hex
-    return ColourConverter().parse_hex_number(arg)
-
-
-def color_to_hex(color: Color) -> str:
-    return str(color)
 
 
 def dict_without_nones(d: Optional[Mapping[str, Any]] = None, **kwargs):
