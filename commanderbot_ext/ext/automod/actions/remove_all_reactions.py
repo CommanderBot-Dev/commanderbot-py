@@ -6,23 +6,15 @@ from commanderbot_ext.lib import JsonObject
 
 
 @dataclass
-class ReplyToMessage(AutomodActionBase):
+class RemoveAllReactions(AutomodActionBase):
     """
-    Reply to the message in context.
-
-    Attributes
-    ----------
-    content
-        The content of the message to send.
+    Remove all reactions from the message in context.
     """
-
-    content: str
 
     async def apply(self, event: AutomodEvent):
         if message := event.message:
-            content = event.format_content(self.content)
-            await message.reply(content)
+            await message.clear_reactions()
 
 
 def create_action(data: JsonObject) -> AutomodAction:
-    return ReplyToMessage.from_data(data)
+    return RemoveAllReactions.from_data(data)
