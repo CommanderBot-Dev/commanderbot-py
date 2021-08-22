@@ -19,6 +19,8 @@ class AutomodLogOptions(FromDataMixin):
     ----------
     channel
         The ID of the channel to log in.
+    stacktrace
+        Whether to print error stacktraces.
     emoji
         The emoji used to represent the type of message.
     color
@@ -27,6 +29,7 @@ class AutomodLogOptions(FromDataMixin):
 
     channel: ChannelID
 
+    stacktrace: Optional[bool] = None
     emoji: Optional[str] = None
     color: Optional[Color] = None
 
@@ -38,6 +41,7 @@ class AutomodLogOptions(FromDataMixin):
             color = color_from_field_optional(data, "color")
             return cls(
                 channel=data["channel"],
+                stacktrace=data.get("stacktrace"),
                 emoji=data.get("emoji"),
                 color=color,
             )

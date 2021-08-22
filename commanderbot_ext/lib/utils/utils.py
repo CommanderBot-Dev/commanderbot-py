@@ -1,3 +1,6 @@
+import os
+import re
+import traceback
 from typing import Any, AsyncIterable, List, Mapping, Optional, Set, Type, TypeVar
 
 from commanderbot import CommanderBotBase
@@ -52,3 +55,20 @@ def dict_without_falsies(d: Optional[Mapping[str, Any]] = None, **kwargs):
 
 async def async_expand(it: AsyncIterable[T]) -> List[T]:
     return [value async for value in it]
+
+
+def sanitize_stacktrace(error: Exception) -> str:
+    lines = traceback.format_exception(
+        etype=type(error),
+        value=error,
+        tb=error.__traceback__,
+    )
+
+    def shorten(match):
+        abs_path = match.group(1)
+        basename = os.path.basename(abs_path)
+        return f'File "{basename}"'
+
+    lines = [re.sub(r'File "([^"]+)"', shorten, line, 1) for line in lines]
+
+    return "".join(lines)

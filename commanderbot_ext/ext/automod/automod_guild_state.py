@@ -27,7 +27,7 @@ from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reacti
 from commanderbot_ext.lib.json import to_data
 from commanderbot_ext.lib.responsive_exception import ResponsiveException
 from commanderbot_ext.lib.types import GuildContext, JsonObject, TextReaction
-from commanderbot_ext.lib.utils import async_expand
+from commanderbot_ext.lib.utils import async_expand, sanitize_stacktrace
 
 
 @dataclass
@@ -53,12 +53,19 @@ class AutomodGuildState(CogGuildState):
         # also not exist, hence why it's optional.
         return await self.store.get_default_log_options(self.guild)
 
-    async def _log_rule_error_to_channel(self, rule: AutomodRule, error: Exception):
+    async def _maybe_log_rule_error_to_channel(
+        self, rule: AutomodRule, error: Exception
+    ):
         try:
             if log_options := await self._get_log_options_for_rule(rule):
                 channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
-                # TODO Fancy-up the error message sent by the bot. #enhance
-                content = f"Rule `{rule.name}` caused an error: {error}"
+                lines = [f"Rule `{rule.name}` caused an error:", "```"]
+                if log_options.stacktrace:
+                    lines.append(sanitize_stacktrace(error))
+                else:
+                    lines.append(str(error))
+                lines.append("```")
+                content = "\n".join(lines)
                 await channel.send(content)
         except:
             self.log.exception("Failed to log message to error channel:")
@@ -69,7 +76,7 @@ class AutomodGuildState(CogGuildState):
                 await self.store.increment_rule_hits(self.guild, rule.name)
         except Exception as error:
             self.log.exception("Automod rule caused an error:")
-            await self._log_rule_error_to_channel(rule, error)
+            await self._maybe_log_rule_error_to_channel(rule, error)
 
     async def _do_event(self, event: AutomodEventBase):
         # Run rules in parallel so that they don't need to wait for one another.
@@ -108,12 +115,14 @@ class AutomodGuildState(CogGuildState):
         self,
         ctx: GuildContext,
         channel: TextChannel,
+        stacktrace: Optional[bool],
         emoji: Optional[str],
         color: Optional[Color],
     ):
         try:
             new_log_options = AutomodLogOptions(
                 channel=channel.id,
+                stacktrace=stacktrace,
                 emoji=emoji,
                 color=color,
             )

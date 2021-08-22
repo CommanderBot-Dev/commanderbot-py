@@ -288,12 +288,14 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
         self,
         ctx: GuildContext,
         channel: TextChannel,
+        stacktrace: Optional[bool],
         emoji: Optional[str],
         color: Optional[Color],
     ):
         await self.state[ctx.guild].set_default_log_options(
             ctx,
             channel=channel,
+            stacktrace=stacktrace,
             emoji=emoji,
             color=color,
         )
