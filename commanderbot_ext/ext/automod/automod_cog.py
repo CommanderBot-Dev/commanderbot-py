@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Union, cast
+from typing import Optional, cast
 
 from discord import (
     Color,
@@ -207,13 +207,10 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
                     await guild_state.on_user_update(before, after, member)
 
     @Cog.listener()
-    async def on_member_ban(self, guild: Guild, user: Union[User, Member]):
+    async def on_member_ban(self, guild: Guild, user: User):
         # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_member_ban
         guild_state = self.state[guild]
-        if isinstance(user, Member):
-            await guild_state.on_member_ban(user)
-        else:
-            await guild_state.on_user_ban(user)
+        await guild_state.on_user_ban(user)
 
     @Cog.listener()
     async def on_member_unban(self, guild: Guild, user: User):

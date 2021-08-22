@@ -13,13 +13,10 @@ class UserBanned(AutomodTriggerBase):
     """
     Fires when an `on_member_ban` event is received.
 
-    Note that this occurs regardless of whether the user was a member of the guild at
-    the time of being banned.
-
     See: https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_member_ban
     """
 
-    event_types = (events.UserBanned, events.MemberBanned)
+    event_types = (events.UserBanned,)
 
 
 def create_trigger(data: JsonObject) -> AutomodTrigger:

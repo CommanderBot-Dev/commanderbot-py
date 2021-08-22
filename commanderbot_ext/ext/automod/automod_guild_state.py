@@ -292,9 +292,6 @@ class AutomodGuildState(CogGuildState):
     async def on_user_update(self, before: User, after: User, member: Member):
         await self._do_event(events.UserUpdated(self.bot, before, after, member))
 
-    async def on_member_ban(self, member: Member):
-        await self._do_event(events.MemberBanned(self.bot, member))
-
     async def on_user_ban(self, user: User):
         await self._do_event(events.UserBanned(self.bot, user))
 

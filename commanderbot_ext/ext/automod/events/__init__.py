@@ -1,4 +1,3 @@
-from .member_banned import *
 from .member_joined import *
 from .member_left import *
 from .member_typing import *
