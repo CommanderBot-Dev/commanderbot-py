@@ -5,12 +5,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
 
-from discord import Guild
+from discord import Guild, Member
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
 from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot_ext.ext.automod.automod_rule import AutomodRule
-from commanderbot_ext.lib import GuildID, JsonObject, ResponsiveException
+from commanderbot_ext.lib import GuildID, JsonObject, ResponsiveException, RoleSet
 from commanderbot_ext.lib.json import to_data
 from commanderbot_ext.lib.utils import dict_without_ellipsis
 
@@ -51,20 +51,27 @@ class AutomodUnmodifiableFields(ResponsiveException):
 
 @dataclass
 class AutomodGuildData:
+    # Default logging configuration for this guild.
     default_log_options: Optional[AutomodLogOptions] = None
 
-    # Index rules by name for fast look-up in commands.
+    # Roles that are permitted to manage the extension within this guild.
+    permitted_roles: Optional[RoleSet] = None
+
+    # Index rules by name for faster look-up in commands.
     rules: Dict[str, AutomodRule] = field(init=False, default_factory=dict)
 
-    # Index rules by event type for faster initial access.
+    # Group rules by event type for faster look-up during event dispatch.
     rules_by_event_type: RulesByEventType = field(
         init=False, default_factory=lambda: defaultdict(lambda: set())
     )
 
     @staticmethod
     def from_data(data: JsonObject) -> AutomodGuildData:
+        default_log_options = AutomodLogOptions.from_field_optional(data, "log")
+        permitted_roles = RoleSet.from_field_optional(data, "permitted_roles")
         guild_data = AutomodGuildData(
-            default_log_options=AutomodLogOptions.from_field_optional(data, "log"),
+            default_log_options=default_log_options,
+            permitted_roles=permitted_roles,
         )
         for rule_data in data.get("rules", []):
             rule = AutomodRule.from_data(rule_data)
@@ -74,15 +81,29 @@ class AutomodGuildData:
     def to_data(self) -> JsonObject:
         return dict_without_ellipsis(
             log=self.default_log_options or ...,
+            permitted_roles=self.permitted_roles or ...,
             rules=list(self.rules.values()) or ...,
         )
 
     def set_default_log_options(
         self, log_options: Optional[AutomodLogOptions]
     ) -> Optional[AutomodLogOptions]:
-        old_log_options = self.default_log_options
+        old_value = self.default_log_options
         self.default_log_options = log_options
-        return old_log_options
+        return old_value
+
+    def set_permitted_roles(
+        self, permitted_roles: Optional[RoleSet]
+    ) -> Optional[RoleSet]:
+        old_value = self.permitted_roles
+        self.permitted_roles = permitted_roles
+        return old_value
+
+    def member_has_permission(self, member: Member) -> bool:
+        if self.permitted_roles is None:
+            return False
+        has_permission = self.permitted_roles.member_has_some(member)
+        return has_permission
 
     def all_rules(self) -> Iterable[AutomodRule]:
         yield from self.rules.values()
@@ -223,6 +244,20 @@ class AutomodData:
         self, guild: Guild, log_options: Optional[AutomodLogOptions]
     ) -> Optional[AutomodLogOptions]:
         return self.guilds[guild.id].set_default_log_options(log_options)
+
+    # @implements AutomodStore
+    async def get_permitted_roles(self, guild: Guild) -> Optional[RoleSet]:
+        return self.guilds[guild.id].permitted_roles
+
+    # @implements AutomodStore
+    async def set_permitted_roles(
+        self, guild: Guild, permitted_roles: Optional[RoleSet]
+    ) -> Optional[RoleSet]:
+        return self.guilds[guild.id].set_permitted_roles(permitted_roles)
+
+    # @implements AutomodStore
+    async def member_has_permission(self, guild: Guild, member: Member) -> bool:
+        return self.guilds[guild.id].member_has_permission(member)
 
     # @implements AutomodStore
     async def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:

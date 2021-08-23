@@ -10,10 +10,12 @@ from discord import (
     RawMessageUpdateEvent,
     RawReactionActionEvent,
     Reaction,
+    Role,
     TextChannel,
     User,
 )
 from discord.abc import Messageable
+from discord.ext import commands
 from discord.ext.commands import Bot, Cog, group
 
 from commanderbot_ext.ext.automod.automod_data import AutomodData
@@ -51,6 +53,17 @@ def make_automod_store(bot: Bot, cog: Cog, options: AutomodOptions) -> AutomodSt
             ),
         )
     raise UnsupportedDatabaseOptions(db_options)
+
+
+def check_can_run_automod():
+    async def predicate(ctx: GuildContext):
+        cog = ctx.cog
+        actor = ctx.author
+        if isinstance(cog, AutomodCog) and isinstance(actor, Member):
+            return await cog.state[ctx.guild].member_has_permission(actor)
+        return False
+
+    return commands.check(predicate)
 
 
 class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
@@ -254,7 +267,11 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
         aliases=["am"],
     )
     @checks.guild_only()
-    @checks.is_administrator()
+    @commands.check_any(
+        checks.is_administrator(),
+        check_can_run_automod(),
+        commands.is_owner(),
+    )
     async def cmd_automod(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_automod)
@@ -269,6 +286,8 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_automod_options)
 
+    # @@ automod options log
+
     @cmd_automod_options.group(
         name="log",
         brief="Configure the default logging behaviour.",
@@ -276,9 +295,16 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
     async def cmd_automod_options_log(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
             if ctx.subcommand_passed:
-                await ctx.send_help(self.cmd_automod_options)
+                await ctx.send_help(self.cmd_automod_options_log)
             else:
                 await self.state[ctx.guild].show_default_log_options(ctx)
+
+    @cmd_automod_options_log.command(
+        name="show",
+        brief="Show the default logging behaviour.",
+    )
+    async def cmd_automod_options_log_show(self, ctx: GuildContext):
+        await self.state[ctx.guild].show_default_log_options(ctx)
 
     @cmd_automod_options_log.command(
         name="set",
@@ -306,6 +332,43 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
     )
     async def cmd_automod_options_log_remove(self, ctx: GuildContext):
         await self.state[ctx.guild].remove_default_log_options(ctx)
+
+    # @@ automod options permit
+
+    # NOTE Only guild admins and bot owners can manage permitted roles.
+
+    @cmd_automod_options.group(
+        name="permit",
+        brief="Configure the set of roles permitted to manage automod.",
+    )
+    @checks.is_guild_admin_or_bot_owner()
+    async def cmd_automod_options_permit(self, ctx: GuildContext):
+        if not ctx.invoked_subcommand:
+            if ctx.subcommand_passed:
+                await ctx.send_help(self.cmd_automod_options_permit)
+            else:
+                await self.state[ctx.guild].show_permitted_roles(ctx)
+
+    @cmd_automod_options_permit.command(
+        name="show",
+        brief="Show the roles permitted to manage automod.",
+    )
+    async def cmd_automod_options_permit_show(self, ctx: GuildContext):
+        await self.state[ctx.guild].show_permitted_roles(ctx)
+
+    @cmd_automod_options_permit.command(
+        name="set",
+        brief="Set the roles permitted to manage automod.",
+    )
+    async def cmd_automod_options_permit_set(self, ctx: GuildContext, *roles: Role):
+        await self.state[ctx.guild].set_permitted_roles(ctx, *roles)
+
+    @cmd_automod_options_permit.command(
+        name="clear",
+        brief="Clear all roles permitted to manage automod.",
+    )
+    async def cmd_automod_options_permit_clear(self, ctx: GuildContext):
+        await self.state[ctx.guild].clear_permitted_roles(ctx)
 
     # @@ automod rules
 
