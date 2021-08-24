@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Iterator, Set, Union, cast
+from typing import Any, Iterable, Iterator, Optional, Set, Tuple, Union
 
 from discord import Guild, Member, Role
 
@@ -50,16 +50,22 @@ class RoleSet(JsonSerializable, FromDataMixin):
     def _get_member_role_ids(self, member: Member) -> Set[RoleID]:
         return {role.id for role in member.roles}
 
-    def iter_roles(self, guild: Guild) -> Iterable[Role]:
+    def iter_roles(self, guild: Guild) -> Iterable[Tuple[RoleID, Optional[Role]]]:
         for role_id in self._values:
-            role = cast(Role, guild.get_role(role_id))
-            yield role
+            role = guild.get_role(role_id)
+            yield role_id, role
 
     def to_names(self, guild: Guild) -> str:
-        return " ".join(f"{role.name}" for role in self.iter_roles(guild))
+        return " ".join(
+            f"{role.name}" if role else f"`{role_id} (Unknown)`"
+            for role_id, role in self.iter_roles(guild)
+        )
 
     def to_mentions(self, guild: Guild) -> str:
-        return " ".join(f"{role.mention}" for role in self.iter_roles(guild))
+        return " ".join(
+            f"{role.mention}" if role else f"`{role_id} (Unknown)`"
+            for role_id, role in self.iter_roles(guild)
+        )
 
     def add(self, role: Union[Role, RoleID]):
         role_id = self._get_role_id(role)
