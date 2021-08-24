@@ -174,7 +174,8 @@ class AutomodEventBase:
         self, prefix: str, member: Member
     ) -> Iterable[Tuple[str, Any]]:
         yield f"{prefix}_id", member.id
-        yield f"{prefix}_name", member.name
+        yield f"{prefix}_name", f"{member}"
+        yield f"{prefix}_username", member.name
         yield f"{prefix}_discriminator", member.discriminator
         yield f"{prefix}_mention", member.mention
         yield f"{prefix}_display_name", member.display_name
