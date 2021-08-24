@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Optional, Type, TypeVar
 
 from discord import Color
@@ -6,8 +6,8 @@ from discord.abc import Messageable
 
 from commanderbot_ext.ext.automod.automod_action import AutomodAction, AutomodActionBase
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib import ChannelID, JsonObject, ValueFormatter
-from commanderbot_ext.lib.utils.colors import color_from_field_optional
+from commanderbot_ext.lib import AllowedMentions, ChannelID, JsonObject, ValueFormatter
+from commanderbot_ext.lib.utils import color_from_field_optional
 
 ST = TypeVar("ST")
 
@@ -30,6 +30,9 @@ class LogMessage(AutomodActionBase):
     fields
         A custom set of fields to display as part of the message. The key should
         correspond to an event field, and the value is the title to use for it.
+    allowed_mentions
+        The types of mentions allowed in the message. Unless otherwise specified, all
+        mentions will be suppressed.
     """
 
     content: Optional[str] = None
@@ -37,10 +40,12 @@ class LogMessage(AutomodActionBase):
     emoji: Optional[str] = None
     color: Optional[Color] = None
     fields: Optional[Dict[str, str]] = None
+    allowed_mentions: Optional[AllowedMentions] = None
 
     @classmethod
     def from_data(cls: Type[ST], data: JsonObject) -> ST:
         color = color_from_field_optional(data, "color")
+        allowed_mentions = AllowedMentions.from_field_optional(data, "allowed_mentions")
         return cls(
             description=data.get("description"),
             content=data.get("content"),
@@ -48,6 +53,7 @@ class LogMessage(AutomodActionBase):
             emoji=data.get("emoji"),
             color=color,
             fields=data.get("fields"),
+            allowed_mentions=allowed_mentions,
         )
 
     async def resolve_channel(self, event: AutomodEvent) -> Optional[Messageable]:
@@ -76,7 +82,8 @@ class LogMessage(AutomodActionBase):
                 fields_str = ", ".join(field_parts)
                 parts.append(fields_str)
             content = " ".join(parts)
-            await channel.send(content)
+            allowed_mentions = self.allowed_mentions or AllowedMentions.none()
+            await channel.send(content, allowed_mentions=allowed_mentions)
 
 
 def create_action(data: JsonObject) -> AutomodAction:
