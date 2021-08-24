@@ -15,7 +15,7 @@ ST = TypeVar("ST")
 @dataclass
 class LogMessage(AutomodActionBase):
     """
-    Send a log message.
+    Send a log message, with pings disabled by default.
 
     Attributes
     ----------
