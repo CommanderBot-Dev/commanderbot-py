@@ -1,11 +1,15 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, Optional, Protocol, Tuple, cast
+from typing import Any, ClassVar, Dict, Iterable, Optional, Protocol, Tuple, Type, cast
 
 from discord import Member, TextChannel, User
 from discord.ext.commands import Bot
 
-from commanderbot_ext.lib import ShallowFormatter
-from commanderbot_ext.lib.types import TextMessage, TextReaction
+from commanderbot_ext.lib import (
+    ShallowFormatter,
+    TextMessage,
+    TextReaction,
+    ValueFormatter,
+)
 
 
 class AutomodEvent(Protocol):
@@ -45,6 +49,9 @@ class AutomodEvent(Protocol):
     def remove_metadata(self, key: str):
         """Remove metadata from the event."""
 
+    def get_fields(self, unsafe: bool = False) -> Dict[str, Any]:
+        """Get the full event data."""
+
     def format_content(self, content: str, *, unsafe: bool = False) -> str:
         """Format a string with event data."""
 
@@ -55,6 +62,8 @@ class AutomodEventBase:
     bot: Bot
 
     _metadata: Dict[str, Any] = field(init=False, default_factory=dict)
+
+    SAFE_TYPES: ClassVar[Tuple[Type, ...]] = (bool, int, float, str)
 
     def __init__(
         self,
@@ -98,24 +107,24 @@ class AutomodEventBase:
     def remove_metadata(self, key: str):
         del self._metadata[key]
 
+    def get_fields(self, unsafe: bool = False) -> Dict[str, Any]:
+        if unsafe:
+            return self._get_fields_unsafe()
+        return self._get_fields_safe()
+
     def format_content(self, content: str, *, unsafe: bool = False) -> str:
         # NOTE Beware of untrusted format strings!
         # Instead of providing a handful of library objects with arbitrary (and
         # potentially sensitive) data to the format string, we build a flattened set of
         # arguments and pass them to a safe formatter. Pass `unsafe=True` to explicitly
         # enable unsafe formatting for things like field access.
-        format_args = self._get_format_args(unsafe)
+        fields = self.get_fields(unsafe)
         if unsafe:
-            return content.format_map(format_args)
-        return ShallowFormatter().format(content, **format_args)
+            return content.format_map(fields)
+        return ShallowFormatter().format(content, **fields)
 
-    def _get_format_args(self, unsafe: bool = False) -> Dict[str, Any]:
-        if unsafe:
-            return self._get_unsafe_format_args()
-        return self._get_safe_format_args()
-
-    def _get_unsafe_format_args(self) -> Dict[str, Any]:
-        format_args = self._get_safe_format_args()
+    def _get_fields_unsafe(self) -> Dict[str, Any]:
+        format_args = self._get_fields_safe()
         format_args.update(
             channel=self.channel,
             message=self.message,
@@ -127,10 +136,15 @@ class AutomodEventBase:
         format_args.update(self._metadata)
         return format_args
 
-    def _get_safe_format_args(self) -> Dict[str, Any]:
-        return {k: v for k, v in self._yield_safe_format_args()}
+    def _get_fields_safe(self) -> Dict[str, Any]:
+        return {k: v for k, v in self._yield_safe_fields()}
 
-    def _yield_safe_format_args(self) -> Iterable[Tuple[str, Any]]:
+    def _is_value_safe(self, v: Any) -> bool:
+        return (type(v) in self.SAFE_TYPES) or (
+            isinstance(v, ValueFormatter) and (type(v.value) in self.SAFE_TYPES)
+        )
+
+    def _yield_safe_fields(self) -> Iterable[Tuple[str, Any]]:
         if self.channel is not None:
             yield "channel_id", self.channel.id,
             yield "channel_name", self.channel.name,
@@ -144,23 +158,33 @@ class AutomodEventBase:
             yield "reaction_emoji", self.reaction.emoji
             yield "reaction_count", self.reaction.count
         if self.author is not None:
-            yield from self._get_safe_member_args("author", self.author)
+            yield from self._yield_safe_member_fields("author", self.author)
         if self.actor is not None:
-            yield from self._get_safe_member_args("actor", self.actor)
+            yield from self._yield_safe_member_fields("actor", self.actor)
         if self.member is not None:
-            yield from self._get_safe_member_args("member", self.member)
-        yield from self._get_safe_metadata_args()
+            yield from self._yield_safe_member_fields("member", self.member)
+        for k, v in self._yield_extra_fields():
+            if self._is_value_safe(v):
+                yield k, v
+        for k, v in self._yield_metadata_fields():
+            if self._is_value_safe(v):
+                yield k, v
 
-    def _get_safe_member_args(
+    def _yield_safe_member_fields(
         self, prefix: str, member: Member
     ) -> Iterable[Tuple[str, Any]]:
         yield f"{prefix}_id", member.id
-        yield f"{prefix}_name", member.name
+        yield f"{prefix}_name", f"{member}"
+        yield f"{prefix}_username", member.name
         yield f"{prefix}_discriminator", member.discriminator
         yield f"{prefix}_mention", member.mention
         yield f"{prefix}_display_name", member.display_name
 
-    def _get_safe_metadata_args(self) -> Iterable[Tuple[str, Any]]:
+    def _yield_extra_fields(self) -> Iterable[Tuple[str, Any]]:
+        """Override this to provide additional fields based on the event type."""
+        if False:
+            yield
+
+    def _yield_metadata_fields(self) -> Iterable[Tuple[str, Any]]:
         for k, v in self._metadata.items():
-            if type(v) in (bool, int, float, str):
-                yield k, v
+            yield k, v

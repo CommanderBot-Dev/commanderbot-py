@@ -18,5 +18,12 @@ def is_administrator():
     return has_guild_permissions(administrator=True)
 
 
+def is_guild_admin_or_bot_owner():
+    return commands.check_any(
+        is_administrator(),
+        commands.is_owner(),
+    )
+
+
 def guild_only():
     return commands.guild_only()

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2021-08-25
+
+### Changed
+
+- `automod` improvements (#41):
+  - Implemented role-based (per-guild) permissions
+  - Added a new `log_message` action that suppresses pings by default
+  - Pings are now suppressed by default in error messages
+  - Added normalization to the `message_content_contains` condition
+  - Added more fields to some events for string formatting
+
 ## [0.13.0] - 2021-08-22
 
 ### Added
@@ -125,7 +136,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Implemented `status` and `faq` extensions as an exercise for developing `commanderbot-lib`
 
-[unreleased]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.13.0...HEAD
+[unreleased]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.10.0...v0.11.0
