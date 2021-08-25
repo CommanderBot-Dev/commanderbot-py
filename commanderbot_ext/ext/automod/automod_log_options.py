@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Optional
 
@@ -24,7 +22,7 @@ class AutomodLogOptions(FromDataMixin):
     emoji
         The emoji used to represent the type of message.
     color
-        The color used for embed stripes.
+        The color used to represent the type of message.
     """
 
     channel: ChannelID
