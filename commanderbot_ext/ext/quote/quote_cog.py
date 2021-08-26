@@ -1,4 +1,4 @@
-from discord import Embed
+from discord import AllowedMentions, Embed, Message
 from discord.ext.commands import Bot, Cog, Context, command
 
 
@@ -6,34 +6,53 @@ class QuoteCog(Cog, name="commanderbot_ext.ext.quote"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 
-    async def construct_embed(self, msg_link: str, quotem: bool = False):
-        message_link = msg_link.split("/")
-        message_channel = self.bot.get_channel(int(message_link[-2]))
-        message = await message_channel.fetch_message(int(message_link[-1]))
-
-        # message.author is name + discrim, icon_url is authors avatar
+    async def construct_embed(self, ctx: Context, message: Message) -> Embed:
         quote_embed = Embed(
-            description=message.clean_content, timestamp=message.created_at
+            description=message.clean_content,
+            timestamp=message.created_at,
         )
-        quote_embed.set_author(
-            name=str(message.author), icon_url=str(message.author.avatar_url)
+        quote_embed.set_footer(
+            text=f"{message.author} in #{message.channel}",
+            icon_url=message.author.display_avatar.url,
         )
-        quote_embed.set_footer(text=f"#{message_channel.name}")
-
-        if quotem:
-            return (quote_embed, message.author)
         return quote_embed
 
+    async def do_quote(
+        self,
+        ctx: Context,
+        message: Message,
+        content: str,
+        allowed_mentions: AllowedMentions,
+    ):
+        quote_embed = await self.construct_embed(ctx, message)
+        await ctx.send(
+            content,
+            embed=quote_embed,
+            allowed_mentions=allowed_mentions,
+        )
+
     @command(name="quote")
-    async def cmd_quote(self, ctx: Context, msg_link: str):
-        quote_embed = await self.construct_embed(msg_link)
-        await ctx.send(f"{msg_link}", embed=quote_embed, reference=ctx.message)
+    async def cmd_quote(self, ctx: Context, message: Message):
+        content = (
+            f"{ctx.author.mention} quoted {message.author.mention} {message.jump_url}"
+        )
+        allowed_mentions = AllowedMentions.none()
+        await self.do_quote(
+            ctx, message, content=content, allowed_mentions=allowed_mentions
+        )
 
     @command(name="quotem")
-    async def cmd_quotem(self, ctx: Context, msg_link: str):
-        quote_embed = await self.construct_embed(msg_link, quotem=True)
-        await ctx.send(
-            f"{quote_embed[1].mention}\n{msg_link}",
-            embed=quote_embed[0],
-            reference=ctx.message,
+    async def cmd_quotem(self, ctx: Context, message: Message):
+        content = (
+            f"{ctx.author.mention} quote-mentioned {message.author.mention}"
+            + f" {message.jump_url}"
+        )
+        allowed_mentions = AllowedMentions(
+            everyone=False,
+            users=True,
+            roles=False,
+            replied_user=False,
+        )
+        await self.do_quote(
+            ctx, message, content=content, allowed_mentions=allowed_mentions
         )
