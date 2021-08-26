@@ -10,13 +10,21 @@ homepage = "https://github.com/CommanderBot-Dev/commanderbot-ext"
 keywords = ['discord', 'bot']
 
 [tool.poetry.dependencies]
-python = "^3.8"
-"discord.py" = "^1.7.1"
-commanderbot = "^0.9.0"
-SQLAlchemy = "^1.4.9"
+python = "^3.10"
+"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "848d752" }
+commanderbot = { git = "https://github.com/CommanderBot-Dev/commanderbot-core.git", branch = "dpy2" }
+
+# NOTE This will be necessary until nbtlib updates numpy itself.
+numpy = { version = "^1.21", python=">=3.10,<3.11" }
+nbtlib = { git = "https://github.com/vberlier/nbtlib", branch = "main" }
+
+# NOTE See: https://github.com/python-poetry/poetry/issues/4402
+# This was fixed in stable, but doesn't seem to be fixed in the beta branch.
+SQLAlchemy = ">=1.4,<1.4.23"
+
 aiosqlite = "^0.17.0"
-lectern = ">=0.14.0"
-beet = ">=0.32.1"
+lectern = ">=0.15.0"
+beet = ">=0.36.0"
 aiohttp = "^3.7.4"
 PyYAML = "^5.4.1"
 

@@ -1,8 +1,11 @@
 .pytest_cache/**
 **/__pycache__
 venv/**
+.venv/**
 bot/**
 dist/**
 *.egg-info/**
 
 .vscode/**
+
+.python-version
