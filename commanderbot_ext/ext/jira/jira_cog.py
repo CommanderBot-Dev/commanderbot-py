@@ -1,6 +1,6 @@
-import discord
 import aiohttp
-from discord.ext.commands import Bot, Cog, command
+from discord import Embed
+from discord.ext.commands import Bot, Cog, Context, command
 
 
 class JiraCog(Cog, name="commanderbot_ext.ext.jira"):
@@ -36,7 +36,7 @@ class JiraCog(Cog, name="commanderbot_ext.ext.jira"):
 
     # TODO remove hardcoded status and resolve values and add config for JIRA URL and bug ID format
     @command(name="jira", aliases=["bug"])
-    async def cmd_jira(self, ctx: discord.Message, bug_id: str):
+    async def cmd_jira(self, ctx: Context, bug_id: str):
         # Assume the parameter is a URL, so get the ID from it
         if "/" in bug_id:
             bug_id = bug_id.split("/")[-1]
@@ -64,7 +64,7 @@ class JiraCog(Cog, name="commanderbot_ext.ext.jira"):
         creation_date = report_data["created"][:10]
         since_version = report_data["versions"][0]["name"]
 
-        jira_embed = discord.Embed(
+        jira_embed = Embed(
             title=title, url=f"https://bugs.mojang.com/browse/{bug_id}", color=0x00ACED
         )
         jira_embed.add_field(name="Reporter", value=reporter, inline=True)
@@ -103,6 +103,7 @@ class JiraCog(Cog, name="commanderbot_ext.ext.jira"):
             jira_embed.add_field(name="Fix Version", value=fix_version, inline=True)
 
         jira_embed.set_footer(
-            text=str(ctx.message.author), icon_url=str(ctx.message.author.avatar_url)
+            text=str(ctx.message.author),
+            icon_url=str(ctx.message.author.display_avatar.url),
         )
         await ctx.send(embed=jira_embed)
