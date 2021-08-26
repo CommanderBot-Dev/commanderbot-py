@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from discord import Colour, Embed, Message, TextChannel
+from discord import AllowedMentions, Colour, Embed, Message
 from discord.abc import Messageable
 from discord.ext.commands import Bot, Cog, Context, group
 from discord.ext.commands.converter import ColourConverter
 
-from commanderbot_ext.lib import checks
+from commanderbot_ext.lib import MessageableChannel, checks
 
 HEADING_PREFIX = "👉"
 
@@ -42,12 +42,11 @@ class PosterBoardCog(Cog, name="commanderbot_ext.ext.poster_board"):
         ctx: Context,
         colour: Optional[Colour] = None,
         title: Optional[str] = None,
-        destination: Optional[TextChannel] = None,
+        destination: Optional[MessageableChannel] = None,
         *,
         content: Optional[str] = None,
     ):
         actual_dest = destination if destination is not None else ctx.channel
-        assert isinstance(actual_dest, TextChannel)
         await self.send_embed(
             destination=actual_dest, title=title, content=content, colour=colour
         )
@@ -59,11 +58,10 @@ class PosterBoardCog(Cog, name="commanderbot_ext.ext.poster_board"):
         ctx: Context,
         from_message: Message,
         to_message: Optional[Message] = None,
-        destination: Optional[TextChannel] = None,
+        destination: Optional[MessageableChannel] = None,
         limit: Optional[int] = 100,
     ):
         actual_dest = destination if destination is not None else ctx.channel
-        assert isinstance(actual_dest, TextChannel)
         to_message = to_message if to_message is not None else from_message
         after_ts: datetime = from_message.created_at - timedelta(milliseconds=1)
         before_ts: datetime = to_message.created_at + timedelta(milliseconds=1)
@@ -71,9 +69,6 @@ class PosterBoardCog(Cog, name="commanderbot_ext.ext.poster_board"):
             limit=limit, after=after_ts, before=before_ts, oldest_first=True
         )
         async for message in messages:
-            assert isinstance(message, Message)
-            files = [await attachment.to_file() for attachment in message.attachments]
-            embed = message.embeds[0] if message.embeds else None
             content = str(message.content)
             if content.startswith(HEADING_PREFIX):
                 em_tokens = content[len(HEADING_PREFIX) :].split(maxsplit=1)
@@ -83,10 +78,15 @@ class PosterBoardCog(Cog, name="commanderbot_ext.ext.poster_board"):
                 await self.send_embed(
                     destination=actual_dest, content=em_content, colour=em_colour
                 )
-            elif message.mentions or message.role_mentions:
-                message_to_edit: Message = await actual_dest.send(
-                    "🤖", files=files, embed=embed
-                )
-                await message_to_edit.edit(content=content)
             else:
-                await actual_dest.send(content, files=files, embed=embed)
+                files = [
+                    await attachment.to_file() for attachment in message.attachments
+                ]
+                embeds = message.embeds
+                allowed_mentions = AllowedMentions.none()
+                await actual_dest.send(
+                    content,
+                    files=files,
+                    embeds=embeds,
+                    allowed_mentions=allowed_mentions,
+                )

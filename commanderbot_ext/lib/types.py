@@ -1,6 +1,18 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
-from discord import Guild, Member, Message, Reaction, Role, TextChannel, User
+from discord import (
+    DMChannel,
+    GroupChannel,
+    Guild,
+    Member,
+    Message,
+    PartialMessageable,
+    Reaction,
+    Role,
+    TextChannel,
+    Thread,
+    User,
+)
 from discord.ext.commands import Context, MessageConverter, RoleConverter
 
 __all__ = (
@@ -12,6 +24,8 @@ __all__ = (
     "RawOptions",
     "JsonObject",
     "MemberOrUser",
+    "PartialMessageableChannel",
+    "MessageableChannel",
     "TextMessage",
     "TextReaction",
     "GuildRole",
@@ -30,7 +44,10 @@ RawOptions = Any
 
 JsonObject = Dict[str, Any]
 
-MemberOrUser = Union[User, Member]
+MemberOrUser = Member | User
+
+PartialMessageableChannel = TextChannel | Thread | DMChannel | PartialMessageable
+MessageableChannel = PartialMessageableChannel | GroupChannel
 
 
 class TextMessage(Message):
