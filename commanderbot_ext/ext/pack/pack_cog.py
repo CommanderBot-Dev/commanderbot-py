@@ -2,9 +2,8 @@ import asyncio
 import io
 from logging import Logger, getLogger
 from textwrap import dedent
-from typing import Optional
 
-from discord import File, Message
+from discord import File
 from discord.ext.commands import Bot, Cog, Context, command
 
 from commanderbot_ext.ext.pack.pack_generate import generate_packs
@@ -42,7 +41,7 @@ class PackCog(Cog, name="commanderbot_ext.ext.pack"):
             self.log.warn("Command executed without message.")
             return
 
-        message: Message = ctx.message
+        message = ctx.message
         author = message.author.display_name
         first_line, _, message_content = message.content.partition("\n")
         args = first_line.split()
