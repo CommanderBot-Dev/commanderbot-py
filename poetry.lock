@@ -166,7 +166,7 @@ colorama = {version = "*", markers = "sys_platform == \"win32\""}
 
 [[package]]
 name = "commanderbot"
-version = "0.9.0"
+version = "0.10.0a1"
 description = "A simple wrapper and CLI bootstrap for discord.py bots."
 category = "main"
 optional = false
@@ -182,7 +182,7 @@ colorlog = "^4.2.1"
 type = "git"
 url = "https://github.com/CommanderBot-Dev/commanderbot-core.git"
 reference = "dpy2"
-resolved_reference = "b4664ff19887d35d83298dc3854d23224d4cbebb"
+resolved_reference = "c2b4edad655c0aa40e0bc467d70346c3fa56201d"
 
 [[package]]
 name = "discord.py"
