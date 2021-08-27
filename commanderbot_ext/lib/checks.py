@@ -1,3 +1,4 @@
+from discord import Member
 from discord.ext import commands
 
 # NOTE See: https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html#checks
@@ -27,3 +28,10 @@ def is_guild_admin_or_bot_owner():
 
 def guild_only():
     return commands.guild_only()
+
+
+def member_only():
+    def predicate(ctx: commands.Context) -> bool:
+        return isinstance(ctx.author, Member)
+
+    return commands.check(predicate)

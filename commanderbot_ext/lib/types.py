@@ -28,8 +28,8 @@ __all__ = (
     "MessageableChannel",
     "TextMessage",
     "TextReaction",
-    "GuildRole",
     "GuildContext",
+    "MemberContext",
 )
 
 
@@ -88,30 +88,6 @@ class TextReaction(Reaction):
     message: TextMessage
 
 
-class GuildRole(Role):
-    """
-    A [Role] from within a [Guild].
-
-    This is a dummy class that can be used in casts to convince static analysis that
-    this [Role] does indeed contain a [Guild].
-
-    This is not intended to be used anywhere other than type-hinting.
-    """
-
-    guild: Guild
-
-    @classmethod
-    async def convert(cls, ctx: Context, argument: Any):
-        """
-        Attempt to convert the given argument into a `Role` from within a `Guild`.
-
-        Note that discord.py's built-in `Role` is special-cased, so what we do here is
-        explicitly make this subclass convertible and then just return the underlying
-        `Role` anyway.
-        """
-        return await RoleConverter().convert(ctx, argument)
-
-
 class GuildContext(Context):
     """
     A [Context] from within a [Guild].
@@ -123,3 +99,16 @@ class GuildContext(Context):
     """
 
     guild: Guild
+
+
+class MemberContext(GuildContext):
+    """
+    A [Context] from within a [Guild] with an author that is a [Member].
+
+    This is a dummy class that can be used in casts to convince static analysis that
+    this [Context] contains an `author` that is a [Member] and not just a [User].
+
+    This is not intended to be used anywhere other than type-hinting.
+    """
+
+    author: Member

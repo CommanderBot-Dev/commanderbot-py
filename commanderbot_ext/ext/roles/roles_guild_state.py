@@ -1,19 +1,23 @@
 from dataclasses import dataclass
-from typing import List, Optional, cast
+from typing import Any, Callable, Coroutine, List, Optional, Type
 
-from discord import Member, Message, Permissions, Role
+from discord import AllowedMentions, Member, Message, Permissions, Role
 
+from commanderbot_ext.ext.roles.roles_result import (
+    AddableRolesResult,
+    JoinableRolesResult,
+    LeavableRolesResult,
+    RemovableRolesResult,
+    RolesResult,
+)
 from commanderbot_ext.ext.roles.roles_store import (
     RoleEntry,
     RoleEntryPair,
     RolesException,
     RolesStore,
 )
-from commanderbot_ext.lib import CogGuildState, GuildContext, GuildRole, RoleID
+from commanderbot_ext.lib import CogGuildState, GuildContext, MemberContext, RoleID
 from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
-
-REACTION_YES = "✅"
-REACTION_NO = "❌"
 
 SAFE_PERMS = Permissions.none()
 # general
@@ -22,6 +26,7 @@ SAFE_PERMS.read_messages = True
 SAFE_PERMS.change_nickname = True
 # text channel
 SAFE_PERMS.send_messages = True
+SAFE_PERMS.use_threads = True
 SAFE_PERMS.embed_links = True
 SAFE_PERMS.attach_files = True
 SAFE_PERMS.add_reactions = True
@@ -47,15 +52,22 @@ class RolesGuildState(CogGuildState):
 
     store: RolesStore
 
-    def _sort_role_pairs(self, role_pairs: List[RoleEntryPair]) -> List[RoleEntryPair]:
+    async def reply(self, ctx: GuildContext, content: str) -> Message:
+        """Wraps `Context.reply()` with some extension-default boilerplate."""
+        return await ctx.message.reply(
+            content,
+            allowed_mentions=AllowedMentions.none(),
+        )
+
+    def sort_role_pairs(self, role_pairs: List[RoleEntryPair]) -> List[RoleEntryPair]:
         # Sort by stringified role name.
         return sorted(role_pairs, key=lambda role_pair: str(role_pair[0]))
 
-    def _stringify_role_pairs(self, role_pairs: List[RoleEntryPair]) -> str:
+    def stringify_role_pairs(self, role_pairs: List[RoleEntryPair]) -> str:
         lines = []
         for role, role_entry in role_pairs:
-            # Start with the role's actual name.
-            role_line_parts = [f"`{role}`"]
+            # Start with the role mention.
+            role_line_parts = [f"{role.mention}"]
             # Mention that it's not joinable, if applicable.
             if not role_entry.joinable:
                 role_line_parts.append(" (not joinable)")
@@ -64,52 +76,55 @@ class RolesGuildState(CogGuildState):
                 role_line_parts.append(" (not leavable)")
             # Add its description, if any.
             if role_entry.description:
-                role_line_parts.append(f": {role_entry.description}")
+                role_line_parts.append(f" {role_entry.description}")
             role_line = "".join(role_line_parts)
-            lines.append(f"- {role_line}")
+            lines.append(role_line)
         return "\n".join(lines)
 
-    async def _resolve_role(self, role_id: RoleID) -> Optional[GuildRole]:
+    async def resolve_role(self, role_id: RoleID) -> Optional[Role]:
         # Attempt to resolve the role from the given ID.
         role = self.guild.get_role(role_id)
         # If the role resolves correctly, return it.
         if isinstance(role, Role):
-            return cast(GuildRole, role)
-        # Otherwise skip it, but log so the role can be fixed.
-        self.log.exception(f"Failed to resolve role ID: {role_id}")
+            return role
+        # Otherwise, warn about and automatically clean-up unresolved roles.
+        self.log.warning(f"Cleaning-up unresolved role with ID: {role_id}")
+        await self.store.deregister_role_by_id(self.guild.id, role_id)
 
-    async def _get_all_role_pairs(self) -> List[RoleEntryPair]:
+    async def get_all_role_pairs(self) -> List[RoleEntryPair]:
         # Flatten the full list of role entry pairs.
         role_pairs: List[RoleEntryPair] = []
-        async for role_id, role_entry in self.store.iter_role_entries(self.guild):
-            # If the role was resolved, add it to the list.
-            if role := await self._resolve_role(role_id):
+        role_entries = await self.store.get_all_role_entries(self.guild)
+        for role_entry in role_entries:
+            # If the role can be resolved, add it to the list.
+            if role := await self.resolve_role(role_entry.role_id):
                 role_pairs.append((role, role_entry))
         # Sort and return.
-        return self._sort_role_pairs(role_pairs)
+        return self.sort_role_pairs(role_pairs)
 
-    async def _get_relevant_role_for(
-        self, role_id: int, role_entry: RoleEntry, member: Member
-    ) -> Optional[GuildRole]:
-        # If the role didn't resolve, it certainly isn't relevant.
-        if role := await self._resolve_role(role_id):
+    async def get_relevant_role_for(
+        self, role_entry: RoleEntry, member: Member
+    ) -> Optional[Role]:
+        # If the role can't be resolved, it certainly isn't relevant.
+        if role := await self.resolve_role(role_entry.role_id):
             # A role is relevant to the user if:
             # 1. it's joinable; or
             # 2. it's leavable and present on the user.
-            if role_entry.joinable or (role_entry.leavable and role in member.roles):
+            if role_entry.joinable or (role_entry.leavable and (role in member.roles)):
                 return role
 
-    async def _get_relevant_role_pairs(self, member: Member) -> List[RoleEntryPair]:
+    async def get_relevant_role_pairs(self, member: Member) -> List[RoleEntryPair]:
         # Build a list of relevant role entry pairs.
         role_pairs: List[RoleEntryPair] = []
-        async for role_id, role_entry in self.store.iter_role_entries(self.guild):
+        role_entries = await self.store.get_all_role_entries(self.guild)
+        for role_entry in role_entries:
             # If the role is relevant to the user, add it to the list.
-            if role := await self._get_relevant_role_for(role_id, role_entry, member):
+            if role := await self.get_relevant_role_for(role_entry, member):
                 role_pairs.append((role, role_entry))
         # Sort and return.
-        return self._sort_role_pairs(role_pairs)
+        return self.sort_role_pairs(role_pairs)
 
-    async def _get_unsafe_role_perms(self, role: GuildRole) -> Optional[Permissions]:
+    async def get_unsafe_role_perms(self, role: Role) -> Optional[Permissions]:
         # Start with an empty set of unsafe permissions.
         unsafe_perms = Permissions.none()
         # Collect all of the enabled permissions.
@@ -122,19 +137,19 @@ class RolesGuildState(CogGuildState):
         if unsafe_perms != Permissions.none():
             return unsafe_perms
 
-    async def _should_register_role(
-        self, ctx: GuildContext, role: GuildRole
+    async def should_register_role(
+        self, ctx: GuildContext, role: Role
     ) -> ConfirmationResult:
         # If the role contains unsafe permissions, ask for confirmation.
-        if unsafe_perms := await self._get_unsafe_role_perms(role):
+        if unsafe_perms := await self.get_unsafe_role_perms(role):
             unsafe_perms_str = "\n".join(
                 f"- `{pname}`" for pname, pvalue in unsafe_perms if pvalue
             )
             conf_content = "\n".join(
                 [
-                    f"`{role}` contains potentially unsafe permissions:",
+                    f"{role.mention} contains potentially unsafe permissions:",
                     unsafe_perms_str,
-                    f"Do you want to register `{role}` anyway?",
+                    f"Do you want to register {role.mention} anyway?",
                 ]
             )
             return await confirm_with_reaction(self.bot, ctx, conf_content)
@@ -144,7 +159,7 @@ class RolesGuildState(CogGuildState):
     async def register_role(
         self,
         ctx: GuildContext,
-        role: GuildRole,
+        role: Role,
         joinable: bool,
         leavable: bool,
         description: Optional[str],
@@ -153,7 +168,7 @@ class RolesGuildState(CogGuildState):
         try:
             # Check whether this is a role that should be registered. If the role
             # contains unsafe permissions, this will also ask for confirmation.
-            conf = await self._should_register_role(ctx, role)
+            conf = await self.should_register_role(ctx, role)
             # If the answer was yes...
             if conf == ConfirmationResult.YES:
                 # Attempt to register the role.
@@ -165,140 +180,113 @@ class RolesGuildState(CogGuildState):
                 )
                 # Send a response that includes some confirmation about the flags.
                 if role_entry.joinable and role_entry.leavable:
-                    await ctx.send(f"✅ `{role}` has been registered as opt-in/opt-out.")
+                    await self.reply(
+                        ctx,
+                        f"✅ {role.mention} has been registered as opt-in/opt-out.",
+                    )
                 elif role_entry.joinable:
-                    await ctx.send(
-                        f"✅ `{role}` has been registered as **opt-in only** (not leavable)."
+                    await self.reply(
+                        ctx,
+                        f"✅ {role.mention} has been registered as"
+                        + " **opt-in only** (not leavable).",
                     )
                 elif role_entry.leavable:
-                    await ctx.send(
-                        f"✅ `{role}` has been registered as **opt-out only** (not joinable)."
+                    await self.reply(
+                        ctx,
+                        f"✅ {role.mention} has been registered as"
+                        + " **opt-out only** (not joinable).",
                     )
                 else:
-                    await ctx.send(
-                        f"✅ `{role}` has been registered, but is **neither opt-in nor opt-out**."
+                    await self.reply(
+                        ctx,
+                        f"✅ {role.mention} has been registered, but"
+                        + " is **neither opt-in nor opt-out**.",
                     )
             # If the answer was no, send a response.
             if conf == ConfirmationResult.NO:
-                await ctx.send(f"❌ `{role}` has **not** been registered.")
+                await self.reply(ctx, f"❌ {role.mention} has **not** been registered.")
             # If no answer was provided, don't do anything.
         # If a known error occurred, send a response.
         except RolesException as ex:
             await ex.respond(ctx)
 
-    async def deregister_role(self, ctx: GuildContext, role: GuildRole):
+    async def deregister_role(self, ctx: GuildContext, role: Role):
         try:
             await self.store.deregister_role(role)
-            await ctx.send(f"✅ `{role}` has been deregistered.")
+            await self.reply(ctx, f"✅ {role.mention} has been deregistered.")
         except RolesException as ex:
             await ex.respond(ctx)
 
-    async def add_role_to_members(
-        self, ctx: GuildContext, role: GuildRole, members: List[Member]
-    ):
-        # The acting user ought to be a [Member].
-        acting_user = ctx.author
-        assert isinstance(acting_user, Member)
-        # Make sure we actually have some members.
-        if not members:
-            await ctx.reply("🤔 You didn't provide any members.")
-            return
-        # Add the role to each member who does not already have it.
-        added_members: List[Member] = []
-        for member in members:
-            if role not in member.roles:
-                await member.add_roles(role, reason=f"{acting_user} added role to user")
-                added_members.append(member)
-        # Send a response with edit-mentions.
-        if added_members:
-            members_str = " ".join(f"{member.mention}" for member in added_members)
-            message: Message = await ctx.reply("\\🤖")
-            await message.edit(content=f"✅ Added role `{role}` to: {members_str}")
-        else:
-            await ctx.reply("🤷 All of those users already have that role.")
-
-    async def remove_role_from_members(
-        self, ctx: GuildContext, role: GuildRole, members: List[Member]
-    ):
-        # The acting user ought to be a [Member].
-        acting_user = ctx.author
-        assert isinstance(acting_user, Member)
-        # Make sure we actually have some members.
-        if not members:
-            await ctx.reply("🤔 You didn't provide any members.")
-            return
-        # Remove the role from each member who has it.
-        removed_members: List[Member] = []
-        for member in members:
-            if role in member.roles:
-                await member.remove_roles(
-                    role, reason=f"{acting_user} removed role from user"
-                )
-                removed_members.append(member)
-        # Send a response with edit-mentions.
-        if removed_members:
-            members_str = " ".join(f"{member.mention}" for member in removed_members)
-            message: Message = await ctx.reply("`🤖`")
-            await message.edit(content=f"✅ Removed role `{role}` from: {members_str}")
-        else:
-            await ctx.reply("🤷 None of those users have that role.")
-
     async def show_all_roles(self, ctx: GuildContext):
-        if role_pairs := await self._get_all_role_pairs():
-            role_pairs_str = self._stringify_role_pairs(role_pairs)
-            await ctx.send(
-                f"There are {len(role_pairs)} roles registered:\n{role_pairs_str}"
+        if role_pairs := await self.get_all_role_pairs():
+            role_pairs_str = self.stringify_role_pairs(role_pairs)
+            await self.reply(
+                ctx, f"There are {len(role_pairs)} roles registered:\n{role_pairs_str}"
             )
         else:
-            await ctx.send(f"🤷 There are no roles registered.")
+            await self.reply(ctx, f"🤷 There are no roles registered.")
 
-    async def show_relevant_roles(self, ctx: GuildContext):
-        # We ought to have a [Member].
-        member = ctx.author
-        assert isinstance(member, Member)
+    async def show_relevant_roles(self, ctx: MemberContext):
         # List only roles that are relevant to this user.
-        if role_pairs := await self._get_relevant_role_pairs(member):
-            role_pairs_str = self._stringify_role_pairs(role_pairs)
-            await ctx.reply(
-                f"There are {len(role_pairs)} roles relevant to you:\n{role_pairs_str}"
+        member = ctx.author
+        if role_pairs := await self.get_relevant_role_pairs(member):
+            role_pairs_str = self.stringify_role_pairs(role_pairs)
+            await self.reply(
+                ctx,
+                f"There are {len(role_pairs)} roles relevant to you:\n{role_pairs_str}",
             )
         else:
-            await ctx.reply(f"🤷 There are no roles relevant to you.")
+            await self.reply(ctx, f"🤷 There are no roles relevant to you.")
 
-    async def join_role(self, ctx: GuildContext, role: GuildRole):
-        # We ought to have a [Member].
-        member = ctx.author
-        assert isinstance(member, Member)
-        # Only consider roles that have actually been registered.
-        if role_entry := await self.store.get_role_entry(role):
-            # First, check if they already have the role.
-            if role in member.roles:
-                await ctx.reply(f"🤔 You're already in `{role}`.")
-            # Then, check if the role is indeed joinable.
-            elif role_entry.joinable:
-                await member.add_roles(role, reason="User opted-in to role")
-                await ctx.reply(f"✅ You have joined `{role}`.")
-            # Otherwise, they can't join it.
-            else:
-                await ctx.reply(f"❌ You cannot join `{role}`.")
-        else:
-            await ctx.reply(f"🤷 `{role}` is not registered.")
+    async def join_roles(self, ctx: MemberContext, roles: List[Role]):
+        await self.join_leave_roles(ctx, roles, JoinableRolesResult)
 
-    async def leave_role(self, ctx: GuildContext, role: GuildRole):
-        # We ought to have a [Member].
+    async def leave_roles(self, ctx: MemberContext, roles: List[Role]):
+        await self.join_leave_roles(ctx, roles, LeavableRolesResult)
+
+    async def join_leave_roles(
+        self, ctx: MemberContext, roles: List[Role], result_type: Type[RolesResult]
+    ):
+        if not roles:
+            await self.reply(ctx, "🤔 You didn't provide any roles.")
+            return
         member = ctx.author
-        assert isinstance(member, Member)
-        # Only consider roles that have actually been registered.
-        if role_entry := await self.store.get_role_entry(role):
-            # First, check if they don't already have the role.
-            if role not in member.roles:
-                await ctx.reply(f"🤔 You aren't in `{role}`.")
-            # Then, check if the role is indeed leavable.
-            elif role_entry.leavable:
-                await member.remove_roles(role, reason="User opted-out of role")
-                await ctx.reply(f"✅ You have left `{role}`.")
-            # Otherwise, they can't leave it.
-            else:
-                await ctx.reply(f"❌ You cannot leave `{role}`.")
-        else:
-            await ctx.reply(f"🤷 `{role}` is not registered.")
+        result = await result_type.build(self.store, member, roles)
+        lines = await result.apply()
+        content = "\n".join(lines)
+        await self.reply(ctx, content)
+
+    async def add_roles_to_members(
+        self, ctx: MemberContext, roles: List[Role], members: List[Member]
+    ):
+        await self.add_remove_roles(ctx, roles, members, AddableRolesResult)
+
+    async def remove_roles_from_members(
+        self, ctx: MemberContext, roles: List[Role], members: List[Member]
+    ):
+        await self.add_remove_roles(ctx, roles, members, RemovableRolesResult)
+
+    async def add_remove_roles(
+        self,
+        ctx: MemberContext,
+        roles: List[Role],
+        members: List[Member],
+        result_type: Type[RolesResult],
+    ):
+        if not roles:
+            await self.reply(ctx, "🤔 You didn't provide any roles.")
+            return
+        if not members:
+            await self.reply(ctx, "🤔 You didn't provide any members.")
+            return
+        acting_user = ctx.author
+        results = [
+            await result_type.build(self.store, member, roles, acting_user)
+            for member in members
+        ]
+        lines = []
+        for result in results:
+            result_lines = await result.apply()
+            lines += result_lines
+        content = "\n".join(lines)
+        await self.reply(ctx, content)

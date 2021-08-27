@@ -34,7 +34,7 @@ class ResponsiveException(Exception):
             or self.allowed_mentions
             or self.allowed_mentions_default_factory()
         )
-        await ctx.reply(
+        await ctx.message.reply(
             str(self),
             allowed_mentions=allowed_mentions,
         )
