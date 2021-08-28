@@ -1,6 +1,6 @@
 from typing import Optional, cast
 
-from discord import Guild, Message, TextChannel
+from discord import Message, TextChannel, Thread
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog, MessageConverter
 
@@ -74,16 +74,18 @@ class FaqCog(Cog, name="commanderbot_ext.ext.faq"):
             store=self.store,
         )
 
+    def _guild_state_for_message(self, message: Message) -> Optional[FaqGuildState]:
+        if isinstance(message.channel, TextChannel | Thread) and (
+            not is_bot(self.bot, message.author)
+        ):
+            return self.state[message.channel.guild]
+
     # @@ LISTENERS
 
     @Cog.listener()
     async def on_message(self, message: Message):
-        if is_bot(self.bot, message.author):
-            return
-        guild = message.guild
-        channel = message.channel
-        if isinstance(guild, Guild) and isinstance(channel, TextChannel):
-            await self.state[guild].on_message(cast(TextMessage, message))
+        if guild_state := self._guild_state_for_message(message):
+            await guild_state.on_message(cast(TextMessage, message))
 
     # @@ COMMANDS
 
