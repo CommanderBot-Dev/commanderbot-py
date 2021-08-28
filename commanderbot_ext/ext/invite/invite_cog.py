@@ -1,6 +1,7 @@
 from typing import Optional
 
-from discord.ext.commands import Bot, Cog, command, group
+from discord.ext import commands
+from discord.ext.commands import Bot, Cog
 
 from commanderbot_ext.ext.invite.invite_data import InviteData
 from commanderbot_ext.ext.invite.invite_guild_state import InviteGuildState
@@ -74,7 +75,7 @@ class InviteCog(Cog, name="commanderbot_ext.ext.invite"):
 
     # @@ invite
 
-    @command(
+    @commands.command(
         name="invite",
         brief="Show invites.",
     )
@@ -87,7 +88,7 @@ class InviteCog(Cog, name="commanderbot_ext.ext.invite"):
 
     # @@ invites
 
-    @group(
+    @commands.group(
         name="invites",
         brief="Manage invites, or list all invites.",
     )
@@ -165,23 +166,22 @@ class InviteCog(Cog, name="commanderbot_ext.ext.invite"):
             ctx, invite_key, description
         )
 
-    # @@ invites configure
+    # @@ invites options
 
     @cmd_invites.group(
-        name="configure",
-        aliases=["cfg"],
-        brief="Configure invite settings.",
+        name="options",
+        brief="Configure extension options.",
     )
     @checks.is_administrator()
-    async def cmd_invites_configure(self, ctx: GuildContext):
+    async def cmd_invites_options(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
-            await ctx.send_help(self.cmd_invites_configure)
+            await ctx.send_help(self.cmd_invites_options)
 
-    @cmd_invites_configure.command(
+    @cmd_invites_options.command(
         name="here",
-        brief="Configure the invite key for this guild.",
+        brief="Set the invite key for this guild.",
     )
-    async def cmd_invites_configure_here(
+    async def cmd_invites_options_here(
         self, ctx: GuildContext, *, invite_key: Optional[str] = None
     ):
         await self.state[ctx.guild].configure_guild_key(ctx, invite_key)
