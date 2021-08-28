@@ -1,35 +1,17 @@
+import re
+import uuid
 from typing import Optional
 
-from discord import Embed
+import discord
 from discord.ext.commands import Bot, Cog, Context, command
 
-from commanderbot_ext.ext.manifest.manifest_generator import (
-    ManifestType,
-    PackType,
-    generate_manifests,
-)
+from commanderbot_ext.ext.manifest.manifest import Manifest, ModuleType, PackType
 
 
 class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
         self.default_manifest_version = [1, 17, 0]
-
-    def get_manifests(self, pack_type: str) -> list[ManifestType]:
-        """
-        Parses 'pack_type' and returns the list of manifests to generate
-        """
-        pack_type = pack_type.strip().lower()
-        if pack_type == PackType.ADDON.value:
-            return [ManifestType.DATA, ManifestType.RESOURCE]
-        elif pack_type == PackType.BEHAVIOR.value:
-            return [ManifestType.DATA]
-        elif pack_type == PackType.RESOURCE.value:
-            return [ManifestType.RESOURCE]
-        elif pack_type == PackType.SKIN.value:
-            return [ManifestType.SKIN]
-        else:
-            return []
 
     def get_version(self, version_str: Optional[str]) -> list[int]:
         """
@@ -49,6 +31,14 @@ class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
 
         return version
 
+    @staticmethod
+    def get_authors(authors_str: Optional[str]) -> list[str]:
+        authors: list[str] = []
+        if authors_str:
+            for author in re.split("\\s|,", authors_str):
+                authors.append(author.strip())
+        return authors
+
     @command(name="manifest", brief="Generates a Bedrock manifest")
     async def cmd_manifest(
         self,
@@ -57,36 +47,63 @@ class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
         name: Optional[str],
         description: Optional[str],
         min_engine_version: Optional[str],
+        authors: Optional[str],
+        url: Optional[str],
     ):
-        # Parse arguments
-        requested: list[ManifestType] = self.get_manifests(pack_type.strip().lower())
-        engine_version: list[int] = self.get_version(min_engine_version)
-        pack_name: str = str(name) if name else "pack.name"
-        pack_description: str = str(description) if description else "pack.description"
-
-        # If no manifests were requested, reply with an error and return
-        if not requested:
-            available_pack_types: list[str] = [f"`{i}`" for i in PackType.values()]
+        # Parse required pack type argument and create a list of modules from it
+        modules: list[ModuleType] = []
+        pack_type = pack_type.strip().lower()
+        if pack_type == PackType.ADDON.value:
+            modules.append(ModuleType.DATA)
+            modules.append(ModuleType.RESOURCE)
+        elif pack_type == PackType.BEHAVIOR.value or pack_type == PackType.DATA.value:
+            modules.append(ModuleType.DATA)
+        elif pack_type == PackType.RESOURCE.value:
+            modules.append(ModuleType.RESOURCE)
+        elif pack_type == PackType.SKIN.value:
+            modules.append(ModuleType.SKIN)
+        else:
+            available_pack_types = [f"`{i}`" for i in PackType.values()]
             await ctx.reply(
                 f"**{pack_type}** is not a valid pack type\n"
                 f"Available pack types: {' '.join(available_pack_types)}"
             )
             return
 
-        # Generate manifests
-        generated: list[str] = generate_manifests(
-            requested, pack_name, pack_description, engine_version
-        )
+        # Parse optional arguments
+        pack_name = name if name else "pack.name"
+        pack_description = description if description else "pack.description"
+        engine_version = self.get_version(min_engine_version)
+        pack_authors: list[str] = self.get_authors(authors)
+        pack_url: str = url if url else ""
 
-        # Create embed and send it to the user
-        manifest_embed = Embed(color=0x00ACED)
-        if len(generated) == 2:
-            manifest_embed.title = f"Addon Manifest"
-            bp_text = f"**Behavior Pack Manifest**\n```json\n{generated[0]}\n```"
-            rp_text = f"**Resource Pack Manifest**\n```json\n{generated[1]}\n```"
-            manifest_embed.description = f"{bp_text}\n{rp_text}"
-        else:
-            manifest_embed.title = f"{pack_type.title()} Pack Manifest"
-            manifest_embed.description = f"```json\n{generated[0]}\n```"
+        # Create a list of manifests from arguments
+        manifests: list[Manifest] = []
+        for module in modules:
+            manifests.append(
+                Manifest(
+                    module,
+                    pack_name,
+                    pack_description,
+                    engine_version,
+                    pack_authors,
+                    pack_url,
+                    str(uuid.uuid4()),
+                    str(uuid.uuid4()),
+                )
+            )
 
+        # If we're generating a complete addon, make the behavior pack dependent
+        # on the resource pack
+        if len(manifests) == 2:
+            manifests[0].dependency_uuid = manifests[1].pack_uuid
+
+        # Send embed
+        manifest_embed = discord.Embed(title="Generated manifest", color=0x00ACED)
+        description_text = ""
+        for manifest in manifests:
+            description_text += (
+                f"**{manifest.type()} Pack**\n```json\n{manifest.as_json()}\n```\n"
+            )
+        manifest_embed.description = description_text
         await ctx.send(embed=manifest_embed)
