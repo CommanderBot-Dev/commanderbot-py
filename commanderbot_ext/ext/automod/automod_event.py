@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, Iterable, Optional, Protocol, Tuple, Type, cast
 
-from discord import Member, TextChannel, User
+from discord import Member, TextChannel, Thread, User
 from discord.ext.commands import Bot
 
 from commanderbot_ext.lib import (
@@ -17,7 +17,7 @@ class AutomodEvent(Protocol):
     bot: Bot
 
     @property
-    def channel(self) -> Optional[TextChannel]:
+    def channel(self) -> Optional[TextChannel | Thread]:
         """Return the relevant channel, if any."""
 
     @property
@@ -75,7 +75,7 @@ class AutomodEventBase:
         self._metadata = {}
 
     @property
-    def channel(self) -> Optional[TextChannel]:
+    def channel(self) -> Optional[TextChannel | Thread]:
         return None
 
     @property

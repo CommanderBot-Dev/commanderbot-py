@@ -15,6 +15,7 @@ from discord import (
     RawReactionActionEvent,
     Role,
     TextChannel,
+    Thread,
     User,
 )
 from yaml import YAMLError
@@ -353,7 +354,9 @@ class AutomodGuildState(CogGuildState):
 
     # @@ EVENT HANDLERS
 
-    async def on_typing(self, channel: TextChannel, member: Member, when: datetime):
+    async def on_typing(
+        self, channel: TextChannel | Thread, member: Member, when: datetime
+    ):
         await self._do_event(events.MemberTyping(self.bot, channel, member, when))
 
     async def on_message(self, message: TextMessage):

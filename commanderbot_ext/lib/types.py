@@ -8,12 +8,11 @@ from discord import (
     Message,
     PartialMessageable,
     Reaction,
-    Role,
     TextChannel,
     Thread,
     User,
 )
-from discord.ext.commands import Context, MessageConverter, RoleConverter
+from discord.ext.commands import Context, MessageConverter
 
 __all__ = (
     "IDType",
@@ -52,7 +51,7 @@ MessageableChannel = PartialMessageableChannel | GroupChannel
 
 class TextMessage(Message):
     """
-    A [Message] in a [TextChannel].
+    A [Message] in a [TextChannel] or [Thread].
 
     This is a dummy class that can be used in casts to convince static analysis that
     this [Message] does indeed contain a [TextChannel] and [Guild].
@@ -60,7 +59,7 @@ class TextMessage(Message):
     This is not intended to be used anywhere other than type-hinting.
     """
 
-    channel: TextChannel
+    channel: TextChannel | Thread
     guild: Guild
 
     @classmethod

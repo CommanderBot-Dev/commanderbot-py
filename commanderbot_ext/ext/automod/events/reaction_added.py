@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from discord import Member, TextChannel
+from discord import Member, TextChannel, Thread
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEventBase
 from commanderbot_ext.lib.types import TextMessage, TextReaction
@@ -14,7 +14,7 @@ class ReactionAdded(AutomodEventBase):
     _member: Member
 
     @property
-    def channel(self) -> TextChannel:
+    def channel(self) -> TextChannel | Thread:
         return self._reaction.message.channel
 
     @property

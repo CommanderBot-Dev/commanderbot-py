@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from discord import Member, TextChannel
+from discord import Member, TextChannel, Thread
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEventBase
 
@@ -10,12 +10,12 @@ __all__ = ("MemberTyping",)
 
 @dataclass
 class MemberTyping(AutomodEventBase):
-    _channel: TextChannel
+    _channel: TextChannel | Thread
     _member: Member
     _when: datetime
 
     @property
-    def channel(self) -> TextChannel:
+    def channel(self) -> TextChannel | Thread:
         return self._channel
 
     @property

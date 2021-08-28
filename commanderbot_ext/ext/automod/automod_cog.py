@@ -12,9 +12,9 @@ from discord import (
     Reaction,
     Role,
     TextChannel,
+    Thread,
     User,
 )
-from discord.abc import Messageable
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog, Context
 
@@ -30,11 +30,12 @@ from commanderbot_ext.lib import (
     InMemoryDatabaseOptions,
     JsonFileDatabaseAdapter,
     JsonFileDatabaseOptions,
+    MessageableChannel,
     TextMessage,
+    TextReaction,
     UnsupportedDatabaseOptions,
     checks,
 )
-from commanderbot_ext.lib.types import TextReaction
 from commanderbot_ext.lib.utils import is_bot
 
 
@@ -102,44 +103,39 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
         )
 
     def _guild_state_for_message(self, message: Message) -> Optional[AutomodGuildState]:
-        channel = message.channel
-        if isinstance(channel, TextChannel) and (not is_bot(self.bot, message.author)):
-            guild = cast(Guild, channel.guild)
-            return self.state[guild]
+        if isinstance(message.channel, TextChannel | Thread) and (
+            not is_bot(self.bot, message.author)
+        ):
+            return self.state[message.channel.guild]
 
     def _guild_state_for_member(self, member: Member) -> Optional[AutomodGuildState]:
         if not is_bot(self.bot, member):
-            guild = cast(Guild, member.guild)
-            return self.state[guild]
+            return self.state[member.guild]
 
     def _guild_state_for_channel_user(
-        self, channel: Messageable, user: User
+        self, channel: MessageableChannel, user: User
     ) -> Optional[AutomodGuildState]:
         if (
-            isinstance(channel, TextChannel)
+            isinstance(channel, TextChannel | Thread)
             and isinstance(user, Member)
             and (not is_bot(self.bot, user))
         ):
-            guild = cast(Guild, channel.guild)
-            return self.state[guild]
+            return self.state[channel.guild]
 
     def _guild_state_for_reaction_actor(
         self, reaction: Reaction, actor: User
     ) -> Optional[AutomodGuildState]:
-        message = reaction.message
-        channel = message.channel
         if (
-            isinstance(channel, TextChannel)
+            isinstance(reaction.message.channel, TextChannel | Thread)
             and isinstance(actor, Member)
             and (not is_bot(self.bot, actor))
         ):
-            guild = cast(Guild, channel.guild)
-            return self.state[guild]
+            return self.state[reaction.message.channel.guild]
 
     # @@ EVENT LISTENERS
 
     @Cog.listener()
-    async def on_typing(self, channel: Messageable, user: User, when: datetime):
+    async def on_typing(self, channel: MessageableChannel, user: User, when: datetime):
         # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_typing
         if guild_state := self._guild_state_for_channel_user(channel, user):
             await guild_state.on_typing(
