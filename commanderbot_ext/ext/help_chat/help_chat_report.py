@@ -132,7 +132,9 @@ class HelpChatReport:
         ]
         file_contents = "\n".join(lines)
         filename = f"{self.title}.csv"
-        return File(fp=io.StringIO(file_contents), filename=filename)
+        fp = io.StringIO(file_contents)
+        file = File(fp=fp, filename=filename)
+        return file
 
     def build_summary_lines(self, options: HelpChatSummaryOptions) -> Iterable[str]:
         sorted_user_records = self.get_sorted_user_records()
@@ -180,7 +182,7 @@ class HelpChatReport:
         # Send the first (and possibly only) batch as an embed with some initial response text,
         # with the results file attached.
         first_batch = batches[0]
-        await ctx.reply(
+        await ctx.message.reply(
             embed=self.make_summary_batch_embed(1, count_batches, first_batch),
             file=results_file,
         )
@@ -209,10 +211,14 @@ class HelpChatReportBuildContext:
         self.before: datetime = before
         self.label: str = label
 
-        self._progress_message: Optional[Message] = None
-        self._built_at: Optional[datetime] = None
-        self._channel_states: Optional[List[ChannelState]] = None
-        self._user_table: Optional[UserTable] = None
+        self._progress_message: Optional[Message] = field(init=False, default=None)
+        self._built_at: datetime = field(
+            init=False, default_factory=lambda: datetime.utcnow()
+        )
+        self._channel_states: List[ChannelState] = field(
+            init=False, default_factory=lambda: []
+        )
+        self._user_table: UserTable = field(init=False, default_factory=lambda: {})
 
     @property
     def channel(self) -> TextChannel:
@@ -279,7 +285,7 @@ class HelpChatReportBuildContext:
                 allowed_mentions=AllowedMentions(replied_user=False),
             )
         else:
-            self._progress_message = await self.ctx.reply(
+            self._progress_message = await self.ctx.message.reply(
                 content=progress_text,
                 mention_author=False,
             )
@@ -341,9 +347,6 @@ class HelpChatReportBuildContext:
         # Invoking one final update, which will make the final edit to the progress message.
         await self.update()
         # Return the final result, encapsulated in an object.
-        assert self._built_at is not None
-        assert self._channel_states is not None
-        assert self._user_table is not None
         return HelpChatReport(
             after=self.after,
             before=self.before,

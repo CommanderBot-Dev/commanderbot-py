@@ -30,7 +30,9 @@ class HelpChatGuildState(CogGuildState):
             if isinstance(channel, TextChannel):
                 yield channel
             elif isinstance(channel, CategoryChannel):
-                yield from channel.channels
+                yield from (
+                    ch for ch in channel.channels if isinstance(ch, TextChannel)
+                )
 
     async def list_channels(self, ctx: GuildContext):
         if help_channels := await self.store.get_help_channels(self.guild):

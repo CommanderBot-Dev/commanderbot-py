@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import Optional, Union
 
 from discord import CategoryChannel, TextChannel
-from discord.ext.commands import Bot, Cog, group
+from discord.ext import commands
+from discord.ext.commands import Bot, Cog
 
 from commanderbot_ext.ext.help_chat import constants
 from commanderbot_ext.ext.help_chat.help_chat_guild_state import HelpChatGuildState
@@ -74,7 +75,7 @@ class HelpChatCog(Cog, name="commanderbot_ext.ext.help_chat"):
 
     # @@ COMMANDS
 
-    @group(name="helpchat", aliases=["hc"])
+    @commands.group(name="helpchat", aliases=["hc"])
     @checks.is_administrator()
     @checks.guild_only()
     async def cmd_helpchat(self, ctx: GuildContext):
