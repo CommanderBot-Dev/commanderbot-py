@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import AsyncIterable, List, Optional, Tuple
 
-from discord.guild import Guild
+from discord import Guild
 
 from commanderbot_ext.ext.faq.faq_data import FaqData
 from commanderbot_ext.ext.faq.faq_store import FaqEntry

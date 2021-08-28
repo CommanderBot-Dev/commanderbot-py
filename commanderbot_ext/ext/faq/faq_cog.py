@@ -1,7 +1,8 @@
 from typing import Optional, cast
 
 from discord import Guild, Message, TextChannel
-from discord.ext.commands import Bot, Cog, MessageConverter, command, group
+from discord.ext import commands
+from discord.ext.commands import Bot, Cog, MessageConverter
 
 from commanderbot_ext.ext.faq.faq_data import FaqData
 from commanderbot_ext.ext.faq.faq_guild_state import FaqGuildState
@@ -88,7 +89,7 @@ class FaqCog(Cog, name="commanderbot_ext.ext.faq"):
 
     # @@ faq
 
-    @command(
+    @commands.command(
         name="faq",
         brief="Show or list all FAQs.",
     )
@@ -101,7 +102,7 @@ class FaqCog(Cog, name="commanderbot_ext.ext.faq"):
 
     # @@ faqs
 
-    @group(
+    @commands.group(
         name="faqs",
         brief="Manage FAQs, or list all FAQs.",
     )
@@ -208,29 +209,28 @@ class FaqCog(Cog, name="commanderbot_ext.ext.faq"):
     # @@ faqs configure
 
     @cmd_faqs.group(
-        name="configure",
-        aliases=["cfg"],
-        brief="Configure FAQ settings.",
+        name="options",
+        brief="Configure extension options.",
     )
     @checks.is_administrator()
-    async def cmd_faqs_configure(self, ctx: GuildContext):
+    async def cmd_faqs_options(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
-            await ctx.send_help(self.cmd_faqs_configure)
+            await ctx.send_help(self.cmd_faqs_options)
 
-    @cmd_faqs_configure.command(
+    @cmd_faqs_options.command(
         name="prefix",
         brief="Configure FAQ prefix.",
     )
-    async def cmd_faqs_configure_prefix(
+    async def cmd_faqs_options_prefix(
         self, ctx: GuildContext, *, prefix: Optional[str] = None
     ):
         await self.state[ctx.guild].configure_prefix(ctx, prefix)
 
-    @cmd_faqs_configure.command(
+    @cmd_faqs_options.command(
         name="match",
         brief="Configure FAQ match pattern.",
     )
-    async def cmd_faqs_configure_match(
+    async def cmd_faqs_options_match(
         self, ctx: GuildContext, *, match: Optional[str] = None
     ):
         await self.state[ctx.guild].configure_match(ctx, match)
