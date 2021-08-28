@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine, List, Optional, Type
+from typing import List, Optional, Type
 
 from discord import AllowedMentions, Member, Message, Permissions, Role
 
@@ -16,7 +16,13 @@ from commanderbot_ext.ext.roles.roles_store import (
     RolesException,
     RolesStore,
 )
-from commanderbot_ext.lib import CogGuildState, GuildContext, MemberContext, RoleID
+from commanderbot_ext.lib import (
+    CogGuildState,
+    GuildContext,
+    MemberContext,
+    RoleID,
+    RoleSet,
+)
 from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
 
 SAFE_PERMS = Permissions.none()
@@ -290,3 +296,56 @@ class RolesGuildState(CogGuildState):
             lines += result_lines
         content = "\n".join(lines)
         await self.reply(ctx, content)
+
+    async def show_permitted_roles(self, ctx: GuildContext):
+        permitted_roles = await self.store.get_permitted_roles(self.guild)
+        if permitted_roles is not None:
+            count_permitted_roles = len(permitted_roles)
+            role_mentions = permitted_roles.to_mentions(self.guild)
+            await self.reply(
+                ctx,
+                f"There are {count_permitted_roles} roles permitted to"
+                + f" add/remove other users to/from roles: {role_mentions}",
+            )
+        else:
+            await self.reply(
+                ctx,
+                f"No roles are permitted to add/remove other users to/from roles.",
+            )
+
+    async def set_permitted_roles(self, ctx: GuildContext, *roles: Role):
+        if not roles:
+            await self.reply(ctx, "🤷 No roles provided.")
+            return
+        new_permitted_roles = RoleSet(set(role.id for role in roles))
+        new_role_mentions = new_permitted_roles.to_mentions(self.guild)
+        old_permitted_roles = await self.store.set_permitted_roles(
+            self.guild, new_permitted_roles
+        )
+        if old_permitted_roles is not None:
+            old_role_mentions = old_permitted_roles.to_mentions(self.guild)
+            await self.reply(
+                ctx,
+                f"✅ Changed permitted roles from {old_role_mentions}"
+                + f" to: {new_role_mentions}",
+            )
+        else:
+            await self.reply(ctx, f"✅ Changed permitted roles to: {new_role_mentions}")
+
+    async def clear_permitted_roles(self, ctx: GuildContext):
+        old_permitted_roles = await self.store.set_permitted_roles(self.guild, None)
+        if old_permitted_roles is not None:
+            role_mentions = old_permitted_roles.to_mentions(self.guild)
+            await self.reply(ctx, f"✅ Cleared all permitted roles: {role_mentions}")
+        else:
+            await self.reply(
+                ctx,
+                f"🤷 No roles are permitted to add/remove other users to/from roles.",
+            )
+
+    async def member_has_permission(self, member: Member) -> bool:
+        permitted_roles = await self.store.get_permitted_roles(self.guild)
+        if permitted_roles is None:
+            return False
+        has_permission = permitted_roles.member_has_some(member)
+        return has_permission

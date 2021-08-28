@@ -15,6 +15,10 @@ def has_guild_permissions(**perms):
     return commands.check(extended_check)
 
 
+def is_owner():
+    return commands.is_owner()
+
+
 def is_administrator():
     return has_guild_permissions(administrator=True)
 
@@ -22,7 +26,7 @@ def is_administrator():
 def is_guild_admin_or_bot_owner():
     return commands.check_any(
         is_administrator(),
-        commands.is_owner(),
+        is_owner(),
     )
 
 
@@ -35,3 +39,7 @@ def member_only():
         return isinstance(ctx.author, Member)
 
     return commands.check(predicate)
+
+
+def any_of(*checks):
+    return commands.check_any(*checks)

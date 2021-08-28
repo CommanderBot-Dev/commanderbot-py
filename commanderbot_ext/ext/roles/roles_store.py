@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import AsyncIterable, List, Optional, Protocol, Tuple
+from typing import List, Optional, Protocol, Tuple
 
-from discord import Guild, Member, Role
+from discord import Guild, Role
 
-from commanderbot_ext.lib import GuildID, ResponsiveException, RoleID
+from commanderbot_ext.lib import GuildID, ResponsiveException, RoleID, RoleSet
 
 
 class RolesException(ResponsiveException):
@@ -39,6 +39,14 @@ class RolesStore(Protocol):
     """
     Abstracts the data storage and persistence of the roles cog.
     """
+
+    async def get_permitted_roles(self, guild: Guild) -> Optional[RoleSet]:
+        ...
+
+    async def set_permitted_roles(
+        self, guild: Guild, permitted_roles: Optional[RoleSet]
+    ) -> Optional[RoleSet]:
+        ...
 
     async def get_all_role_entries(self, guild: Guild) -> List[RoleEntry]:
         ...

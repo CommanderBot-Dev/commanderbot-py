@@ -1,8 +1,8 @@
-from typing import Optional, Tuple, cast
+from typing import Optional, cast
 
-from discord import Member, Role
-from discord.ext.commands import Bot, Cog, command, group
-from discord.ext.commands.converter import Greedy
+from discord import Guild, Member, Role
+from discord.ext import commands
+from discord.ext.commands import Bot, Cog, Context, Greedy
 
 from commanderbot_ext.ext.roles.roles_data import RolesData
 from commanderbot_ext.ext.roles.roles_guild_state import RolesGuildState
@@ -17,7 +17,6 @@ from commanderbot_ext.lib import (
     JsonFileDatabaseAdapter,
     JsonFileDatabaseOptions,
     LenientRole,
-    LenientRoleConverter,
     MemberContext,
     UnsupportedDatabaseOptions,
     checks,
@@ -34,11 +33,23 @@ def make_roles_store(bot: Bot, cog: Cog, options: RolesOptions) -> RolesStore:
             cog=cog,
             db=JsonFileDatabaseAdapter(
                 options=db_options,
-                serializer=lambda cache: cache.serialize(),
-                deserializer=RolesData.deserialize,
+                serializer=lambda cache: cache.to_data(),
+                deserializer=RolesData.from_data,
             ),
         )
     raise UnsupportedDatabaseOptions(db_options)
+
+
+def member_has_permission():
+    async def predicate(ctx: Context):
+        cog = cast(RolesCog, ctx.cog)
+        return (
+            isinstance(ctx.guild, Guild)
+            and isinstance(ctx.author, Member)
+            and await cog.state[ctx.guild].member_has_permission(ctx.author)
+        )
+
+    return commands.check(predicate)
 
 
 class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
@@ -78,7 +89,7 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
 
     # @@ join
 
-    @command(
+    @commands.command(
         name="join",
         brief="Join a role.",
     )
@@ -89,7 +100,7 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
 
     # @@ leave
 
-    @command(
+    @commands.command(
         name="leave",
         brief="Leave a role.",
     )
@@ -100,7 +111,7 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
 
     # @@ roles
 
-    @group(
+    @commands.group(
         name="roles",
         brief="Show relevant roles.",
     )
@@ -109,6 +120,52 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
     async def cmd_roles(self, ctx: MemberContext):
         if not ctx.invoked_subcommand:
             await self.state[ctx.guild].show_relevant_roles(ctx)
+
+    # @@ roles options
+
+    @cmd_roles.group(
+        name="options",
+        brief="Configure extension options.",
+    )
+    @checks.is_guild_admin_or_bot_owner()
+    @checks.member_only()
+    async def cmd_roles_options(self, ctx: MemberContext):
+        if not ctx.invoked_subcommand:
+            await ctx.send_help(self.cmd_roles_options)
+
+    # @@ roles options permit
+
+    @cmd_roles_options.group(
+        name="permit",
+        brief="Configure the set of roles permitted to add/remove other users to/from roles.",
+    )
+    async def cmd_roles_options_permit(self, ctx: GuildContext):
+        if not ctx.invoked_subcommand:
+            if ctx.subcommand_passed:
+                await ctx.send_help(self.cmd_roles_options_permit)
+            else:
+                await self.state[ctx.guild].show_permitted_roles(ctx)
+
+    @cmd_roles_options_permit.command(
+        name="show",
+        brief="Show the roles permitted to add/remove other users to/from roles.",
+    )
+    async def cmd_roles_options_permit_show(self, ctx: GuildContext):
+        await self.state[ctx.guild].show_permitted_roles(ctx)
+
+    @cmd_roles_options_permit.command(
+        name="set",
+        brief="Set the roles permitted to add/remove other users to/from roles.",
+    )
+    async def cmd_roles_options_permit_set(self, ctx: GuildContext, *roles: Role):
+        await self.state[ctx.guild].set_permitted_roles(ctx, *roles)
+
+    @cmd_roles_options_permit.command(
+        name="clear",
+        brief="Clear all roles permitted to add/remove other users to/from roles.",
+    )
+    async def cmd_roles_options_permit_clear(self, ctx: GuildContext):
+        await self.state[ctx.guild].clear_permitted_roles(ctx)
 
     # @@ roles show
 
@@ -146,7 +203,11 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
         name="showall",
         brief="Show all roles.",
     )
-    @checks.is_administrator()
+    @checks.any_of(
+        checks.is_administrator(),
+        member_has_permission(),
+        checks.is_owner(),
+    )
     async def cmd_roles_showall(self, ctx: GuildContext):
         await self.state[ctx.guild].show_all_roles(ctx)
 
@@ -156,7 +217,11 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
         name="add",
         brief="Add one or more roles to one or more members.",
     )
-    @checks.is_administrator()
+    @checks.any_of(
+        checks.is_administrator(),
+        member_has_permission(),
+        checks.is_owner(),
+    )
     @checks.member_only()
     async def cmd_roles_add(
         self, ctx: MemberContext, roles: Greedy[LenientRole], *members: Member
@@ -171,7 +236,11 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
         name="remove",
         brief="Remove a role from members.",
     )
-    @checks.is_administrator()
+    @checks.any_of(
+        checks.is_administrator(),
+        member_has_permission(),
+        checks.is_owner(),
+    )
     @checks.member_only()
     async def cmd_roles_remove(
         self, ctx: MemberContext, roles: Greedy[LenientRole], *members: Member
@@ -186,7 +255,7 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
         name="register",
         brief="Register a role.",
     )
-    @checks.is_administrator()
+    @checks.is_guild_admin_or_bot_owner()
     async def cmd_roles_register(
         self,
         ctx: GuildContext,
@@ -210,6 +279,6 @@ class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
         name="deregister",
         brief="Deregister a role.",
     )
-    @checks.is_administrator()
+    @checks.is_guild_admin_or_bot_owner()
     async def cmd_roles_deregister(self, ctx: GuildContext, role: Role):
         await self.state[ctx.guild].deregister_role(ctx, role)

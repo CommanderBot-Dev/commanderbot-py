@@ -1,11 +1,17 @@
 from dataclasses import dataclass
-from typing import AsyncIterable, List, Optional, Tuple
+from typing import List, Optional
 
 from discord import Guild, Role
 
 from commanderbot_ext.ext.roles.roles_data import RolesData
 from commanderbot_ext.ext.roles.roles_store import RoleEntry
-from commanderbot_ext.lib import CogStore, GuildID, JsonFileDatabaseAdapter, RoleID
+from commanderbot_ext.lib import (
+    CogStore,
+    GuildID,
+    JsonFileDatabaseAdapter,
+    RoleID,
+    RoleSet,
+)
 
 
 # @implements RolesStore
@@ -16,6 +22,20 @@ class RolesJsonStore(CogStore):
     """
 
     db: JsonFileDatabaseAdapter[RolesData]
+
+    # @implements RolesStore
+    async def get_permitted_roles(self, guild: Guild) -> Optional[RoleSet]:
+        cache = await self.db.get_cache()
+        return await cache.get_permitted_roles(guild)
+
+    # @implements RolesStore
+    async def set_permitted_roles(
+        self, guild: Guild, permitted_roles: Optional[RoleSet]
+    ) -> Optional[RoleSet]:
+        cache = await self.db.get_cache()
+        old_value = await cache.set_permitted_roles(guild, permitted_roles)
+        await self.db.dirty()
+        return old_value
 
     # @implements RolesStore
     async def get_all_role_entries(self, guild: Guild) -> List[RoleEntry]:
