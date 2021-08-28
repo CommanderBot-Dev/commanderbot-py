@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import AsyncIterable, Optional
 
-from discord import Guild, Member
+from discord import Guild
 
 from commanderbot_ext.ext.automod.automod_data import AutomodData
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
@@ -48,11 +48,6 @@ class AutomodJsonStore(CogStore):
         old_value = await cache.set_permitted_roles(guild, permitted_roles)
         await self.db.dirty()
         return old_value
-
-    # @implements AutomodStore
-    async def member_has_permission(self, guild: Guild, member: Member) -> bool:
-        cache = await self.db.get_cache()
-        return await cache.member_has_permission(guild, member)
 
     # @implements AutomodStore
     async def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:

@@ -16,7 +16,7 @@ from discord import (
 )
 from discord.abc import Messageable
 from discord.ext import commands
-from discord.ext.commands import Bot, Cog, group
+from discord.ext.commands import Bot, Cog, Context
 
 from commanderbot_ext.ext.automod.automod_data import AutomodData
 from commanderbot_ext.ext.automod.automod_guild_state import AutomodGuildState
@@ -55,13 +55,14 @@ def make_automod_store(bot: Bot, cog: Cog, options: AutomodOptions) -> AutomodSt
     raise UnsupportedDatabaseOptions(db_options)
 
 
-def check_can_run_automod():
-    async def predicate(ctx: GuildContext):
-        cog = ctx.cog
-        actor = ctx.author
-        if isinstance(cog, AutomodCog) and isinstance(actor, Member):
-            return await cog.state[ctx.guild].member_has_permission(actor)
-        return False
+def member_has_permission():
+    async def predicate(ctx: Context):
+        cog = cast(AutomodCog, ctx.cog)
+        return (
+            isinstance(ctx.guild, Guild)
+            and isinstance(ctx.author, Member)
+            and await cog.state[ctx.guild].member_has_permission(ctx.author)
+        )
 
     return commands.check(predicate)
 
@@ -261,15 +262,15 @@ class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
 
     # @@ automod
 
-    @group(
+    @commands.group(
         name="automod",
         brief="Manage automod features.",
         aliases=["am"],
     )
     @checks.guild_only()
-    @commands.check_any(
+    @checks.any_of(
         checks.is_administrator(),
-        check_can_run_automod(),
+        member_has_permission(),
         commands.is_owner(),
     )
     async def cmd_automod(self, ctx: GuildContext):

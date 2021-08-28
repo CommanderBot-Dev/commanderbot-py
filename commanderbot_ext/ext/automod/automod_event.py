@@ -10,6 +10,7 @@ from commanderbot_ext.lib import (
     TextReaction,
     ValueFormatter,
 )
+from commanderbot_ext.lib.utils import yield_member_date_fields
 
 
 class AutomodEvent(Protocol):
@@ -163,6 +164,8 @@ class AutomodEventBase:
             yield from self._yield_safe_member_fields("actor", self.actor)
         if self.member is not None:
             yield from self._yield_safe_member_fields("member", self.member)
+        if self.user is not None:
+            yield from self._yield_safe_user_fields("user", self.user)
         for k, v in self._yield_extra_fields():
             if self._is_value_safe(v):
                 yield k, v
@@ -173,12 +176,19 @@ class AutomodEventBase:
     def _yield_safe_member_fields(
         self, prefix: str, member: Member
     ) -> Iterable[Tuple[str, Any]]:
-        yield f"{prefix}_id", member.id
-        yield f"{prefix}_name", f"{member}"
-        yield f"{prefix}_username", member.name
-        yield f"{prefix}_discriminator", member.discriminator
-        yield f"{prefix}_mention", member.mention
-        yield f"{prefix}_display_name", member.display_name
+        yield from self._yield_safe_user_fields(prefix, cast(User, member))
+        yield f"{prefix}_nick", member.nick
+        yield from yield_member_date_fields(prefix, member)
+
+    def _yield_safe_user_fields(
+        self, prefix: str, user: User
+    ) -> Iterable[Tuple[str, Any]]:
+        yield f"{prefix}_id", user.id
+        yield f"{prefix}_name", f"{user}"
+        yield f"{prefix}_username", user.name
+        yield f"{prefix}_discriminator", user.discriminator
+        yield f"{prefix}_mention", user.mention
+        yield f"{prefix}_display_name", user.display_name
 
     def _yield_extra_fields(self) -> Iterable[Tuple[str, Any]]:
         """Override this to provide additional fields based on the event type."""

@@ -1,6 +1,6 @@
 from typing import AsyncIterable, Optional, Protocol
 
-from discord import Guild, Member
+from discord import Guild
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
 from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
@@ -29,9 +29,6 @@ class AutomodStore(Protocol):
     async def set_permitted_roles(
         self, guild: Guild, permitted_roles: Optional[RoleSet]
     ) -> Optional[RoleSet]:
-        ...
-
-    async def member_has_permission(self, guild: Guild, member: Member) -> bool:
         ...
 
     def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:

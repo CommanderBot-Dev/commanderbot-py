@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
 
-from discord import Guild, Member
+from discord import Guild
 
 from commanderbot_ext.ext.automod.automod_event import AutomodEvent
 from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
@@ -98,12 +98,6 @@ class AutomodGuildData:
         old_value = self.permitted_roles
         self.permitted_roles = permitted_roles
         return old_value
-
-    def member_has_permission(self, member: Member) -> bool:
-        if self.permitted_roles is None:
-            return False
-        has_permission = self.permitted_roles.member_has_some(member)
-        return has_permission
 
     def all_rules(self) -> Iterable[AutomodRule]:
         yield from self.rules.values()
@@ -254,10 +248,6 @@ class AutomodData:
         self, guild: Guild, permitted_roles: Optional[RoleSet]
     ) -> Optional[RoleSet]:
         return self.guilds[guild.id].set_permitted_roles(permitted_roles)
-
-    # @implements AutomodStore
-    async def member_has_permission(self, guild: Guild, member: Member) -> bool:
-        return self.guilds[guild.id].member_has_permission(member)
 
     # @implements AutomodStore
     async def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:

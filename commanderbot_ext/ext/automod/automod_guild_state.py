@@ -2,11 +2,12 @@ import asyncio
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from json.decoder import JSONDecodeError
+from json import JSONDecodeError
 from typing import Optional, cast
 
 import yaml
 from discord import (
+    AllowedMentions,
     Color,
     Member,
     RawMessageDeleteEvent,
@@ -16,8 +17,7 @@ from discord import (
     TextChannel,
     User,
 )
-from discord.mentions import AllowedMentions
-from yaml.error import YAMLError
+from yaml import YAMLError
 
 from commanderbot_ext.ext.automod import events
 from commanderbot_ext.ext.automod.automod_event import AutomodEventBase
@@ -111,7 +111,7 @@ class AutomodGuildState(CogGuildState):
 
     async def reply(self, ctx: GuildContext, content: str):
         """Wraps `Context.reply()` with some extension-default boilerplate."""
-        await ctx.reply(
+        await ctx.message.reply(
             content,
             allowed_mentions=AllowedMentions.none(),
         )
@@ -345,7 +345,11 @@ class AutomodGuildState(CogGuildState):
             await ex.respond(ctx)
 
     async def member_has_permission(self, member: Member) -> bool:
-        return await self.store.member_has_permission(self.guild, member)
+        permitted_roles = await self.store.get_permitted_roles(self.guild)
+        if permitted_roles is None:
+            return False
+        has_permission = permitted_roles.member_has_some(member)
+        return has_permission
 
     # @@ EVENT HANDLERS
 
