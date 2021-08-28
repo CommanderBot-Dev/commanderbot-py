@@ -7,3 +7,8 @@ A collection of cogs and extensions for discord.py bots.
 
 [package-badge]: https://img.shields.io/pypi/v/commanderbot-ext.svg
 [version-badge]: https://img.shields.io/pypi/pyversions/commanderbot-ext.svg
+
+## Requirements
+
+- Python 3.10+
+- discord.py 2.0+
