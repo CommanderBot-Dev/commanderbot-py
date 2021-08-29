@@ -19,6 +19,7 @@ class AllowedMentions(JsonSerializable, discord.AllowedMentions, FromDataMixin):
     def only_replies(cls):
         return cls(everyone=False, users=False, roles=False, replied_user=True)
 
+    # @overrides FromDataMixin
     @classmethod
     def try_from_data(cls, data):
         if isinstance(data, str):
@@ -27,6 +28,7 @@ class AllowedMentions(JsonSerializable, discord.AllowedMentions, FromDataMixin):
         if isinstance(data, dict):
             return cls(**data)
 
+    # @implements JsonSerializable
     def to_json(self) -> Any:
         return dict(
             everyone=self.everyone,

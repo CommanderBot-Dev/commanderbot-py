@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from logging import Logger, getLogger
 from typing import Any, Dict, List, Optional, Union
 
-from discord import AllowedMentions, Intents, Message
+import discord
 from discord.ext.commands import Context
 from discord.ext.commands.errors import (
     BotMissingPermissions,
@@ -15,6 +15,8 @@ from discord.ext.commands.errors import (
 )
 
 from commanderbot_ext.core.commander_bot_base import CommanderBotBase
+from commanderbot_ext.lib.allowed_mentions import AllowedMentions
+from commanderbot_ext.lib.intents import Intents
 from commanderbot_ext.lib.responsive_exception import ResponsiveException
 
 __all__ = (
@@ -45,18 +47,24 @@ class CommanderBot(CommanderBotBase):
     def __init__(self, *args, **kwargs):
         # Account for options that don't belong to the discord.py Bot base.
         extensions_data = kwargs.pop("extensions", None)
-        intents_data = kwargs.pop("intents", None)
-        # Construct intents object.
-        intents = self.make_intents(intents_data)
+        # Account for options that need further processing.
+        intents = Intents.from_field_optional(kwargs, "intents")
+        allowed_mentions = AllowedMentions.from_field_optional(
+            kwargs, "allowed_mentions"
+        )
+        kwargs.update(
+            intents=intents or Intents.default(),
+            allowed_mentions=allowed_mentions or AllowedMentions.not_everyone(),
+        )
         # Initialize discord.py Bot base.
-        super().__init__(*args, **kwargs, intents=intents)
+        super().__init__(*args, **kwargs)
         # Grab our own logger instance.
         self.log: Logger = getLogger("CommanderBot")
         # Remember when we started and the last time we connected.
         self._started_at: datetime = datetime.utcnow()
         self._connected_since: Optional[datetime] = None
         # Warn about a lack of configured intents.
-        if intents_data is None:
+        if intents is None:
             self.log.warning(
                 f"No intents configured; using default flags: {self.intents.value}"
             )
@@ -68,17 +76,6 @@ class CommanderBot(CommanderBotBase):
             self._configure_extensions(extensions_data)
         else:
             self.log.warning("No extensions configured.")
-
-    @classmethod
-    def make_intents(cls, data) -> Intents:
-        if data is None:
-            return Intents.default()
-        elif isinstance(data, str):
-            if intents_factory := getattr(Intents, data, None):
-                return intents_factory()
-        elif isinstance(data, dict):
-            return Intents(**data)
-        raise ValueError(f"Invalid intents: {data}")
 
     def _configure_extensions(self, extensions_data: list):
         if not isinstance(extensions_data, list):
@@ -109,11 +106,16 @@ class CommanderBot(CommanderBotBase):
 
         self.log.info(f"Finished loading extensions.")
 
-    async def reply(self, ctx: Context, content: str) -> Message:
-        """Wraps `Context.reply()` with all mentions disabled."""
+    async def reply(
+        self,
+        ctx: Context,
+        content: str,
+        allowed_mentions: Optional[discord.AllowedMentions] = None,
+    ) -> discord.Message:
+        """Wraps `Context.reply()` with all mentions disabled by default."""
         return await ctx.message.reply(
             content,
-            allowed_mentions=AllowedMentions.none(),
+            allowed_mentions=allowed_mentions or AllowedMentions.none(),
         )
 
     # @implements CommanderBotBase
