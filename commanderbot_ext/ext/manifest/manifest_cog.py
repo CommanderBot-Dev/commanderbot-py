@@ -57,7 +57,7 @@ class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
             modules.append(ModuleType.SKIN)
         else:
             available_pack_types = [f"`{i}`" for i in PackType.values()]
-            await ctx.reply(
+            await ctx.message.reply(
                 f"**{pack_type}** is not a valid pack type\n"
                 f"Available pack types: {' '.join(available_pack_types)}"
             )
