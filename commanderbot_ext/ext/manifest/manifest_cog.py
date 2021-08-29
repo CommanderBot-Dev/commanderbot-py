@@ -1,11 +1,14 @@
-import re
-import uuid
 from typing import Optional
 
-import discord
+from discord import Embed
 from discord.ext.commands import Bot, Cog, Context, command
 
-from commanderbot_ext.ext.manifest.manifest import Manifest, ModuleType, PackType
+from commanderbot_ext.ext.manifest.manifest import (
+    Manifest,
+    ModuleType,
+    PackType,
+    add_dependency,
+)
 
 
 class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
@@ -31,15 +34,7 @@ class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
 
         return version
 
-    @staticmethod
-    def get_authors(authors_str: Optional[str]) -> list[str]:
-        authors: list[str] = []
-        if authors_str:
-            for author in re.split("\\s|,", authors_str):
-                authors.append(author.strip())
-        return authors
-
-    @command(name="manifest", brief="Generates a Bedrock manifest")
+    @command(name="manifest", brief="Generate a Bedrock manifest")
     async def cmd_manifest(
         self,
         ctx: Context,
@@ -47,8 +42,6 @@ class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
         name: Optional[str],
         description: Optional[str],
         min_engine_version: Optional[str],
-        authors: Optional[str],
-        url: Optional[str],
     ):
         # Parse required pack type argument and create a list of modules from it
         modules: list[ModuleType] = []
@@ -74,36 +67,34 @@ class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
         pack_name = name if name else "pack.name"
         pack_description = description if description else "pack.description"
         engine_version = self.get_version(min_engine_version)
-        pack_authors: list[str] = self.get_authors(authors)
-        pack_url: str = url if url else ""
 
-        # Create a list of manifests from arguments
+        # Create a list of manifests from modules
         manifests: list[Manifest] = []
         for module in modules:
             manifests.append(
-                Manifest(
-                    module,
-                    pack_name,
-                    pack_description,
-                    engine_version,
-                    pack_authors,
-                    pack_url,
-                    str(uuid.uuid4()),
-                    str(uuid.uuid4()),
-                )
+                Manifest(module, pack_name, pack_description, engine_version)
             )
 
         # If we're generating a complete addon, make the behavior pack dependent
         # on the resource pack
         if len(manifests) == 2:
-            manifests[0].dependency_uuid = manifests[1].pack_uuid
+            add_dependency(manifests[0], manifests[1])
 
         # Send embed
-        manifest_embed = discord.Embed(title="Generated manifest", color=0x00ACED)
+        manifest_embed = Embed(title="Generated manifest", color=0x00ACED)
         description_text = ""
         for manifest in manifests:
-            description_text += (
-                f"**{manifest.type()} Pack**\n```json\n{manifest.as_json()}\n```\n"
-            )
+            # Get the common name for a manifest using each kind of module
+            common_name: str = ""
+            if manifest.module_type == ModuleType.DATA:
+                common_name = "Behavior Pack"
+            elif manifest.module_type == ModuleType.RESOURCE:
+                common_name = "Resource Pack"
+            elif manifest.module_type == ModuleType.SKIN:
+                common_name = "Skin Pack"
+
+            formatted_manifest_json: str = f"```json\n{manifest.as_json()}\n```"
+            description_text += f"**{common_name}**\n{formatted_manifest_json}\n"
+
         manifest_embed.description = description_text
         await ctx.send(embed=manifest_embed)
