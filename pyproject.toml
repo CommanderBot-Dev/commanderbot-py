@@ -11,8 +11,19 @@ keywords = ['discord', 'bot']
 
 [tool.poetry.dependencies]
 python = "^3.10"
+
+# This is the last announced version of the discord.py 2.0 beta. RIP.
 "discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "848d752" }
-commanderbot = { git = "https://github.com/CommanderBot-Dev/commanderbot-core.git", branch = "dpy2" }
+
+# These are used for logging.
+colorama = "^0.4.3"
+colorlog = "^4.2.1"
+
+# NOTE See: https://github.com/python/typing/issues/865
+# This exact version restriction can be removed once this bug is fixed.
+typing-extensions = "3.10.0.0"
+
+# The rest are for various extensions.
 
 # NOTE This will be necessary until nbtlib updates numpy itself.
 numpy = { version = "^1.21", python=">=3.10,<3.11" }

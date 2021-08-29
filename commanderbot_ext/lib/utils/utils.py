@@ -3,10 +3,10 @@ import re
 import traceback
 from typing import Any, AsyncIterable, List, Mapping, Optional, Set, Type, TypeVar
 
-from commanderbot import CommanderBotBase
 from discord import Member
 from discord.ext.commands import Bot, Cog
 
+from commanderbot_ext.core.commander_bot_base import CommanderBotBase
 from commanderbot_ext.lib.types import RoleID
 
 T = TypeVar("T")
@@ -59,7 +59,7 @@ async def async_expand(it: AsyncIterable[T]) -> List[T]:
 
 def sanitize_stacktrace(error: Exception) -> str:
     lines = traceback.format_exception(
-        etype=type(error),
+        type(error),
         value=error,
         tb=error.__traceback__,
     )
