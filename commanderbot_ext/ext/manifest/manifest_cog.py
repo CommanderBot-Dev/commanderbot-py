@@ -87,11 +87,11 @@ class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
             # Get the common name for a manifest using each kind of module
             common_name: str = ""
             if manifest.module_type == ModuleType.DATA:
-                common_name = "Behavior Pack"
+                common_name = "Behavior pack"
             elif manifest.module_type == ModuleType.RESOURCE:
-                common_name = "Resource Pack"
+                common_name = "Resource pack"
             elif manifest.module_type == ModuleType.SKIN:
-                common_name = "Skin Pack"
+                common_name = "Skin pack"
 
             formatted_manifest_json: str = f"```json\n{manifest.as_json()}\n```"
             description_text += f"**{common_name}**\n{formatted_manifest_json}\n"
