@@ -6,7 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Added `manifest` command that generate Bedrock manifests
+
 ### Changed
+
 - Improved emoji parsing logic for the `vote` command
 
 ## [0.14.0] - 2021-08-25
