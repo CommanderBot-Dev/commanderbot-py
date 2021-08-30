@@ -2,8 +2,8 @@
 
 A collection of cogs and extensions for discord.py bots.
 
-[![package-badge]](https://pypi.python.org/pypi/commanderbot-ext/)
-[![version-badge]](https://pypi.python.org/pypi/commanderbot-ext/)
+[![package-badge]](https://pypi.python.org/pypi/commanderbot/)
+[![version-badge]](https://pypi.python.org/pypi/commanderbot/)
 
 ## Requirements
 
@@ -18,14 +18,14 @@ You will need the following:
 
 1. Your own [Discord Application](https://discordapp.com/developers/applications) with a bot token.
 2. A [configuration file](#configuring-your-bot) for the bot.
-3. A Python 3.10+ environment with the `commanderbot-ext` package installed.
+3. A Python 3.10+ environment with the `commanderbot` package installed.
    - It is recommended to use a [virtual environment](https://docs.python.org/3/tutorial/venv.html) for this.
-   - Run `pip install commanderbot-ext` to install the bot core package.
+   - Run `pip install commanderbot` to install the bot core package.
 
 The first thing you should do is check the CLI help menu:
 
 ```bash
-python -m commanderbot_ext --help
+python -m commanderbot --help
 ```
 
 There are three ways to provide your bot token:
@@ -37,7 +37,7 @@ There are three ways to provide your bot token:
 Here's an example that provides the bot token as an argument:
 
 ```bash
-python -m commanderbot_ext bot.json --token put_your_bot_token_here
+python -m commanderbot bot.json --token put_your_bot_token_here
 ```
 
 ## Configuring your bot
@@ -50,9 +50,9 @@ The current set of configuration options is limited. Following is an example con
 {
   "command_prefix": ">",
   "extensions": [
-    "commanderbot_ext.status",
+    "commanderbot.ext.status",
     {
-      "name": "commanderbot_ext.faq",
+      "name": "commanderbot.ext.faq",
       "enabled": true,
       "options": {
         "database": "faq.json",
@@ -63,5 +63,5 @@ The current set of configuration options is limited. Following is an example con
 }
 ```
 
-[package-badge]: https://img.shields.io/pypi/v/commanderbot-ext.svg
-[version-badge]: https://img.shields.io/pypi/pyversions/commanderbot-ext.svg
+[package-badge]: https://img.shields.io/pypi/v/commanderbot.svg
+[version-badge]: https://img.shields.io/pypi/pyversions/commanderbot.svg
