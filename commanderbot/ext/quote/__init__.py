@@ -1,6 +1,6 @@
 from discord.ext.commands import Bot
 
-from commanderbot_ext.ext.quote.quote_cog import QuoteCog
+from commanderbot.ext.quote.quote_cog import QuoteCog
 
 
 def setup(bot: Bot):

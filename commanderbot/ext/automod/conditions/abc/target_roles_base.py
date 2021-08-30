@@ -3,10 +3,10 @@ from typing import Optional, Type, TypeVar
 
 from discord import Member
 
-from commanderbot_ext.ext.automod.automod_condition import AutomodConditionBase
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib import JsonObject
-from commanderbot_ext.lib.guards.roles_guard import RolesGuard
+from commanderbot.ext.automod.automod_condition import AutomodConditionBase
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.lib import JsonObject
+from commanderbot.lib.guards.roles_guard import RolesGuard
 
 ST = TypeVar("ST")
 

@@ -3,11 +3,11 @@ from typing import AsyncIterable, Optional
 
 from discord import Guild
 
-from commanderbot_ext.ext.automod.automod_data import AutomodData
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
-from commanderbot_ext.ext.automod.automod_store import AutomodRule
-from commanderbot_ext.lib import CogStore, JsonFileDatabaseAdapter, JsonObject, RoleSet
+from commanderbot.ext.automod.automod_data import AutomodData
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
+from commanderbot.ext.automod.automod_store import AutomodRule
+from commanderbot.lib import CogStore, JsonFileDatabaseAdapter, JsonObject, RoleSet
 
 
 # @implements AutomodStore

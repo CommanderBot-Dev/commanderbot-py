@@ -3,7 +3,7 @@ from typing import AsyncIterable, List, Optional, Protocol, Set, Tuple
 
 from discord import Guild
 
-from commanderbot_ext.lib import ResponsiveException
+from commanderbot.lib import ResponsiveException
 
 
 class FaqException(ResponsiveException):

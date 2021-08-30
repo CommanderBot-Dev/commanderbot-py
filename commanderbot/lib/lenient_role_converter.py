@@ -3,7 +3,7 @@ from typing import List
 from discord import Role
 from discord.ext.commands import BadArgument, RoleConverter, RoleNotFound
 
-from commanderbot_ext.lib.types import GuildContext
+from commanderbot.lib.types import GuildContext
 
 __all__ = (
     "CannotDisambiguateRole",

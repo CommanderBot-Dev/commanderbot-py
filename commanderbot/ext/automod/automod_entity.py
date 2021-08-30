@@ -11,8 +11,8 @@ from typing import (
     TypeVar,
 )
 
-from commanderbot_ext.ext.automod.utils import deserialize_module_object
-from commanderbot_ext.lib import JsonObject
+from commanderbot.ext.automod.utils import deserialize_module_object
+from commanderbot.lib import JsonObject
 
 SelfType = TypeVar("SelfType")
 

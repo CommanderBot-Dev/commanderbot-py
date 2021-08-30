@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from commanderbot_ext.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.from_data_mixin import FromDataMixin
 
 __all__ = ("IntegerRange",)
 

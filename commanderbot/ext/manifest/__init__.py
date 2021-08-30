@@ -1,6 +1,6 @@
 from discord.ext.commands import Bot
 
-from commanderbot_ext.ext.manifest.manifest_cog import ManifestCog
+from commanderbot.ext.manifest.manifest_cog import ManifestCog
 
 
 def setup(bot: Bot):

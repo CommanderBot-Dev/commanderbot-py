@@ -7,12 +7,12 @@ from typing import AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Ty
 
 from discord import Guild
 
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
-from commanderbot_ext.ext.automod.automod_rule import AutomodRule
-from commanderbot_ext.lib import GuildID, JsonObject, ResponsiveException, RoleSet
-from commanderbot_ext.lib.json import to_data
-from commanderbot_ext.lib.utils import dict_without_ellipsis
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
+from commanderbot.ext.automod.automod_rule import AutomodRule
+from commanderbot.lib import GuildID, JsonObject, ResponsiveException, RoleSet
+from commanderbot.lib.json import to_data
+from commanderbot.lib.utils import dict_without_ellipsis
 
 RulesByEventType = DefaultDict[Type[AutomodEvent], Set[AutomodRule]]
 

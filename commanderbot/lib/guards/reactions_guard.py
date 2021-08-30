@@ -3,8 +3,8 @@ from typing import Optional, Set
 
 from discord import Reaction
 
-from commanderbot_ext.lib.from_data_mixin import FromDataMixin
-from commanderbot_ext.lib.integer_range import IntegerRange
+from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.integer_range import IntegerRange
 
 __all__ = ("ReactionsGuard",)
 

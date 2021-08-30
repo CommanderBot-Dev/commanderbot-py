@@ -3,9 +3,9 @@ from typing import Any, Iterable, Iterator, Optional, Set, Tuple, Union
 
 from discord import Guild, Member, Role
 
-from commanderbot_ext.lib.from_data_mixin import FromDataMixin
-from commanderbot_ext.lib.json_serializable import JsonSerializable
-from commanderbot_ext.lib.types import RoleID
+from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.json_serializable import JsonSerializable
+from commanderbot.lib.types import RoleID
 
 __all__ = ("RoleSet",)
 

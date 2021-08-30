@@ -3,9 +3,9 @@ from typing import Iterable, Optional, Set
 
 from discord import Member, Role
 
-from commanderbot_ext.lib.from_data_mixin import FromDataMixin
-from commanderbot_ext.lib.types import RoleID
-from commanderbot_ext.lib.utils import member_roles_from
+from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.types import RoleID
+from commanderbot.lib.utils import member_roles_from
 
 __all__ = ("RolesGuard",)
 

@@ -4,10 +4,10 @@ from typing import Optional, Type, TypeVar
 
 from discord import Member
 
-from commanderbot_ext.ext.automod.automod_condition import AutomodConditionBase
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib import JsonObject
-from commanderbot_ext.lib.utils import timedelta_from_field_optional
+from commanderbot.ext.automod.automod_condition import AutomodConditionBase
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.lib import JsonObject
+from commanderbot.lib.utils import timedelta_from_field_optional
 
 ST = TypeVar("ST")
 

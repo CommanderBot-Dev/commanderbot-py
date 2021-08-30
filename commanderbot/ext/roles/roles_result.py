@@ -5,7 +5,7 @@ from typing import List, Type, TypeVar
 
 from discord import Member, Role
 
-from commanderbot_ext.ext.roles.roles_store import RolesStore
+from commanderbot.ext.roles.roles_store import RolesStore
 
 ST = TypeVar("ST")
 

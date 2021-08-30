@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from commanderbot_ext.ext.automod.automod_guild_state import AutomodGuildState
-from commanderbot_ext.ext.automod.automod_store import AutomodStore
-from commanderbot_ext.lib import GuildPartitionedCogState
+from commanderbot.ext.automod.automod_guild_state import AutomodGuildState
+from commanderbot.ext.automod.automod_store import AutomodStore
+from commanderbot.lib import GuildPartitionedCogState
 
 
 @dataclass

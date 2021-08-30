@@ -3,9 +3,9 @@ from typing import Optional
 
 from discord import Color
 
-from commanderbot_ext.lib import ChannelID
-from commanderbot_ext.lib.from_data_mixin import FromDataMixin
-from commanderbot_ext.lib.utils import color_from_field_optional
+from commanderbot.lib import ChannelID
+from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.utils import color_from_field_optional
 
 
 @dataclass

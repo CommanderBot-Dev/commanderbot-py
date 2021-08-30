@@ -3,7 +3,7 @@ from typing import Optional
 from discord import Member
 from discord.ext.commands import Bot, Cog, Context, command, has_permissions
 
-from commanderbot_ext.lib import checks
+from commanderbot.lib import checks
 
 
 class KickCog(Cog, name="commanderbot_ext.ext.kick"):

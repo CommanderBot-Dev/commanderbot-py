@@ -3,9 +3,9 @@ from typing import AsyncIterable, List, Optional, Tuple
 
 from discord import Guild
 
-from commanderbot_ext.ext.faq.faq_data import FaqData
-from commanderbot_ext.ext.faq.faq_store import FaqEntry
-from commanderbot_ext.lib import CogStore, JsonFileDatabaseAdapter
+from commanderbot.ext.faq.faq_data import FaqData
+from commanderbot.ext.faq.faq_store import FaqEntry
+from commanderbot.lib import CogStore, JsonFileDatabaseAdapter
 
 
 # @implements FaqStore

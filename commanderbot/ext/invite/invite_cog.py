@@ -3,13 +3,13 @@ from typing import Optional
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog
 
-from commanderbot_ext.ext.invite.invite_data import InviteData
-from commanderbot_ext.ext.invite.invite_guild_state import InviteGuildState
-from commanderbot_ext.ext.invite.invite_json_store import InviteJsonStore
-from commanderbot_ext.ext.invite.invite_options import InviteOptions
-from commanderbot_ext.ext.invite.invite_state import InviteState
-from commanderbot_ext.ext.invite.invite_store import InviteStore
-from commanderbot_ext.lib import (
+from commanderbot.ext.invite.invite_data import InviteData
+from commanderbot.ext.invite.invite_guild_state import InviteGuildState
+from commanderbot.ext.invite.invite_json_store import InviteJsonStore
+from commanderbot.ext.invite.invite_options import InviteOptions
+from commanderbot.ext.invite.invite_state import InviteState
+from commanderbot.ext.invite.invite_store import InviteStore
+from commanderbot.lib import (
     CogGuildStateManager,
     GuildContext,
     InMemoryDatabaseOptions,

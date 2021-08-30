@@ -3,7 +3,7 @@ from typing import Any, Iterable, Tuple
 
 from discord import Member
 
-from commanderbot_ext.lib.value_formatter import ValueFormatter
+from commanderbot.lib.value_formatter import ValueFormatter
 
 
 def yield_member_date_fields(prefix: str, member: Member) -> Iterable[Tuple[str, Any]]:

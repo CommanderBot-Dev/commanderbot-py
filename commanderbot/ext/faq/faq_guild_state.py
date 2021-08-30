@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Tuple
 
-from commanderbot_ext.ext.faq.faq_store import FaqException, FaqStore
-from commanderbot_ext.lib import CogGuildState, GuildContext, TextMessage
-from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
-from commanderbot_ext.lib.utils import async_expand
+from commanderbot.ext.faq.faq_store import FaqException, FaqStore
+from commanderbot.lib import CogGuildState, GuildContext, TextMessage
+from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
+from commanderbot.lib.utils import async_expand
 
 
 @dataclass

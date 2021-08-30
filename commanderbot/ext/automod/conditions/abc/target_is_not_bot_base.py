@@ -3,8 +3,8 @@ from typing import Optional, TypeVar
 
 from discord import Member
 
-from commanderbot_ext.ext.automod.automod_condition import AutomodConditionBase
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.automod_condition import AutomodConditionBase
+from commanderbot.ext.automod.automod_event import AutomodEvent
 
 ST = TypeVar("ST")
 

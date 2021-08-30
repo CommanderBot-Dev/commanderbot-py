@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from commanderbot_ext.ext.help_chat.help_chat_guild_state import HelpChatGuildState
-from commanderbot_ext.ext.help_chat.help_chat_store import HelpChatStore
-from commanderbot_ext.lib import GuildPartitionedCogState
+from commanderbot.ext.help_chat.help_chat_guild_state import HelpChatGuildState
+from commanderbot.ext.help_chat.help_chat_store import HelpChatStore
+from commanderbot.lib import GuildPartitionedCogState
 
 
 @dataclass

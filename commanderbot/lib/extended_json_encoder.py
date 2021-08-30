@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Set
 
 from discord import Color
 
-from commanderbot_ext.lib.json_serializable import JsonSerializable
-from commanderbot_ext.lib.utils import color_to_hex, datetime_to_str, timedelta_to_dict
+from commanderbot.lib.json_serializable import JsonSerializable
+from commanderbot.lib.utils import color_to_hex, datetime_to_str, timedelta_to_dict
 
 
 class ExtendedJsonEncoder(json.JSONEncoder):

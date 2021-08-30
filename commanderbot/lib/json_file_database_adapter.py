@@ -3,9 +3,9 @@ from dataclasses import dataclass, field
 from logging import Logger, getLogger
 from typing import Callable, Generic, Optional, TypeVar
 
-from commanderbot_ext.lib.database_options import JsonFileDatabaseOptions
-from commanderbot_ext.lib.json import json_dump_async, json_load_async
-from commanderbot_ext.lib.types import JsonObject
+from commanderbot.lib.database_options import JsonFileDatabaseOptions
+from commanderbot.lib.json import json_dump_async, json_load_async
+from commanderbot.lib.types import JsonObject
 
 __all__ = ("JsonFileDatabaseAdapter",)
 

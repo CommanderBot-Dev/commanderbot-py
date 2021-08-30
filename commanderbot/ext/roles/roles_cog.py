@@ -4,13 +4,13 @@ from discord import Guild, Member, Role
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog, Context, Greedy
 
-from commanderbot_ext.ext.roles.roles_data import RolesData
-from commanderbot_ext.ext.roles.roles_guild_state import RolesGuildState
-from commanderbot_ext.ext.roles.roles_json_store import RolesJsonStore
-from commanderbot_ext.ext.roles.roles_options import RolesOptions
-from commanderbot_ext.ext.roles.roles_state import RolesState
-from commanderbot_ext.ext.roles.roles_store import RolesStore
-from commanderbot_ext.lib import (
+from commanderbot.ext.roles.roles_data import RolesData
+from commanderbot.ext.roles.roles_guild_state import RolesGuildState
+from commanderbot.ext.roles.roles_json_store import RolesJsonStore
+from commanderbot.ext.roles.roles_options import RolesOptions
+from commanderbot.ext.roles.roles_state import RolesState
+from commanderbot.ext.roles.roles_store import RolesStore
+from commanderbot.lib import (
     CogGuildStateManager,
     GuildContext,
     InMemoryDatabaseOptions,

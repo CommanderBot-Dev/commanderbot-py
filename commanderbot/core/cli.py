@@ -3,8 +3,8 @@ import json
 import os
 from logging import getLogger
 
-from commanderbot_ext.core.commander_bot import CommanderBot
-from commanderbot_ext.lib.logging import setup_logging
+from commanderbot.core.commander_bot import CommanderBot
+from commanderbot.lib.logging import setup_logging
 
 __all__ = ("run",)
 

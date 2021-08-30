@@ -2,8 +2,8 @@ from typing import Any
 
 import discord
 
-from commanderbot_ext.lib.from_data_mixin import FromDataMixin
-from commanderbot_ext.lib.json_serializable import JsonSerializable
+from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.json_serializable import JsonSerializable
 
 __all__ = ("AllowedMentions",)
 

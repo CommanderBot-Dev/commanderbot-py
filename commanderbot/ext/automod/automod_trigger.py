@@ -11,14 +11,14 @@ from typing import (
     TypeVar,
 )
 
-from commanderbot_ext.ext.automod import triggers
-from commanderbot_ext.ext.automod.automod_entity import (
+from commanderbot.ext.automod import triggers
+from commanderbot.ext.automod.automod_entity import (
     AutomodEntity,
     AutomodEntityBase,
     deserialize_entities,
 )
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib.types import JsonObject
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.lib.types import JsonObject
 
 ST = TypeVar("ST")
 

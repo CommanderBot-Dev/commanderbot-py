@@ -3,7 +3,7 @@ from typing import List, Optional, Protocol, Tuple
 
 from discord import Guild, Role
 
-from commanderbot_ext.lib import GuildID, ResponsiveException, RoleID, RoleSet
+from commanderbot.lib import GuildID, ResponsiveException, RoleID, RoleSet
 
 
 class RolesException(ResponsiveException):

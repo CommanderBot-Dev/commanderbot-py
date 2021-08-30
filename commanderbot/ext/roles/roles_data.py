@@ -7,13 +7,13 @@ from typing import DefaultDict, Dict, List, Optional
 
 from discord import Guild, Role
 
-from commanderbot_ext.ext.roles.roles_store import (
+from commanderbot.ext.roles.roles_store import (
     RoleIDNotRegistered,
     RoleNotRegistered,
 )
-from commanderbot_ext.lib import GuildID, JsonObject, RoleID
-from commanderbot_ext.lib.role_set import RoleSet
-from commanderbot_ext.lib.utils import dict_without_ellipsis
+from commanderbot.lib import GuildID, JsonObject, RoleID
+from commanderbot.lib.role_set import RoleSet
+from commanderbot.lib.utils import dict_without_ellipsis
 
 
 # @implements RoleEntry

@@ -6,7 +6,7 @@ from textwrap import dedent
 from discord import File
 from discord.ext.commands import Bot, Cog, Context, command
 
-from commanderbot_ext.ext.pack.pack_generate import generate_packs
+from commanderbot.ext.pack.pack_generate import generate_packs
 
 PACK_HELP = """
     Compile messages into data packs and resource packs with lectern.

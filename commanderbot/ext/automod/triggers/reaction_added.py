@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from commanderbot_ext.ext.automod import events
-from commanderbot_ext.ext.automod.automod_trigger import AutomodTrigger
-from commanderbot_ext.ext.automod.triggers.reaction import Reaction
-from commanderbot_ext.lib import JsonObject
+from commanderbot.ext.automod import events
+from commanderbot.ext.automod.automod_trigger import AutomodTrigger
+from commanderbot.ext.automod.triggers.reaction import Reaction
+from commanderbot.lib import JsonObject
 
 
 @dataclass

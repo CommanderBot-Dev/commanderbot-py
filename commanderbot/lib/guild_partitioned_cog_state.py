@@ -3,10 +3,10 @@ from typing import Generic, TypeVar, Union
 
 from discord import Guild
 
-from commanderbot_ext.lib.cog_guild_state import CogGuildState
-from commanderbot_ext.lib.cog_guild_state_manager import CogGuildStateManager
-from commanderbot_ext.lib.cog_state import CogState
-from commanderbot_ext.lib.types import GuildID
+from commanderbot.lib.cog_guild_state import CogGuildState
+from commanderbot.lib.cog_guild_state_manager import CogGuildStateManager
+from commanderbot.lib.cog_state import CogState
+from commanderbot.lib.types import GuildID
 
 __all__ = ("GuildPartitionedCogState",)
 

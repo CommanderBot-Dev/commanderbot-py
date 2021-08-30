@@ -20,12 +20,12 @@ from discord import (
 )
 from yaml import YAMLError
 
-from commanderbot_ext.ext.automod import events
-from commanderbot_ext.ext.automod.automod_event import AutomodEventBase
-from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
-from commanderbot_ext.ext.automod.automod_rule import AutomodRule
-from commanderbot_ext.ext.automod.automod_store import AutomodStore
-from commanderbot_ext.lib import (
+from commanderbot.ext.automod import events
+from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
+from commanderbot.ext.automod.automod_rule import AutomodRule
+from commanderbot.ext.automod.automod_store import AutomodStore
+from commanderbot.lib import (
     CogGuildState,
     GuildContext,
     JsonObject,
@@ -34,9 +34,9 @@ from commanderbot_ext.lib import (
     TextMessage,
     TextReaction,
 )
-from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
-from commanderbot_ext.lib.json import to_data
-from commanderbot_ext.lib.utils import async_expand, sanitize_stacktrace
+from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
+from commanderbot.lib.json import to_data
+from commanderbot.lib.utils import async_expand, sanitize_stacktrace
 
 
 @dataclass

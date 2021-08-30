@@ -2,8 +2,8 @@ import re
 from dataclasses import dataclass
 from typing import Any, AnyStr, Match, Optional
 
-from commanderbot_ext.lib.from_data_mixin import FromDataMixin
-from commanderbot_ext.lib.json_serializable import JsonSerializable
+from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.json_serializable import JsonSerializable
 
 __all__ = ("PatternWrapper",)
 

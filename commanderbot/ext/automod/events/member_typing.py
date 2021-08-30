@@ -3,7 +3,7 @@ from datetime import datetime
 
 from discord import Member, TextChannel, Thread
 
-from commanderbot_ext.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.automod_event import AutomodEventBase
 
 __all__ = ("MemberTyping",)
 

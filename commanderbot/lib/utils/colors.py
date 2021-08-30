@@ -3,8 +3,8 @@ from typing import Any, Optional
 from discord import Color
 from discord.ext.commands import ColourConverter
 
-from commanderbot_ext.lib.data import MalformedData
-from commanderbot_ext.lib.types import JsonObject
+from commanderbot.lib.data import MalformedData
+from commanderbot.lib.types import JsonObject
 
 __all__ = (
     "color_from_hex",

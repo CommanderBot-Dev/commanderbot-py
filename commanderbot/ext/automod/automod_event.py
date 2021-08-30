@@ -4,13 +4,13 @@ from typing import Any, ClassVar, Dict, Iterable, Optional, Protocol, Tuple, Typ
 from discord import Member, TextChannel, Thread, User
 from discord.ext.commands import Bot
 
-from commanderbot_ext.lib import (
+from commanderbot.lib import (
     ShallowFormatter,
     TextMessage,
     TextReaction,
     ValueFormatter,
 )
-from commanderbot_ext.lib.utils import yield_member_date_fields
+from commanderbot.lib.utils import yield_member_date_fields
 
 
 class AutomodEvent(Protocol):

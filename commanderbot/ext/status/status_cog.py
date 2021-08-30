@@ -1,6 +1,6 @@
 from discord.ext.commands import Bot, Cog, Context, command
 
-from commanderbot_ext.ext.status.status_details import StatusDetails
+from commanderbot.ext.status.status_details import StatusDetails
 
 
 class StatusCog(Cog, name="commanderbot_ext.ext.status"):

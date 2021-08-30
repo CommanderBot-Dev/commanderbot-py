@@ -3,8 +3,8 @@ from typing import Optional, Set
 
 from discord import TextChannel
 
-from commanderbot_ext.lib.from_data_mixin import FromDataMixin
-from commanderbot_ext.lib.types import ChannelID
+from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.types import ChannelID
 
 __all__ = ("ChannelsGuard",)
 

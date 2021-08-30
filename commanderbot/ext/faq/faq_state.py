@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from commanderbot_ext.ext.faq.faq_guild_state import FaqGuildState
-from commanderbot_ext.ext.faq.faq_store import FaqStore
-from commanderbot_ext.lib import GuildPartitionedCogState
+from commanderbot.ext.faq.faq_guild_state import FaqGuildState
+from commanderbot.ext.faq.faq_store import FaqStore
+from commanderbot.lib import GuildPartitionedCogState
 
 
 @dataclass

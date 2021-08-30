@@ -1,7 +1,7 @@
 from discord.ext.commands import Bot
 
-from commanderbot_ext.ext.invite.invite_cog import InviteCog
-from commanderbot_ext.lib.utils import add_configured_cog
+from commanderbot.ext.invite.invite_cog import InviteCog
+from commanderbot.lib.utils import add_configured_cog
 
 
 def setup(bot: Bot):

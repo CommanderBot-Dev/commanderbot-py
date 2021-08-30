@@ -6,8 +6,8 @@ from typing import Any, AsyncIterable, List, Mapping, Optional, Set, Type, TypeV
 from discord import Member
 from discord.ext.commands import Bot, Cog
 
-from commanderbot_ext.core.commander_bot_base import CommanderBotBase
-from commanderbot_ext.lib.types import RoleID
+from commanderbot.core.commander_bot_base import CommanderBotBase
+from commanderbot.lib.types import RoleID
 
 T = TypeVar("T")
 

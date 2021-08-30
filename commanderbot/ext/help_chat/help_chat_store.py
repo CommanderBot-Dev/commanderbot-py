@@ -4,7 +4,7 @@ from typing import List, Optional, Protocol
 from discord import Guild, TextChannel
 from discord.ext.commands import Context
 
-from commanderbot_ext.lib import ChannelID
+from commanderbot.lib import ChannelID
 
 
 class HelpChannel(Protocol):

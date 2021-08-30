@@ -3,7 +3,7 @@ from typing import Optional
 from discord import Embed
 from discord.ext.commands import Bot, Cog, Context, command
 
-from commanderbot_ext.ext.manifest.manifest import (
+from commanderbot.ext.manifest.manifest import (
     Manifest,
     ModuleType,
     PackType,

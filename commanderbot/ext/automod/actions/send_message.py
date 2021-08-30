@@ -3,9 +3,9 @@ from typing import Optional, Type, TypeVar
 
 from discord.abc import Messageable
 
-from commanderbot_ext.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib import AllowedMentions, ChannelID, JsonObject
+from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.lib import AllowedMentions, ChannelID, JsonObject
 
 ST = TypeVar("ST")
 

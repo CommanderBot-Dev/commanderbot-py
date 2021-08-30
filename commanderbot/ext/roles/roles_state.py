@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from commanderbot_ext.ext.roles.roles_guild_state import RolesGuildState
-from commanderbot_ext.ext.roles.roles_store import RolesStore
-from commanderbot_ext.lib import GuildPartitionedCogState
+from commanderbot.ext.roles.roles_guild_state import RolesGuildState
+from commanderbot.ext.roles.roles_store import RolesStore
+from commanderbot.lib import GuildPartitionedCogState
 
 
 @dataclass

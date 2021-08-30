@@ -3,12 +3,12 @@ from typing import Optional
 
 from discord import Member
 
-from commanderbot_ext.ext.automod.actions.abc.add_roles_to_target_base import (
+from commanderbot.ext.automod.actions.abc.add_roles_to_target_base import (
     AddRolesToTargetBase,
 )
-from commanderbot_ext.ext.automod.automod_action import AutomodAction
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib import JsonObject
+from commanderbot.ext.automod.automod_action import AutomodAction
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.lib import JsonObject
 
 
 @dataclass

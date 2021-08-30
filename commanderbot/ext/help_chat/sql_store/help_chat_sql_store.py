@@ -5,9 +5,9 @@ from discord import Guild, TextChannel
 from sqlalchemy.future import select
 from sqlalchemy.sql.expression import insert
 
-from commanderbot_ext.ext.help_chat.help_chat_store import HelpChannel
-from commanderbot_ext.ext.help_chat.sql_store import models
-from commanderbot_ext.lib import CogStore, SQLDatabaseAdapter
+from commanderbot.ext.help_chat.help_chat_store import HelpChannel
+from commanderbot.ext.help_chat.sql_store import models
+from commanderbot.lib import CogStore, SQLDatabaseAdapter
 
 __all__ = ("HelpChatSQLStore",)
 

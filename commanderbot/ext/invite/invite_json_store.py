@@ -3,9 +3,9 @@ from typing import AsyncIterable, List, Optional, Tuple
 
 from discord import Guild
 
-from commanderbot_ext.ext.invite.invite_data import InviteData
-from commanderbot_ext.ext.invite.invite_store import InviteEntry
-from commanderbot_ext.lib import CogStore, JsonFileDatabaseAdapter
+from commanderbot.ext.invite.invite_data import InviteData
+from commanderbot.ext.invite.invite_store import InviteEntry
+from commanderbot.lib import CogStore, JsonFileDatabaseAdapter
 
 
 # @implements InviteStore

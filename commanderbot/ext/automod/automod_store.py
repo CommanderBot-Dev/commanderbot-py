@@ -2,10 +2,10 @@ from typing import AsyncIterable, Optional, Protocol
 
 from discord import Guild
 
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
-from commanderbot_ext.ext.automod.automod_rule import AutomodRule
-from commanderbot_ext.lib import JsonObject, RoleSet
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
+from commanderbot.ext.automod.automod_rule import AutomodRule
+from commanderbot.lib import JsonObject, RoleSet
 
 
 class AutomodStore(Protocol):

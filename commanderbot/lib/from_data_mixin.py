@@ -1,7 +1,7 @@
 from typing import Any, Optional, Type, TypeVar
 
-from commanderbot_ext.lib.data import MalformedData
-from commanderbot_ext.lib.json import JsonObject
+from commanderbot.lib.data import MalformedData
+from commanderbot.lib.json import JsonObject
 
 __all__ = ("FromDataMixin",)
 

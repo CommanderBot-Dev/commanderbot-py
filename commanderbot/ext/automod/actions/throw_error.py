@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from commanderbot_ext.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib import JsonObject
+from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.lib import JsonObject
 
 
 @dataclass

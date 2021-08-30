@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict
 
-from commanderbot_ext.lib import (
+from commanderbot.lib import (
     DatabaseOptions,
     InMemoryDatabaseOptions,
     make_database_options,

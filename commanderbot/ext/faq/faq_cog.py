@@ -4,13 +4,13 @@ from discord import Message, TextChannel, Thread
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog, MessageConverter
 
-from commanderbot_ext.ext.faq.faq_data import FaqData
-from commanderbot_ext.ext.faq.faq_guild_state import FaqGuildState
-from commanderbot_ext.ext.faq.faq_json_store import FaqJsonStore
-from commanderbot_ext.ext.faq.faq_options import FaqOptions
-from commanderbot_ext.ext.faq.faq_state import FaqState
-from commanderbot_ext.ext.faq.faq_store import FaqStore
-from commanderbot_ext.lib import (
+from commanderbot.ext.faq.faq_data import FaqData
+from commanderbot.ext.faq.faq_guild_state import FaqGuildState
+from commanderbot.ext.faq.faq_json_store import FaqJsonStore
+from commanderbot.ext.faq.faq_options import FaqOptions
+from commanderbot.ext.faq.faq_state import FaqState
+from commanderbot.ext.faq.faq_store import FaqStore
+from commanderbot.lib import (
     CogGuildStateManager,
     GuildContext,
     InMemoryDatabaseOptions,
@@ -20,7 +20,7 @@ from commanderbot_ext.lib import (
     UnsupportedDatabaseOptions,
     checks,
 )
-from commanderbot_ext.lib.utils import is_bot
+from commanderbot.lib.utils import is_bot
 
 
 def make_faq_store(bot: Bot, cog: Cog, options: FaqOptions) -> FaqStore:

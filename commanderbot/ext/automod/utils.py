@@ -2,7 +2,7 @@ from collections import defaultdict
 from importlib import import_module
 from typing import Any, DefaultDict
 
-from commanderbot_ext.lib import JsonObject, ResponsiveException
+from commanderbot.lib import JsonObject, ResponsiveException
 
 module_function_cache: DefaultDict[str, DefaultDict[str, Any]] = defaultdict(
     lambda: defaultdict(lambda: None)

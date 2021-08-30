@@ -6,7 +6,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncConnection
 
-from commanderbot_ext.lib.database_options import SQLiteDatabaseOptions
+from commanderbot.lib.database_options import SQLiteDatabaseOptions
 
 __all__ = ("SQLiteDatabaseAdapter",)
 

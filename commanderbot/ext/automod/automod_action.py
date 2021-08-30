@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Protocol
 
-from commanderbot_ext.ext.automod import actions
-from commanderbot_ext.ext.automod.automod_entity import (
+from commanderbot.ext.automod import actions
+from commanderbot.ext.automod.automod_entity import (
     AutomodEntity,
     AutomodEntityBase,
     deserialize_entities,
 )
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.automod_event import AutomodEvent
 
 
 class AutomodAction(AutomodEntity, Protocol):

@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import List, Optional, Type, TypeVar
 
-from commanderbot_ext.ext.automod import events
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.ext.automod.automod_trigger import (
+from commanderbot.ext.automod import events
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.automod_trigger import (
     AutomodTrigger,
     AutomodTriggerBase,
 )
-from commanderbot_ext.lib import ChannelsGuard, JsonObject, RolesGuard
+from commanderbot.lib import ChannelsGuard, JsonObject, RolesGuard
 
 ST = TypeVar("ST")
 

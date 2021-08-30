@@ -3,8 +3,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from commanderbot_ext.lib.extended_json_encoder import ExtendedJsonEncoder
-from commanderbot_ext.lib.types import JsonObject
+from commanderbot.lib.extended_json_encoder import ExtendedJsonEncoder
+from commanderbot.lib.types import JsonObject
 
 
 def to_data(obj: Any) -> Any:

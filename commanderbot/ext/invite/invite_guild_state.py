@@ -2,14 +2,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Tuple
 
-from commanderbot_ext.ext.invite.invite_store import (
+from commanderbot.ext.invite.invite_store import (
     InviteEntry,
     InviteException,
     InviteStore,
 )
-from commanderbot_ext.lib import CogGuildState, GuildContext
-from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
-from commanderbot_ext.lib.utils import async_expand
+from commanderbot.lib import CogGuildState, GuildContext
+from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
+from commanderbot.lib.utils import async_expand
 
 
 @dataclass

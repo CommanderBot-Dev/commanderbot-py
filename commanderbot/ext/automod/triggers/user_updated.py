@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
-from commanderbot_ext.ext.automod import events
-from commanderbot_ext.ext.automod.automod_trigger import (
+from commanderbot.ext.automod import events
+from commanderbot.ext.automod.automod_trigger import (
     AutomodTrigger,
     AutomodTriggerBase,
 )
-from commanderbot_ext.lib import JsonObject
+from commanderbot.lib import JsonObject
 
 
 @dataclass

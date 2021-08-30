@@ -1,6 +1,6 @@
 from discord.ext.commands import Bot
 
-from commanderbot_ext.ext.kick.kick_cog import KickCog
+from commanderbot.ext.kick.kick_cog import KickCog
 
 
 def setup(bot: Bot):

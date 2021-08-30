@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional, Type, TypeVar
 
-from commanderbot_ext.ext.automod.automod_condition import (
+from commanderbot.ext.automod.automod_condition import (
     AutomodCondition,
     AutomodConditionBase,
 )
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib import JsonObject, RolesGuard
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.lib import JsonObject, RolesGuard
 
 ST = TypeVar("ST")
 

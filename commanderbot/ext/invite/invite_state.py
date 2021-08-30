@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from commanderbot_ext.ext.invite.invite_guild_state import InviteGuildState
-from commanderbot_ext.ext.invite.invite_store import InviteStore
-from commanderbot_ext.lib import GuildPartitionedCogState
+from commanderbot.ext.invite.invite_guild_state import InviteGuildState
+from commanderbot.ext.invite.invite_store import InviteStore
+from commanderbot.lib import GuildPartitionedCogState
 
 
 @dataclass

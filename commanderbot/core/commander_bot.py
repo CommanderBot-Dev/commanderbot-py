@@ -14,10 +14,10 @@ from discord.ext.commands.errors import (
     UserInputError,
 )
 
-from commanderbot_ext.core.commander_bot_base import CommanderBotBase
-from commanderbot_ext.lib.allowed_mentions import AllowedMentions
-from commanderbot_ext.lib.intents import Intents
-from commanderbot_ext.lib.responsive_exception import ResponsiveException
+from commanderbot.core.commander_bot_base import CommanderBotBase
+from commanderbot.lib.allowed_mentions import AllowedMentions
+from commanderbot.lib.intents import Intents
+from commanderbot.lib.responsive_exception import ResponsiveException
 
 __all__ = (
     "ConfiguredExtension",

@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from commanderbot_ext.lib.data import MalformedData
-from commanderbot_ext.lib.types import JsonObject
+from commanderbot.lib.data import MalformedData
+from commanderbot.lib.types import JsonObject
 
 __all__ = (
     "datetime_from_str",

@@ -5,8 +5,8 @@ from typing import Callable, Dict, Generic, Iterable, TypeVar, Union
 from discord import Guild
 from discord.ext.commands import Bot, Cog
 
-from commanderbot_ext.lib.cog_guild_state import CogGuildState
-from commanderbot_ext.lib.types import GuildID
+from commanderbot.lib.cog_guild_state import CogGuildState
+from commanderbot.lib.types import GuildID
 
 __all__ = ("CogGuildStateManager",)
 

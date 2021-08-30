@@ -3,9 +3,9 @@ from typing import Optional, Tuple
 
 from discord import Guild, Member
 
-from commanderbot_ext.ext.automod.automod_action import AutomodActionBase
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.lib import RoleID
+from commanderbot.ext.automod.automod_action import AutomodActionBase
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.lib import RoleID
 
 
 @dataclass

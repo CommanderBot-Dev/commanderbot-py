@@ -15,14 +15,14 @@ from typing import (
 
 from discord import Guild
 
-from commanderbot_ext.ext.faq.faq_store import (
+from commanderbot.ext.faq.faq_store import (
     FaqAliasUnavailable,
     FaqEntry,
     FaqKeyAlreadyExists,
     NoSuchFaq,
 )
-from commanderbot_ext.lib import GuildID, JsonObject
-from commanderbot_ext.lib.utils import dict_without_falsies
+from commanderbot.lib import GuildID, JsonObject
+from commanderbot.lib.utils import dict_without_falsies
 
 
 # @implements FaqEntry

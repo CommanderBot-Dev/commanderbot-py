@@ -4,22 +4,22 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
 
-from commanderbot_ext.ext.automod.automod_action import (
+from commanderbot.ext.automod.automod_action import (
     AutomodAction,
     deserialize_actions,
 )
-from commanderbot_ext.ext.automod.automod_condition import (
+from commanderbot.ext.automod.automod_condition import (
     AutomodCondition,
     deserialize_conditions,
 )
-from commanderbot_ext.ext.automod.automod_event import AutomodEvent
-from commanderbot_ext.ext.automod.automod_log_options import AutomodLogOptions
-from commanderbot_ext.ext.automod.automod_trigger import (
+from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
+from commanderbot.ext.automod.automod_trigger import (
     AutomodTrigger,
     deserialize_triggers,
 )
-from commanderbot_ext.lib import JsonObject
-from commanderbot_ext.lib.utils import datetime_from_field_optional
+from commanderbot.lib import JsonObject
+from commanderbot.lib.utils import datetime_from_field_optional
 
 
 @dataclass

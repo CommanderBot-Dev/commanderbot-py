@@ -3,9 +3,9 @@ from typing import List, Optional
 
 from discord import Guild, Role
 
-from commanderbot_ext.ext.roles.roles_data import RolesData
-from commanderbot_ext.ext.roles.roles_store import RoleEntry
-from commanderbot_ext.lib import (
+from commanderbot.ext.roles.roles_data import RolesData
+from commanderbot.ext.roles.roles_store import RoleEntry
+from commanderbot.lib import (
     CogStore,
     GuildID,
     JsonFileDatabaseAdapter,

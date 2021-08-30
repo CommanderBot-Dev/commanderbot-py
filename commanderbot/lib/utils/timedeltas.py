@@ -1,8 +1,8 @@
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
-from commanderbot_ext.lib.data import MalformedData
-from commanderbot_ext.lib.types import JsonObject
+from commanderbot.lib.data import MalformedData
+from commanderbot.lib.types import JsonObject
 
 __all__ = (
     "timedelta_from_dict",

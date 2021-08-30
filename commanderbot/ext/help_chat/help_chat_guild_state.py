@@ -4,9 +4,9 @@ from typing import Iterable, List, Tuple, Union
 
 from discord import CategoryChannel, TextChannel
 
-from commanderbot_ext.ext.help_chat.help_chat_report import HelpChatReportBuildContext
-from commanderbot_ext.ext.help_chat.help_chat_store import HelpChannel, HelpChatStore
-from commanderbot_ext.lib import CogGuildState, GuildContext
+from commanderbot.ext.help_chat.help_chat_report import HelpChatReportBuildContext
+from commanderbot.ext.help_chat.help_chat_store import HelpChannel, HelpChatStore
+from commanderbot.lib import CogGuildState, GuildContext
 
 
 @dataclass

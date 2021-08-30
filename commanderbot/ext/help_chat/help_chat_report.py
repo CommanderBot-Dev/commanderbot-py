@@ -9,9 +9,9 @@ from typing import DefaultDict, Dict, Iterable, List, Optional, Tuple, cast
 from discord import AllowedMentions, Embed, File, Message, TextChannel, User
 from discord.ext.commands import Context
 
-from commanderbot_ext.ext.help_chat import constants
-from commanderbot_ext.ext.help_chat.help_chat_store import HelpChannel
-from commanderbot_ext.lib import IDType
+from commanderbot.ext.help_chat import constants
+from commanderbot.ext.help_chat.help_chat_store import HelpChannel
+from commanderbot.lib import IDType
 
 
 class ChannelStatus(Enum):

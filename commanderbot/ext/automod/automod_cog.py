@@ -18,13 +18,13 @@ from discord import (
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog, Context
 
-from commanderbot_ext.ext.automod.automod_data import AutomodData
-from commanderbot_ext.ext.automod.automod_guild_state import AutomodGuildState
-from commanderbot_ext.ext.automod.automod_json_store import AutomodJsonStore
-from commanderbot_ext.ext.automod.automod_options import AutomodOptions
-from commanderbot_ext.ext.automod.automod_state import AutomodState
-from commanderbot_ext.ext.automod.automod_store import AutomodStore
-from commanderbot_ext.lib import (
+from commanderbot.ext.automod.automod_data import AutomodData
+from commanderbot.ext.automod.automod_guild_state import AutomodGuildState
+from commanderbot.ext.automod.automod_json_store import AutomodJsonStore
+from commanderbot.ext.automod.automod_options import AutomodOptions
+from commanderbot.ext.automod.automod_state import AutomodState
+from commanderbot.ext.automod.automod_store import AutomodStore
+from commanderbot.lib import (
     CogGuildStateManager,
     GuildContext,
     InMemoryDatabaseOptions,
@@ -36,7 +36,7 @@ from commanderbot_ext.lib import (
     UnsupportedDatabaseOptions,
     checks,
 )
-from commanderbot_ext.lib.utils import is_bot
+from commanderbot.lib.utils import is_bot
 
 
 def make_automod_store(bot: Bot, cog: Cog, options: AutomodOptions) -> AutomodStore:

@@ -3,27 +3,27 @@ from typing import List, Optional, Type
 
 from discord import AllowedMentions, Member, Message, Permissions, Role
 
-from commanderbot_ext.ext.roles.roles_result import (
+from commanderbot.ext.roles.roles_result import (
     AddableRolesResult,
     JoinableRolesResult,
     LeavableRolesResult,
     RemovableRolesResult,
     RolesResult,
 )
-from commanderbot_ext.ext.roles.roles_store import (
+from commanderbot.ext.roles.roles_store import (
     RoleEntry,
     RoleEntryPair,
     RolesException,
     RolesStore,
 )
-from commanderbot_ext.lib import (
+from commanderbot.lib import (
     CogGuildState,
     GuildContext,
     MemberContext,
     RoleID,
     RoleSet,
 )
-from commanderbot_ext.lib.dialogs import ConfirmationResult, confirm_with_reaction
+from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 
 SAFE_PERMS = Permissions.none()
 # general

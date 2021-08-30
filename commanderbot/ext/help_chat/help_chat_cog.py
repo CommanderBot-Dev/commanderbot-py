@@ -5,13 +5,13 @@ from discord import CategoryChannel, TextChannel
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog
 
-from commanderbot_ext.ext.help_chat import constants
-from commanderbot_ext.ext.help_chat.help_chat_guild_state import HelpChatGuildState
-from commanderbot_ext.ext.help_chat.help_chat_options import HelpChatOptions
-from commanderbot_ext.ext.help_chat.help_chat_state import HelpChatState
-from commanderbot_ext.ext.help_chat.help_chat_store import HelpChatStore
-from commanderbot_ext.ext.help_chat.sql_store import HelpChatSQLStore
-from commanderbot_ext.lib import (
+from commanderbot.ext.help_chat import constants
+from commanderbot.ext.help_chat.help_chat_guild_state import HelpChatGuildState
+from commanderbot.ext.help_chat.help_chat_options import HelpChatOptions
+from commanderbot.ext.help_chat.help_chat_state import HelpChatState
+from commanderbot.ext.help_chat.help_chat_store import HelpChatStore
+from commanderbot.ext.help_chat.sql_store import HelpChatSQLStore
+from commanderbot.lib import (
     CogGuildStateManager,
     GuildContext,
     InMemoryDatabaseOptions,
