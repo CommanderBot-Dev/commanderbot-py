@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Updated to Python 3.10 (release candidate).
+- Updated to the discord.py 2.0 beta.
+- Updated all extensions past breaking changes.
+- `commanderbot-core` has been merged into `commanderbot-ext`.
+  - The repository has been renamed to `commanderbot-py`.
+  - The package has been renamed to `commanderbot` (which used to belong to `commanderbot-core`).
+- Exception handling logic has been reworked.
+  - Fixes #53
+- Reconsidered all commands to use a `ctx.reply` wrapper with pings disabled.
+  - Fixes #42
+- `allowed_mentions` field in root bot config is now supported.
+  - Fixes #52
+- `automod`:
+  - Even data now includes `user` fields.
+    - Fixes #43
+  - Even data now includes member date fields by default.
+  - `message` triggers now allow basic matching of message content.
+    - Fixes #44
+- `roles`:
+  - Unresolved roles are now deregistered and cleaned-up automatically.
+    - Fixes #47
+  - Elevated commands can no longer add/remove unregistered roles to/from users.
+    - Fixes #48
+  - Users can now join/leave multiple roles in one command.
+    - Fixes #49
+  - Multiple roles can now be added/removed to/from multiple members all in one command.
+  - Roles can now be targeted using a partial name match.
+    - Fixes #50
+  - Roles can now be configured to be able to run elevated commands.
+    - Fixes #18
+
 ## [0.15.0] - 2021-08-29
 
 ### Added
@@ -146,19 +181,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Implemented `status` and `faq` extensions as an exercise for developing `commanderbot-lib`
 
-[unreleased]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.15.0...HEAD
-[0.15.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.14.0...v0.15.0
-[0.14.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.13.0...v0.14.0
-[0.13.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.12.0...v0.13.0
-[0.12.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.11.0...v0.12.0
-[0.11.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.10.0...v0.11.0
-[0.10.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.9.0...v0.10.0
-[0.9.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/CommanderBot-Dev/commanderbot-ext/releases/tag/v0.1.0
+[unreleased]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.14.0...v0.15.0
+[0.14.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.13.0...v0.14.0
+[0.13.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/CommanderBot-Dev/commanderbot-py/releases/tag/v0.1.0
