@@ -1,6 +1,6 @@
-# CommanderBot Ext
+# commanderbot-py
 
-A collection of cogs and extensions for discord.py bots.
+A collection of utilities and extensions for discord.py bots.
 
 [![package-badge]](https://pypi.python.org/pypi/commanderbot/)
 [![version-badge]](https://pypi.python.org/pypi/commanderbot/)
