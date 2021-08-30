@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.16.0] - 2021-08-30
 
 ### Changed
 
@@ -181,7 +181,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Implemented `status` and `faq` extensions as an exercise for developing `commanderbot-lib`
 
-[unreleased]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.15.0...HEAD
+[unreleased]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.12.0...v0.13.0
