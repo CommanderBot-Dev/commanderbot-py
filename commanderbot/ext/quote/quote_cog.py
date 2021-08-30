@@ -1,15 +1,10 @@
+import re
 from typing import List, Optional
 
-from discord import (
-    AllowedMentions,
-    Attachment,
-    Embed,
-    File,
-    Message,
-    TextChannel,
-    Thread,
-)
+from discord import AllowedMentions, Embed, Message, TextChannel, Thread
 from discord.ext.commands import Bot, Cog, Context, command
+
+AUTO_EMBED_PATTERN = re.compile(r"^https?:\/\/\S\S+$")
 
 
 class QuoteCog(Cog, name="commanderbot.ext.quote"):
@@ -40,6 +35,8 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
         )
         lines.append(message.jump_url)
 
+        content_to_quote: Optional[str] = message.content
+
         # Account for any attachments to the original message.
         if message.attachments:
             attachment_urls = [att.url for att in message.attachments]
@@ -52,24 +49,26 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
             ]
             lines += embed_urls
 
+            # Special-case: message is just a media link, which creates a single embed.
+            # In this case, remove the quote embed so the media embed appears.
+            if len(embed_urls) == 1 and AUTO_EMBED_PATTERN.match(content_to_quote):
+                content_to_quote = None
+
         # Build the embed containing the actual quote content, if any.
-        quote_embed: Optional[Embed] = None
-        original_content = message.content
-        if original_content:
-            quote_embed = Embed(
-                description=original_content,
+        embed: Optional[Embed] = None
+        if content_to_quote:
+            embed = Embed(
+                description=content_to_quote,
             )
-            quote_embed.set_author(
+            embed.set_author(
                 name=str(message.author),
                 icon_url=message.author.display_avatar.url,
             )
 
         # Send the message with the embed attached, if any.
         content = "\n".join(lines)
-        if quote_embed:
-            await ctx.send(
-                content, embed=quote_embed, allowed_mentions=allowed_mentions
-            )
+        if embed:
+            await ctx.send(content, embed=embed, allowed_mentions=allowed_mentions)
         else:
             await ctx.send(content, allowed_mentions=allowed_mentions)
 
