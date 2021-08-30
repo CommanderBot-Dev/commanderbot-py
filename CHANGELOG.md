@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Added `allowed_mentions` to `reply_to_message` action
 
+### Changed
+
+- `quote` has been overhauled and now accounts for attachments and embeds
+
 ## [0.16.0] - 2021-08-30
 
 ### Changed
