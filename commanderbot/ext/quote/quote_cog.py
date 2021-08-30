@@ -28,16 +28,29 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
             return
 
         # Build the message content containing the quote metadata.
+        lines: List[str] = []
         created_at_ts = int(message.created_at.timestamp())
         quote_ts = f"<t:{created_at_ts}:R>"
         if message.edited_at is not None:
             edited_at_ts = int(message.edited_at.timestamp())
             quote_ts += f" (edited <ts:{edited_at_ts}:R>)"
-        content = (
+        lines.append(
             f"{ctx.author.mention} {phrasing} {message.author.mention}"
             + f" in {message.channel.mention} from {quote_ts}:"
-            + f"\n{message.jump_url}"
         )
+        lines.append(message.jump_url)
+
+        # Account for any attachments to the original message.
+        if message.attachments:
+            attachment_urls = [att.url for att in message.attachments]
+            lines += attachment_urls
+
+        # Account for any media embeds on the original message.
+        if message.embeds:
+            embed_urls = [
+                embed.url for embed in message.embeds if isinstance(embed.url, str)
+            ]
+            lines += embed_urls
 
         # Build the embed containing the actual quote content, if any.
         quote_embed: Optional[Embed] = None
@@ -51,38 +64,14 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
                 icon_url=message.author.display_avatar.url,
             )
 
-        # Account for any attachments to the original message.
-        quote_files: List[File] = []
-        failed_attachments: List[Attachment] = []
-        for att in message.attachments:
-            try:
-                file = await att.to_file()
-            except:
-                failed_attachments.append(att)
-            else:
-                quote_files.append(file)
-
         # Send the message with the embed attached, if any.
+        content = "\n".join(lines)
         if quote_embed:
             await ctx.send(
-                content,
-                embed=quote_embed,
-                files=quote_files,
-                allowed_mentions=allowed_mentions,
-            )
-        elif quote_files:
-            await ctx.send(
-                content,
-                files=quote_files,
-                allowed_mentions=allowed_mentions,
+                content, embed=quote_embed, allowed_mentions=allowed_mentions
             )
         else:
-            await ctx.message.reply("🤔 There's nothing to quote.")
-            return
-
-        # Let the user know if any attachments failed.
-        if failed_attachments:
-            await ctx.message.add_reaction("⚠️")
+            await ctx.send(content, allowed_mentions=allowed_mentions)
 
     @command(name="quote")
     async def cmd_quote(self, ctx: Context, message: Message):
