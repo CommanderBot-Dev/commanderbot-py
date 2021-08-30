@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "commanderbot-ext"
+name = "commanderbot"
 version = "0.16.0a1"
-description = "A collection of cogs and extensions for discord.py bots."
+description = "A collection of utilities and extensions for discord.py bots."
 authors = ["Arcensoth <arcensoth@gmail.com>"]
 license = "MIT"
 readme = 'README.md'
-repository = "https://github.com/CommanderBot-Dev/commanderbot-ext"
-homepage = "https://github.com/CommanderBot-Dev/commanderbot-ext"
+repository = "https://github.com/CommanderBot-Dev/commanderbot-py"
+homepage = "https://github.com/CommanderBot-Dev/commanderbot-py"
 keywords = ['discord', 'bot']
 
 [tool.poetry.dependencies]
