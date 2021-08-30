@@ -19,8 +19,8 @@ class StatusDetails:
         # Get discord.py version.
         self.discord_py_version: str = version("discord.py")
 
-        # Get commanderbot-ext version.
-        self.commanderbot_ext_version: str = version("commanderbot-ext")
+        # Get commanderbot version.
+        self.commanderbot_version: str = version("commanderbot")
 
         # Get additional bot details, if available.
         self.started_at: Optional[datetime] = None
@@ -36,7 +36,7 @@ class StatusDetails:
         all_rows = {
             "python version": self.python_version,
             "discord.py version": self.discord_py_version,
-            "commanderbot-ext version": self.commanderbot_ext_version,
+            "commanderbot version": self.commanderbot_version,
             "started at": str(self.started_at) if self.started_at else None,
             "connected since": str(self.connected_since)
             if self.connected_since

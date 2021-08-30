@@ -40,7 +40,7 @@ def make_faq_store(bot: Bot, cog: Cog, options: FaqOptions) -> FaqStore:
     raise UnsupportedDatabaseOptions(db_options)
 
 
-class FaqCog(Cog, name="commanderbot_ext.ext.faq"):
+class FaqCog(Cog, name="commanderbot.ext.faq"):
     """
     Allows frequently asked questions (FAQ) to be registered and queried.
 

@@ -2,7 +2,7 @@ from discord import AllowedMentions, Embed, Message
 from discord.ext.commands import Bot, Cog, Context, command
 
 
-class QuoteCog(Cog, name="commanderbot_ext.ext.quote"):
+class QuoteCog(Cog, name="commanderbot.ext.quote"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 

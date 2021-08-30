@@ -6,7 +6,7 @@ from discord.ext.commands import Bot, Cog, Context, command, has_permissions
 from commanderbot.lib import checks
 
 
-class KickCog(Cog, name="commanderbot_ext.ext.kick"):
+class KickCog(Cog, name="commanderbot.ext.kick"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 

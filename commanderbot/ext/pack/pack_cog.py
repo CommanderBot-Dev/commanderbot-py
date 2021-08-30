@@ -22,7 +22,7 @@ PACK_HELP = """
 """
 
 
-class PackCog(Cog, name="commanderbot_ext.ext.pack"):
+class PackCog(Cog, name="commanderbot.ext.pack"):
     def __init__(self, bot: Bot, **options):
         self.bot: Bot = bot
         self.log: Logger = getLogger(self.qualified_name)

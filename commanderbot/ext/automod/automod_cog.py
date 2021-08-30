@@ -68,7 +68,7 @@ def member_has_permission():
     return commands.check(predicate)
 
 
-class AutomodCog(Cog, name="commanderbot_ext.ext.automod"):
+class AutomodCog(Cog, name="commanderbot.ext.automod"):
     """
     Automate a variety of moderation tasks.
 

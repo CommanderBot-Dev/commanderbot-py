@@ -3,7 +3,7 @@ from discord.ext.commands import Bot, Cog, Context, command
 from commanderbot.ext.status.status_details import StatusDetails
 
 
-class StatusCog(Cog, name="commanderbot_ext.ext.status"):
+class StatusCog(Cog, name="commanderbot.ext.status"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 

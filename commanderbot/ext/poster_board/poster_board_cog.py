@@ -11,7 +11,7 @@ from commanderbot.lib import MessageableChannel, checks
 HEADING_PREFIX = "👉"
 
 
-class PosterBoardCog(Cog, name="commanderbot_ext.ext.poster_board"):
+class PosterBoardCog(Cog, name="commanderbot.ext.poster_board"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 

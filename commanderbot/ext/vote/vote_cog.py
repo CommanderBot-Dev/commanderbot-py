@@ -9,7 +9,7 @@ DEFAULT_VOTE_EMOJIS = ("👍", "👎")
 CUSTOM_EMOJI_PATTERN = re.compile(r"\<\:\w+\:\d+\>")
 
 
-class VoteCog(Cog, name="commanderbot_ext.ext.vote"):
+class VoteCog(Cog, name="commanderbot.ext.vote"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 

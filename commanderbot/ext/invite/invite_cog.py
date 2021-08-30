@@ -37,7 +37,7 @@ def make_invite_store(bot: Bot, cog: Cog, options: InviteOptions) -> InviteStore
     raise UnsupportedDatabaseOptions(db_options)
 
 
-class InviteCog(Cog, name="commanderbot_ext.ext.invite"):
+class InviteCog(Cog, name="commanderbot.ext.invite"):
     """
     Allows invites for other servers to be added and listed.
 

@@ -52,7 +52,7 @@ def member_has_permission():
     return commands.check(predicate)
 
 
-class RolesCog(Cog, name="commanderbot_ext.ext.roles"):
+class RolesCog(Cog, name="commanderbot.ext.roles"):
     """
     Allows users to opt-in/out to/from configurable roles.
 

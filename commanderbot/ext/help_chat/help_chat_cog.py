@@ -39,7 +39,7 @@ def make_help_chat_store(bot: Bot, cog: Cog, options: HelpChatOptions) -> HelpCh
     raise UnsupportedDatabaseOptions(db_options)
 
 
-class HelpChatCog(Cog, name="commanderbot_ext.ext.help_chat"):
+class HelpChatCog(Cog, name="commanderbot.ext.help_chat"):
     """
     Designate channels to be recycled for question-and-answer threads.
 

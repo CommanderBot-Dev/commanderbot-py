@@ -11,7 +11,7 @@ from commanderbot.ext.manifest.manifest import (
 )
 
 
-class ManifestCog(Cog, name="commanderbot_ext.ext.manifest"):
+class ManifestCog(Cog, name="commanderbot.ext.manifest"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
         self.default_manifest_version = [1, 17, 0]

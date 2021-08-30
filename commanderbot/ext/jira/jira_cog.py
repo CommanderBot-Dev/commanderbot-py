@@ -3,7 +3,7 @@ from discord import Embed
 from discord.ext.commands import Bot, Cog, Context, command
 
 
-class JiraCog(Cog, name="commanderbot_ext.ext.jira"):
+class JiraCog(Cog, name="commanderbot.ext.jira"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 
