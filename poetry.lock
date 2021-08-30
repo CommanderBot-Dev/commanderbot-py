@@ -168,7 +168,7 @@ colorama = {version = "*", markers = "sys_platform == \"win32\""}
 name = "discord.py"
 version = "2.0.0a3553+g848d7523"
 description = "A Python wrapper for the Discord API"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8.0"
 develop = false
@@ -455,7 +455,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "2255a3fd72c00c6f88ced3442ca66d87ed69a0dd10cb41e1f15ccb00293cfeed"
+content-hash = "6dab4262775dcd5e41eea9879ca4e28f9e0aafa9eddeb67dd6b879710b4cef75"
 
 [metadata.files]
 aiohttp = [

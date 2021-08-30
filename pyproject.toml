@@ -13,7 +13,7 @@ keywords = ['discord', 'bot']
 python = "^3.10"
 
 # This is the last announced version of the discord.py 2.0 beta. RIP.
-"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "848d752" }
+# "discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "848d752" }
 
 # These are used for logging.
 colorama = "^0.4.3"
@@ -27,7 +27,7 @@ typing-extensions = "3.10.0.0"
 
 # NOTE This will be necessary until nbtlib updates numpy itself.
 numpy = { version = "^1.21", python=">=3.10,<3.11" }
-nbtlib = { git = "https://github.com/vberlier/nbtlib", branch = "main" }
+# nbtlib = { git = "https://github.com/vberlier/nbtlib", branch = "main" }
 
 # NOTE See: https://github.com/python-poetry/poetry/issues/4402
 # This was fixed in stable, but doesn't seem to be fixed in the beta branch.
@@ -44,6 +44,12 @@ emoji = "^1.4.2"
 black = "^21.7b0"
 isort = "^5.9.3"
 rope = "^0.19.0"
+
+# FIXME We can't upload GitHub dependencies to PyPI.
+# A future version of nbtlib will solve half of this issue, but discord.py is dead and
+# the 2.0 beta will never be uploaded to PyPI... What do?
+"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "848d752" }
+nbtlib = { git = "https://github.com/vberlier/nbtlib", branch = "main" }
 
 [tool.isort]
 profile = "black"
