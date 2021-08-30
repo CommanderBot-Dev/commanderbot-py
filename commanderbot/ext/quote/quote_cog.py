@@ -1,7 +1,7 @@
 import re
 from typing import List, Optional
 
-from discord import AllowedMentions, Embed, Message, TextChannel, Thread
+from discord import AllowedMentions, Embed, Member, Message, TextChannel, Thread, User
 from discord.ext.commands import Bot, Cog, Context, command
 
 AUTO_EMBED_PATTERN = re.compile(r"^https?:\/\/\S\S+$")
@@ -11,6 +11,17 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 
+    def user_can_quote(
+        self, user: User | Member, channel: TextChannel | Thread
+    ) -> bool:
+        if not isinstance(user, Member):
+            return False
+        quoter_permissions = channel.permissions_for(user)
+        can_quote = (
+            quoter_permissions.read_messages and quoter_permissions.read_message_history
+        )
+        return can_quote
+
     async def do_quote(
         self,
         ctx: Context,
@@ -18,8 +29,16 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
         phrasing: str,
         allowed_mentions: AllowedMentions,
     ):
-        if not isinstance(message.channel, TextChannel | Thread):
-            await ctx.message.reply("😔 I can't quote that.")
+        # Make sure the channel can be quoted from.
+        channel = message.channel
+        if not isinstance(channel, TextChannel | Thread):
+            await ctx.message.reply("😳 I can't quote that.")
+            return
+
+        # Make sure the quoter has read permissions in the channel.
+        quoter = ctx.author
+        if not self.user_can_quote(quoter, channel):
+            await ctx.message.reply("😠 You can't quote that.")
             return
 
         # Build the message content containing the quote metadata.
@@ -31,7 +50,7 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
             quote_ts += f" (edited <ts:{edited_at_ts}:R>)"
         lines.append(
             f"{ctx.author.mention} {phrasing} {message.author.mention}"
-            + f" in {message.channel.mention} from {quote_ts}:"
+            + f" in {channel.mention} from {quote_ts}:"
         )
         lines.append(message.jump_url)
 
