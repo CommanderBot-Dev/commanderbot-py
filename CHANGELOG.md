@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 - Added `allowed_mentions` to `reply_to_message` action
+- Added a new `mentions_removed_from_message` trigger
 
 ### Changed
 
