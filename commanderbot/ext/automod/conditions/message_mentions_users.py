@@ -22,11 +22,11 @@ class MessageMentionsUsers(AutomodConditionBase):
             return False
         event.set_metadata(
             "mentioned_users",
-            " ".join(f"`{user}`" for user in message.mentions),
+            " ".join(user.mention for user in message.mentions),
         )
         event.set_metadata(
-            "mentioned_users_mentions",
-            " ".join(f"{user.mention}" for user in message.mentions),
+            "mentioned_user_names",
+            " ".join(f"`{user}`" for user in message.mentions),
         )
         return True
 

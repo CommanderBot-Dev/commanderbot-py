@@ -49,7 +49,7 @@ class MessageMentionsRoles(AutomodConditionBase):
             return False
         event.set_metadata(
             "mentioned_roles",
-            " ".join(f"{role.mention}" for role in mentioned_roles),
+            " ".join(role.mention for role in mentioned_roles),
         )
         event.set_metadata(
             "mentioned_role_names",
