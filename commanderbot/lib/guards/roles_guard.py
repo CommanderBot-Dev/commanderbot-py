@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Iterable, Optional, Set
+from typing import Iterable, List, Optional, Set
 
-from discord import Member, Role
+from discord import Member, Role, User
 
 from commanderbot.lib.from_data_mixin import FromDataMixin
 from commanderbot.lib.types import RoleID
@@ -56,15 +56,32 @@ class RolesGuard(FromDataMixin):
             return False
         return self.ignore_by_includes(member) or self.ignore_by_excludes(member)
 
-    def matches(self, role: Role) -> bool:
-        """Check whether a role matches the guard."""
+    def member_matches(self, member: User | Member) -> bool:
+        # If `include` roles are defined, check if the member has *any* of them.
         # Note that `include` takes precedence over `exclude`.
+        if self.include:
+            included_roles = member_roles_from(member, self.include)
+            return len(included_roles) > 0
+
+        # If `exclude` roles are defined, check if the member has *none* of them.
+        if self.exclude:
+            excluded_roles = member_roles_from(member, self.exclude)
+            return len(excluded_roles) == 0
+
+        # If neither `include` nor `exclude` roles are defined, it's always a match.
+        return True
+
+    def role_matches(self, role: Role) -> bool:
         if self.include:
             return role.id in self.include
         if self.exclude:
             return role.id not in self.exclude
         return True
 
-    def filter(self, roles: Iterable[Role]) -> Set[Role]:
-        """Filter a set of roles based on the guard."""
-        return {role for role in roles if self.matches(role)}
+    def filter_members(self, members: Iterable[User | Member]) -> List[User | Member]:
+        """Filter a sequence of members based on the guard."""
+        return [member for member in members if self.member_matches(member)]
+
+    def filter_roles(self, roles: Iterable[Role]) -> List[Role]:
+        """Filter a sequence of roles based on the guard."""
+        return [role for role in roles if self.role_matches(role)]
