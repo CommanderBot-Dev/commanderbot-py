@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - `quote` now includes attachments and embeds on the original message
 - `quote` now accounts for the read permissions of the person trying to quote
+- `ChannelsGuard` now accounts for threads, by determining the root channel
 
 ## [0.16.0] - 2021-08-30
 
