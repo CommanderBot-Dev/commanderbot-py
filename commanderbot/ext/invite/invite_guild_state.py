@@ -2,11 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Tuple
 
-from commanderbot.ext.invite.invite_store import (
-    InviteEntry,
-    InviteException,
-    InviteStore,
-)
+from commanderbot.ext.invite.invite_store import InviteEntry, InviteStore
 from commanderbot.lib import CogGuildState, GuildContext
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 from commanderbot.lib.utils import async_expand
@@ -95,90 +91,60 @@ class InviteGuildState(CogGuildState):
             await ctx.send(f"No invites available")
 
     async def add_invite(self, ctx: GuildContext, invite_key: str, link: str):
-        try:
-            invite_entry = await self.store.add_invite(
-                self.guild, invite_key, link=link
-            )
-            await ctx.send(f"Added invite `{invite_entry.key}`")
-        except InviteException as ex:
-            await ex.respond(ctx)
+        invite_entry = await self.store.add_invite(self.guild, invite_key, link=link)
+        await ctx.send(f"Added invite `{invite_entry.key}`")
 
     async def remove_invite(self, ctx: GuildContext, invite_key: str):
-        # Wrap this in case of multiple confirmations.
-        try:
-            # Get the corresponding invite entry.
-            invite_entry = await self.store.require_invite_entry(self.guild, invite_key)
-            # Then ask for confirmation to actually remove it.
-            conf = await confirm_with_reaction(
-                self.bot,
-                ctx,
-                f"Are you sure you want to remove invite `{invite_entry.key}`?",
-            )
-            # If the answer was yes, attempt to remove the invite and send a response.
-            if conf == ConfirmationResult.YES:
-                removed_entry = await self.store.remove_invite(self.guild, invite_key)
-                await ctx.send(f"Removed invite `{removed_entry.key}`")
-            # If the answer was no, send a response.
-            elif conf == ConfirmationResult.NO:
-                await ctx.send(f"Did not remove invite `{invite_key}`")
-            # If no answer was provided, don't do anything.
-        # If a known error occurred, send a response.
-        except InviteException as ex:
-            await ex.respond(ctx)
+        # Get the corresponding invite entry.
+        invite_entry = await self.store.require_invite_entry(self.guild, invite_key)
+        # Then ask for confirmation to actually remove it.
+        conf = await confirm_with_reaction(
+            self.bot,
+            ctx,
+            f"Are you sure you want to remove invite `{invite_entry.key}`?",
+        )
+        # If the answer was yes, attempt to remove the invite and send a response.
+        if conf == ConfirmationResult.YES:
+            removed_entry = await self.store.remove_invite(self.guild, invite_key)
+            await ctx.send(f"Removed invite `{removed_entry.key}`")
+        # If the answer was no, send a response.
+        elif conf == ConfirmationResult.NO:
+            await ctx.send(f"Did not remove invite `{invite_key}`")
+        # If no answer was provided, don't do anything.
 
     async def modify_invite_link(self, ctx: GuildContext, invite_key: str, link: str):
-        try:
-            invite_entry = await self.store.modify_invite_link(
-                self.guild, invite_key, link
-            )
-            await ctx.send(
-                f"Set link for invite `{invite_entry.key}` to: `{invite_entry.link}`"
-            )
-        except InviteException as ex:
-            await ex.respond(ctx)
+        invite_entry = await self.store.modify_invite_link(self.guild, invite_key, link)
+        await ctx.send(
+            f"Set link for invite `{invite_entry.key}` to: `{invite_entry.link}`"
+        )
 
     async def modify_invite_tags(
         self, ctx: GuildContext, invite_key: str, tags: Tuple[str, ...]
     ):
-        try:
-            invite_entry = await self.store.modify_invite_tags(
-                self.guild, invite_key, tags
-            )
-            if tags:
-                tags_str = "`" + "` `".join(invite_entry.sorted_tags) + "`"
-                await ctx.send(
-                    f"Set tags for invite `{invite_entry.key}` to: {tags_str}"
-                )
-            else:
-                await ctx.send(f"Removed tags for invite `{invite_entry.key}`")
-        except InviteException as ex:
-            await ex.respond(ctx)
+        invite_entry = await self.store.modify_invite_tags(self.guild, invite_key, tags)
+        if tags:
+            tags_str = "`" + "` `".join(invite_entry.sorted_tags) + "`"
+            await ctx.send(f"Set tags for invite `{invite_entry.key}` to: {tags_str}")
+        else:
+            await ctx.send(f"Removed tags for invite `{invite_entry.key}`")
 
     async def modify_invite_description(
         self, ctx: GuildContext, invite_key: str, description: Optional[str]
     ):
-        try:
-            invite_entry = await self.store.modify_invite_description(
-                self.guild, invite_key, description
+        invite_entry = await self.store.modify_invite_description(
+            self.guild, invite_key, description
+        )
+        if description:
+            await ctx.send(
+                f"Set description for invite `{invite_entry.key}` to: `{description}`"
             )
-            if description:
-                await ctx.send(
-                    f"Set description for invite `{invite_entry.key}` to: `{description}`"
-                )
-            else:
-                await ctx.send(f"Removed description for invite `{invite_entry.key}`")
-        except InviteException as ex:
-            await ex.respond(ctx)
+        else:
+            await ctx.send(f"Removed description for invite `{invite_entry.key}`")
 
     async def configure_guild_key(self, ctx: GuildContext, invite_key: Optional[str]):
-        try:
-            if invite_entry := await self.store.configure_guild_key(
-                self.guild, invite_key
-            ):
-                await ctx.send(
-                    f"Set the invite key for this guild to: `{invite_entry.key}` {invite_entry.link}"
-                )
-            else:
-                await ctx.send(f"Removed the invite key for this guild")
-        except InviteException as ex:
-            await ex.respond(ctx)
+        if invite_entry := await self.store.configure_guild_key(self.guild, invite_key):
+            await ctx.send(
+                f"Set the invite key for this guild to: `{invite_entry.key}` {invite_entry.link}"
+            )
+        else:
+            await ctx.send(f"Removed the invite key for this guild")

@@ -10,19 +10,8 @@ from commanderbot.ext.roles.roles_result import (
     RemovableRolesResult,
     RolesResult,
 )
-from commanderbot.ext.roles.roles_store import (
-    RoleEntry,
-    RoleEntryPair,
-    RolesException,
-    RolesStore,
-)
-from commanderbot.lib import (
-    CogGuildState,
-    GuildContext,
-    MemberContext,
-    RoleID,
-    RoleSet,
-)
+from commanderbot.ext.roles.roles_store import RoleEntry, RoleEntryPair, RolesStore
+from commanderbot.lib import CogGuildState, GuildContext, MemberContext, RoleID, RoleSet
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 
 SAFE_PERMS = Permissions.none()
@@ -170,58 +159,50 @@ class RolesGuildState(CogGuildState):
         leavable: bool,
         description: Optional[str],
     ):
-        # Wrap this in case of multiple confirmations.
-        try:
-            # Check whether this is a role that should be registered. If the role
-            # contains unsafe permissions, this will also ask for confirmation.
-            conf = await self.should_register_role(ctx, role)
-            # If the answer was yes...
-            if conf == ConfirmationResult.YES:
-                # Attempt to register the role.
-                role_entry = await self.store.register_role(
-                    role,
-                    joinable=joinable,
-                    leavable=leavable,
-                    description=description,
+        # Check whether this is a role that should be registered. If the role
+        # contains unsafe permissions, this will also ask for confirmation.
+        conf = await self.should_register_role(ctx, role)
+        # If the answer was yes...
+        if conf == ConfirmationResult.YES:
+            # Attempt to register the role.
+            role_entry = await self.store.register_role(
+                role,
+                joinable=joinable,
+                leavable=leavable,
+                description=description,
+            )
+            # Send a response that includes some confirmation about the flags.
+            if role_entry.joinable and role_entry.leavable:
+                await self.reply(
+                    ctx,
+                    f"✅ {role.mention} has been registered as opt-in/opt-out.",
                 )
-                # Send a response that includes some confirmation about the flags.
-                if role_entry.joinable and role_entry.leavable:
-                    await self.reply(
-                        ctx,
-                        f"✅ {role.mention} has been registered as opt-in/opt-out.",
-                    )
-                elif role_entry.joinable:
-                    await self.reply(
-                        ctx,
-                        f"✅ {role.mention} has been registered as"
-                        + " **opt-in only** (not leavable).",
-                    )
-                elif role_entry.leavable:
-                    await self.reply(
-                        ctx,
-                        f"✅ {role.mention} has been registered as"
-                        + " **opt-out only** (not joinable).",
-                    )
-                else:
-                    await self.reply(
-                        ctx,
-                        f"✅ {role.mention} has been registered, but"
-                        + " is **neither opt-in nor opt-out**.",
-                    )
-            # If the answer was no, send a response.
-            if conf == ConfirmationResult.NO:
-                await self.reply(ctx, f"❌ {role.mention} has **not** been registered.")
-            # If no answer was provided, don't do anything.
-        # If a known error occurred, send a response.
-        except RolesException as ex:
-            await ex.respond(ctx)
+            elif role_entry.joinable:
+                await self.reply(
+                    ctx,
+                    f"✅ {role.mention} has been registered as"
+                    + " **opt-in only** (not leavable).",
+                )
+            elif role_entry.leavable:
+                await self.reply(
+                    ctx,
+                    f"✅ {role.mention} has been registered as"
+                    + " **opt-out only** (not joinable).",
+                )
+            else:
+                await self.reply(
+                    ctx,
+                    f"✅ {role.mention} has been registered, but"
+                    + " is **neither opt-in nor opt-out**.",
+                )
+        # If the answer was no, send a response.
+        if conf == ConfirmationResult.NO:
+            await self.reply(ctx, f"❌ {role.mention} has **not** been registered.")
+        # If no answer was provided, don't do anything.
 
     async def deregister_role(self, ctx: GuildContext, role: Role):
-        try:
-            await self.store.deregister_role(role)
-            await self.reply(ctx, f"✅ {role.mention} has been deregistered.")
-        except RolesException as ex:
-            await ex.respond(ctx)
+        await self.store.deregister_role(role)
+        await self.reply(ctx, f"✅ {role.mention} has been deregistered.")
 
     async def show_all_roles(self, ctx: GuildContext):
         if role_pairs := await self.get_all_role_pairs():
