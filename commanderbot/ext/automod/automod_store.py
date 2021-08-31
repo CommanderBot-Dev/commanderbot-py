@@ -3,9 +3,8 @@ from typing import AsyncIterable, Optional, Protocol
 from discord import Guild
 
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot.ext.automod.automod_rule import AutomodRule
-from commanderbot.lib import JsonObject, RoleSet
+from commanderbot.lib import JsonObject, LogOptions, RoleSet
 
 
 class AutomodStore(Protocol):
@@ -13,14 +12,12 @@ class AutomodStore(Protocol):
     Abstracts the data storage and persistence of the automod cog.
     """
 
-    async def get_default_log_options(
-        self, guild: Guild
-    ) -> Optional[AutomodLogOptions]:
+    async def get_default_log_options(self, guild: Guild) -> Optional[LogOptions]:
         ...
 
     async def set_default_log_options(
-        self, guild: Guild, log_options: Optional[AutomodLogOptions]
-    ) -> Optional[AutomodLogOptions]:
+        self, guild: Guild, log_options: Optional[LogOptions]
+    ) -> Optional[LogOptions]:
         ...
 
     async def get_permitted_roles(self, guild: Guild) -> Optional[RoleSet]:

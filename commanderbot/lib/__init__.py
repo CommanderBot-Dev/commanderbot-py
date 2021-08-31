@@ -12,6 +12,7 @@ from .integer_range import *
 from .json_file_database_adapter import *
 from .json_serializable import *
 from .lenient_role_converter import *
+from .log_options import *
 from .pattern_wrapper import *
 from .responsive_exception import *
 from .role_set import *

@@ -22,13 +22,13 @@ from yaml import YAMLError
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEventBase
-from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.ext.automod.automod_store import AutomodStore
 from commanderbot.lib import (
     CogGuildState,
     GuildContext,
     JsonObject,
+    LogOptions,
     ResponsiveException,
     RoleSet,
     TextMessage,
@@ -54,7 +54,7 @@ class AutomodGuildState(CogGuildState):
 
     async def _get_log_options_for_rule(
         self, rule: AutomodRule
-    ) -> Optional[AutomodLogOptions]:
+    ) -> Optional[LogOptions]:
         # First try to grab the rule's specific logging configuration, if any.
         if rule.log:
             return rule.log
@@ -145,7 +145,7 @@ class AutomodGuildState(CogGuildState):
         emoji: Optional[str],
         color: Optional[Color],
     ):
-        new_log_options = AutomodLogOptions(
+        new_log_options = LogOptions(
             channel=channel.id,
             stacktrace=stacktrace,
             emoji=emoji,
