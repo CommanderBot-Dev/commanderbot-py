@@ -62,13 +62,20 @@ class AutomodGuildState(CogGuildState):
         # also not exist, hence why it's optional.
         return await self.store.get_default_log_options(self.guild)
 
-    async def _maybe_log_rule_error_to_channel(
-        self, rule: AutomodRule, error: Exception
-    ):
+    async def _handle_rule_error(self, rule: AutomodRule, error: Exception):
+        error_message = f"Rule `{rule.name}` caused an error:"
+
+        # Re-raise the error so that it can be printed to the console.
+        try:
+            raise error
+        except:
+            self.log.exception(error_message)
+
+        # Attempt to print the error to the log channel, if any.
         try:
             if log_options := await self._get_log_options_for_rule(rule):
                 channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
-                lines = [f"Rule `{rule.name}` caused an error:", "```"]
+                lines = [error_message, "```"]
                 if log_options.stacktrace:
                     lines.append(sanitize_stacktrace(error))
                 else:
@@ -77,18 +84,19 @@ class AutomodGuildState(CogGuildState):
                 content = "\n".join(lines)
                 await channel.send(content)
         except:
-            self.log.exception("Failed to log message to error channel:")
+            # If something went wrong here, print another exception to the console.
+            self.log.exception("Failed to log message to error channel")
 
     async def _do_event_for_rule(self, event: AutomodEventBase, rule: AutomodRule):
         try:
             if await rule.run(event):
                 await self.store.increment_rule_hits(self.guild, rule.name)
         except Exception as error:
-            self.log.exception("Automod rule caused an error:")
-            await self._maybe_log_rule_error_to_channel(rule, error)
+            await self._handle_rule_error(rule, error)
 
     async def _do_event(self, event: AutomodEventBase):
-        # Run rules in parallel so that they don't need to wait for one another.
+        # Run rules in parallel so that they don't need to wait for one another. They
+        # run separately so that when a rule fails it doesn't stop the others.
         rules = await async_expand(self.store.rules_for_event(self.guild, event))
         tasks = [self._do_event_for_rule(event, rule) for rule in rules]
         await asyncio.gather(*tasks)
