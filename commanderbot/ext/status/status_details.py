@@ -51,11 +51,11 @@ class StatusDetails:
     @property
     def rows(self) -> Dict[str, str]:
         all_rows = {
-            "CommanderBot version": f"`{self.commanderbot_version}`",
-            "Discord.py version": f"`{self.discord_py_version}`",
             "Python version": f"`{self.python_version}`",
-            "Started at": f"<t:{self._get_epoch(self.started_at)}:f>",
-            "Connected since": f"<t:{self._get_epoch(self.connected_since)}:f>",
+            "Discord.py version": f"`{self.discord_py_version}`",
+            "CommanderBot version": f"`{self.commanderbot_version}`",
+            "Started": f"<t:{self._get_epoch(self.started_at)}:R>",
+            "Last reconnect": f"<t:{self._get_epoch(self.connected_since)}:R>",
             "Uptime": f"`{self._format_timedelta(self.uptime)}`",
         }
         non_empty_rows = {k: v for k, v in all_rows.items() if v}
