@@ -1,7 +1,8 @@
+import re
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from importlib.metadata import version
-from typing import Dict, Iterable, Optional
+from typing import Dict, Optional
 
 from discord.ext.commands import Bot
 
@@ -31,24 +32,31 @@ class StatusDetails:
             self.connected_since = cb.connected_since
             self.uptime = cb.uptime
 
+    def _get_epoch(self, dt: Optional[datetime]) -> Optional[int]:
+        if dt:
+            return int(dt.replace(tzinfo=timezone.utc).timestamp())
+        else:
+            return None
+
+    def _format_timedelta(self, td: Optional[timedelta]) -> Optional[str]:
+        if not td:
+            return None
+
+        times = [int(float(i)) for i in re.split("days?,|:", str(td))]
+        if len(times) == 4:
+            return f"{times[0]}d {times[1]}h {times[2]}m {times[3]}s"
+        else:
+            return f"0d {times[0]}h {times[1]}m {times[2]}s"
+
     @property
     def rows(self) -> Dict[str, str]:
         all_rows = {
-            "python version": self.python_version,
-            "discord.py version": self.discord_py_version,
-            "commanderbot version": self.commanderbot_version,
-            "started at": str(self.started_at) if self.started_at else None,
-            "connected since": str(self.connected_since)
-            if self.connected_since
-            else None,
-            "uptime": str(self.uptime) if self.uptime else None,
+            "CommanderBot version": f"`{self.commanderbot_version}`",
+            "Discord.py version": f"`{self.discord_py_version}`",
+            "Python version": f"`{self.python_version}`",
+            "Started at": f"<t:{self._get_epoch(self.started_at)}:f>",
+            "Connected since": f"<t:{self._get_epoch(self.connected_since)}:f>",
+            "Uptime": f"`{self._format_timedelta(self.uptime)}`",
         }
         non_empty_rows = {k: v for k, v in all_rows.items() if v}
         return non_empty_rows
-
-    @property
-    def lines(self) -> Iterable[str]:
-        rows = self.rows
-        pad = 1 + max(len(key) for key in rows)
-        lines = ("".join((f"{k}:".ljust(pad), "  ", v)) for k, v in rows.items())
-        return lines
