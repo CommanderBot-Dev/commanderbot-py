@@ -42,17 +42,19 @@ class MessageMentionsRoles(AutomodConditionBase):
             return False
         # Check if we care about any of the mentioned roles.
         if self.roles is not None:
-            mentioned_roles = self.roles.filter(message.role_mentions)
+            mentioned_roles = self.roles.filter_roles(message.role_mentions)
         else:
             mentioned_roles = message.role_mentions
         if not mentioned_roles:
             return False
-        role_names = {f"{role}" for role in mentioned_roles}
-        mentioned_role_names = "`" + "` `".join(role_names) + "`"
-        event.set_metadata("mentioned_role_names", mentioned_role_names)
-        role_mentions = {f"{role.mention}" for role in mentioned_roles}
-        mentioned_role_mentions = " ".join(role_mentions)
-        event.set_metadata("mentioned_role_mentions", mentioned_role_mentions)
+        event.set_metadata(
+            "mentioned_roles",
+            " ".join(role.mention for role in mentioned_roles),
+        )
+        event.set_metadata(
+            "mentioned_role_names",
+            " ".join(f"`{role}`" for role in mentioned_roles),
+        )
         return True
 
 

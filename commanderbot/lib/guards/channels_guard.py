@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, Set
 
-from discord import TextChannel
+from discord import TextChannel, Thread
 
 from commanderbot.lib.from_data_mixin import FromDataMixin
 from commanderbot.lib.types import ChannelID
@@ -35,19 +35,28 @@ class ChannelsGuard(FromDataMixin):
         elif isinstance(data, list):
             return cls(include=set(data))
 
-    def ignore_by_includes(self, channel: TextChannel) -> bool:
+    def get_root_channel(self, channel: TextChannel | Thread) -> Optional[TextChannel]:
+        if isinstance(channel, TextChannel):
+            return channel
+        return channel.parent
+
+    def ignore_by_includes(self, channel: TextChannel | Thread) -> bool:
         # Ignore channels that are not included, if any.
         if not self.include:
             return False
-        return channel.id not in self.include
+        if root_channel := self.get_root_channel(channel):
+            return root_channel.id not in self.include
+        return False
 
-    def ignore_by_excludes(self, channel: TextChannel) -> bool:
+    def ignore_by_excludes(self, channel: TextChannel | Thread) -> bool:
         # Ignore channels that are excluded, if any.
         if not self.exclude:
             return False
-        return channel.id in self.exclude
+        if root_channel := self.get_root_channel(channel):
+            return root_channel.id in self.exclude
+        return False
 
-    def ignore(self, channel: Optional[TextChannel]) -> bool:
+    def ignore(self, channel: Optional[TextChannel | Thread]) -> bool:
         """Determine whether to ignore the channel."""
         if channel is None:
             return False

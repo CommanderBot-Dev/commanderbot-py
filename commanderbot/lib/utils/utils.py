@@ -1,38 +1,28 @@
 import os
 import re
 import traceback
-from typing import Any, AsyncIterable, List, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, AsyncIterable, List, Mapping, Optional, Set, TypeVar
 
-from discord import Member
-from discord.ext.commands import Bot, Cog
+from discord import Member, User
+from discord.ext.commands import Bot
 
-from commanderbot.core.commander_bot_base import CommanderBotBase
 from commanderbot.lib.types import RoleID
 
 T = TypeVar("T")
-
-
-def check_commander_bot(bot: Bot) -> Optional[CommanderBotBase]:
-    if isinstance(bot, CommanderBotBase):
-        return bot
-
-
-def add_configured_cog(bot: Bot, ext_name: str, cog_class: Type[Cog]):
-    cog = None
-    if cb := check_commander_bot(bot):
-        if options := cb.get_extension_options(ext_name):
-            cog = cog_class(bot, **options)
-    if not cog:
-        cog = cog_class(bot)
-    bot.add_cog(cog)
 
 
 def is_bot(bot: Bot, user: Any) -> bool:
     return user == bot.user or getattr(user, "bot")
 
 
-def member_roles_from(member: Member, role_ids: Set[RoleID]) -> Set[RoleID]:
-    """Return the set of matching member roles."""
+def member_roles_from(member: User | Member, role_ids: Set[RoleID]) -> Set[RoleID]:
+    """
+    Return the set of matching member roles.
+
+    A plain [User] may be passed, however an empty set will always be returned.
+    """
+    if isinstance(member, User):
+        return set()
     member_role_ids = {role.id for role in member.roles}
     matching_role_ids = role_ids.intersection(member_role_ids)
     return matching_role_ids

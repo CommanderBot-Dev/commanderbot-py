@@ -3,13 +3,15 @@ from typing import Optional
 
 from discord import Color
 
-from commanderbot.lib import ChannelID
 from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.types import ChannelID
 from commanderbot.lib.utils import color_from_field_optional
+
+__all__ = ("LogOptions",)
 
 
 @dataclass
-class AutomodLogOptions(FromDataMixin):
+class LogOptions(FromDataMixin):
     """
     Data container for various log options.
 

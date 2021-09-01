@@ -4,21 +4,17 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
 
-from commanderbot.ext.automod.automod_action import (
-    AutomodAction,
-    deserialize_actions,
-)
+from commanderbot.ext.automod.automod_action import AutomodAction, deserialize_actions
 from commanderbot.ext.automod.automod_condition import (
     AutomodCondition,
     deserialize_conditions,
 )
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot.ext.automod.automod_trigger import (
     AutomodTrigger,
     deserialize_triggers,
 )
-from commanderbot.lib import JsonObject
+from commanderbot.lib import JsonObject, LogOptions
 from commanderbot.lib.utils import datetime_from_field_optional
 
 
@@ -60,7 +56,7 @@ class AutomodRule:
 
     description: Optional[str]
 
-    log: Optional[AutomodLogOptions]
+    log: Optional[LogOptions]
 
     triggers: List[AutomodTrigger]
     conditions: List[AutomodCondition]
@@ -78,7 +74,7 @@ class AutomodRule:
             disabled=data.get("disabled", False),
             hits=data.get("hits", 0),
             description=data.get("description"),
-            log=AutomodLogOptions.from_field_optional(data, "log"),
+            log=LogOptions.from_field_optional(data, "log"),
             triggers=deserialize_triggers(data.get("triggers", [])),
             conditions=deserialize_conditions(data.get("conditions", [])),
             actions=deserialize_actions(data.get("actions", [])),

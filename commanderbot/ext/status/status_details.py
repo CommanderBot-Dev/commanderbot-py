@@ -6,7 +6,7 @@ from typing import Dict, Optional
 
 from discord.ext.commands import Bot
 
-from commanderbot.lib.utils import check_commander_bot
+from commanderbot.core.utils import check_commander_bot
 
 
 class StatusDetails:

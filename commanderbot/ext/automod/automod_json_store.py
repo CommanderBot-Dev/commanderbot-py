@@ -5,9 +5,14 @@ from discord import Guild
 
 from commanderbot.ext.automod.automod_data import AutomodData
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot.ext.automod.automod_store import AutomodRule
-from commanderbot.lib import CogStore, JsonFileDatabaseAdapter, JsonObject, RoleSet
+from commanderbot.lib import (
+    CogStore,
+    JsonFileDatabaseAdapter,
+    JsonObject,
+    LogOptions,
+    RoleSet,
+)
 
 
 # @implements AutomodStore
@@ -20,16 +25,14 @@ class AutomodJsonStore(CogStore):
     db: JsonFileDatabaseAdapter[AutomodData]
 
     # @implements AutomodStore
-    async def get_default_log_options(
-        self, guild: Guild
-    ) -> Optional[AutomodLogOptions]:
+    async def get_default_log_options(self, guild: Guild) -> Optional[LogOptions]:
         cache = await self.db.get_cache()
         return await cache.get_default_log_options(guild)
 
     # @implements AutomodStore
     async def set_default_log_options(
-        self, guild: Guild, log_options: Optional[AutomodLogOptions]
-    ) -> Optional[AutomodLogOptions]:
+        self, guild: Guild, log_options: Optional[LogOptions]
+    ) -> Optional[LogOptions]:
         cache = await self.db.get_cache()
         old_value = await cache.set_default_log_options(guild, log_options)
         await self.db.dirty()

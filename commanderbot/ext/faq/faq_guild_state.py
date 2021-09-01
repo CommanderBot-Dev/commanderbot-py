@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Tuple
 
-from commanderbot.ext.faq.faq_store import FaqException, FaqStore
+from commanderbot.ext.faq.faq_store import FaqStore
 from commanderbot.lib import CogGuildState, GuildContext, TextMessage
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 from commanderbot.lib.utils import async_expand
@@ -83,91 +83,63 @@ class FaqGuildState(CogGuildState):
             await ctx.send(f"No FAQs available")
 
     async def add_faq(self, ctx: GuildContext, faq_key: str, link: str, content: str):
-        try:
-            faq_entry = await self.store.add_faq(
-                self.guild, faq_key, link=link, content=content
-            )
-            await ctx.send(f"Added FAQ `{faq_entry.key}`")
-        except FaqException as ex:
-            await ex.respond(ctx)
+        faq_entry = await self.store.add_faq(
+            self.guild, faq_key, link=link, content=content
+        )
+        await ctx.send(f"Added FAQ `{faq_entry.key}`")
 
     async def remove_faq(self, ctx: GuildContext, faq_key: str):
-        # Wrap this in case of multiple confirmations.
-        try:
-            # Get the corresponding FAQ entry.
-            faq_entry = await self.store.require_faq_entry(self.guild, faq_key)
-            # Then ask for confirmation to actually remove it.
-            conf = await confirm_with_reaction(
-                self.bot,
-                ctx,
-                f"Are you sure you want to remove FAQ `{faq_entry.key}`?",
-            )
-            # If the answer was yes, attempt to remove the FAQ and send a response.
-            if conf == ConfirmationResult.YES:
-                removed_entry = await self.store.remove_faq(self.guild, faq_key)
-                await ctx.send(f"Removed FAQ `{removed_entry.key}`")
-            # If the answer was no, send a response.
-            elif conf == ConfirmationResult.NO:
-                await ctx.send(f"Did not remove FAQ `{faq_key}`")
-            # If no answer was provided, don't do anything.
-        # If a known error occurred, send a response.
-        except FaqException as ex:
-            await ex.respond(ctx)
+        # Get the corresponding FAQ entry.
+        faq_entry = await self.store.require_faq_entry(self.guild, faq_key)
+        # Then ask for confirmation to actually remove it.
+        conf = await confirm_with_reaction(
+            self.bot,
+            ctx,
+            f"Are you sure you want to remove FAQ `{faq_entry.key}`?",
+        )
+        # If the answer was yes, attempt to remove the FAQ and send a response.
+        if conf == ConfirmationResult.YES:
+            removed_entry = await self.store.remove_faq(self.guild, faq_key)
+            await ctx.send(f"Removed FAQ `{removed_entry.key}`")
+        # If the answer was no, send a response.
+        elif conf == ConfirmationResult.NO:
+            await ctx.send(f"Did not remove FAQ `{faq_key}`")
+        # If no answer was provided, don't do anything.
 
     async def modify_faq_content(self, ctx: GuildContext, faq_key: str, content: str):
-        try:
-            faq_entry = await self.store.modify_faq_content(
-                self.guild, faq_key, content
-            )
-            await ctx.send(
-                f"Set content for FAQ `{faq_entry.key}` to:\n>>> `{faq_entry.content}`"
-            )
-        except FaqException as ex:
-            await ex.respond(ctx)
+        faq_entry = await self.store.modify_faq_content(self.guild, faq_key, content)
+        await ctx.send(
+            f"Set content for FAQ `{faq_entry.key}` to:\n>>> `{faq_entry.content}`"
+        )
 
     async def modify_faq_link(
         self, ctx: GuildContext, faq_key: str, link: Optional[str]
     ):
-        try:
-            faq_entry = await self.store.modify_faq_link(self.guild, faq_key, link)
-            if link:
-                await ctx.send(
-                    f"Set link for FAQ `{faq_entry.key}` to: `{faq_entry.link}`"
-                )
-            else:
-                await ctx.send(f"Removed link for FAQ `{faq_entry.key}`")
-        except FaqException as ex:
-            await ex.respond(ctx)
+        faq_entry = await self.store.modify_faq_link(self.guild, faq_key, link)
+        if link:
+            await ctx.send(f"Set link for FAQ `{faq_entry.key}` to: `{faq_entry.link}`")
+        else:
+            await ctx.send(f"Removed link for FAQ `{faq_entry.key}`")
 
     async def modify_faq_aliases(
         self, ctx: GuildContext, faq_key: str, aliases: Tuple[str, ...]
     ):
-        try:
-            faq_entry = await self.store.modify_faq_aliases(
-                self.guild, faq_key, aliases
-            )
-            if aliases:
-                aliases_str = "`" + "` `".join(faq_entry.sorted_aliases) + "`"
-                await ctx.send(
-                    f"Set aliases for FAQ `{faq_entry.key}` to: {aliases_str}"
-                )
-            else:
-                await ctx.send(f"Removed aliases for FAQ `{faq_entry.key}`")
-        except FaqException as ex:
-            await ex.respond(ctx)
+        faq_entry = await self.store.modify_faq_aliases(self.guild, faq_key, aliases)
+        if aliases:
+            aliases_str = "`" + "` `".join(faq_entry.sorted_aliases) + "`"
+            await ctx.send(f"Set aliases for FAQ `{faq_entry.key}` to: {aliases_str}")
+        else:
+            await ctx.send(f"Removed aliases for FAQ `{faq_entry.key}`")
 
     async def modify_faq_tags(
         self, ctx: GuildContext, faq_key: str, tags: Tuple[str, ...]
     ):
-        try:
-            faq_entry = await self.store.modify_faq_tags(self.guild, faq_key, tags)
-            if tags:
-                tags_str = "`" + "` `".join(faq_entry.sorted_tags) + "`"
-                await ctx.send(f"Set tags for FAQ `{faq_entry.key}` to: {tags_str}")
-            else:
-                await ctx.send(f"Removed tags for FAQ `{faq_entry.key}`")
-        except FaqException as ex:
-            await ex.respond(ctx)
+        faq_entry = await self.store.modify_faq_tags(self.guild, faq_key, tags)
+        if tags:
+            tags_str = "`" + "` `".join(faq_entry.sorted_tags) + "`"
+            await ctx.send(f"Set tags for FAQ `{faq_entry.key}` to: {tags_str}")
+        else:
+            await ctx.send(f"Removed tags for FAQ `{faq_entry.key}`")
 
     async def configure_prefix(self, ctx: GuildContext, prefix: Optional[str]):
         await self.store.configure_prefix(self.guild, prefix)

@@ -1,10 +1,18 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Coroutine, Dict, Optional, TypeAlias
 
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, Context
 
-__all__ = ("CommanderBotBase",)
+from commanderbot.lib.event_data import EventData
+
+EventErrorHandler: TypeAlias = Callable[
+    [Exception, EventData, bool], Coroutine[Any, Any, Any]
+]
+
+CommandErrorHandler: TypeAlias = Callable[
+    [Exception, Context, bool], Coroutine[Any, Any, Any]
+]
 
 
 class CommanderBotBase(ABC, Bot):
@@ -25,4 +33,12 @@ class CommanderBotBase(ABC, Bot):
 
     @abstractmethod
     def get_extension_options(self, ext_name: str) -> Optional[Dict[str, Any]]:
+        ...
+
+    @abstractmethod
+    def add_event_error_handler(self, handler: EventErrorHandler):
+        ...
+
+    @abstractmethod
+    def add_command_error_handler(self, handler: CommandErrorHandler):
         ...

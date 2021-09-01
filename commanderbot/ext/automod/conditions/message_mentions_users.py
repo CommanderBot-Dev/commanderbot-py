@@ -20,9 +20,14 @@ class MessageMentionsUsers(AutomodConditionBase):
         # Short-circuit if the message does not mention any users.
         if not message.mentions:
             return False
-        user_names = {f"{user}" for user in message.mentions}
-        mentioned_users_str = "`" + "` `".join(user_names) + "`"
-        event.set_metadata("mentioned_users", mentioned_users_str)
+        event.set_metadata(
+            "mentioned_users",
+            " ".join(user.mention for user in message.mentions),
+        )
+        event.set_metadata(
+            "mentioned_user_names",
+            " ".join(f"`{user}`" for user in message.mentions),
+        )
         return True
 
 

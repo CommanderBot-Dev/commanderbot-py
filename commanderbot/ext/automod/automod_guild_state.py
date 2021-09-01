@@ -22,13 +22,13 @@ from yaml import YAMLError
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEventBase
-from commanderbot.ext.automod.automod_log_options import AutomodLogOptions
 from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.ext.automod.automod_store import AutomodStore
 from commanderbot.lib import (
     CogGuildState,
     GuildContext,
     JsonObject,
+    LogOptions,
     ResponsiveException,
     RoleSet,
     TextMessage,
@@ -54,7 +54,7 @@ class AutomodGuildState(CogGuildState):
 
     async def _get_log_options_for_rule(
         self, rule: AutomodRule
-    ) -> Optional[AutomodLogOptions]:
+    ) -> Optional[LogOptions]:
         # First try to grab the rule's specific logging configuration, if any.
         if rule.log:
             return rule.log
@@ -62,13 +62,20 @@ class AutomodGuildState(CogGuildState):
         # also not exist, hence why it's optional.
         return await self.store.get_default_log_options(self.guild)
 
-    async def _maybe_log_rule_error_to_channel(
-        self, rule: AutomodRule, error: Exception
-    ):
+    async def _handle_rule_error(self, rule: AutomodRule, error: Exception):
+        error_message = f"Rule `{rule.name}` caused an error:"
+
+        # Re-raise the error so that it can be printed to the console.
+        try:
+            raise error
+        except:
+            self.log.exception(error_message)
+
+        # Attempt to print the error to the log channel, if any.
         try:
             if log_options := await self._get_log_options_for_rule(rule):
                 channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
-                lines = [f"Rule `{rule.name}` caused an error:", "```"]
+                lines = [error_message, "```"]
                 if log_options.stacktrace:
                     lines.append(sanitize_stacktrace(error))
                 else:
@@ -77,18 +84,19 @@ class AutomodGuildState(CogGuildState):
                 content = "\n".join(lines)
                 await channel.send(content)
         except:
-            self.log.exception("Failed to log message to error channel:")
+            # If something went wrong here, print another exception to the console.
+            self.log.exception("Failed to log message to error channel")
 
     async def _do_event_for_rule(self, event: AutomodEventBase, rule: AutomodRule):
         try:
             if await rule.run(event):
                 await self.store.increment_rule_hits(self.guild, rule.name)
         except Exception as error:
-            self.log.exception("Automod rule caused an error:")
-            await self._maybe_log_rule_error_to_channel(rule, error)
+            await self._handle_rule_error(rule, error)
 
     async def _do_event(self, event: AutomodEventBase):
-        # Run rules in parallel so that they don't need to wait for one another.
+        # Run rules in parallel so that they don't need to wait for one another. They
+        # run separately so that when a rule fails it doesn't stop the others.
         rules = await async_expand(self.store.rules_for_event(self.guild, event))
         tasks = [self._do_event_for_rule(event, rule) for rule in rules]
         await asyncio.gather(*tasks)
@@ -118,19 +126,16 @@ class AutomodGuildState(CogGuildState):
         )
 
     async def show_default_log_options(self, ctx: GuildContext):
-        try:
-            log_options = await self.store.get_default_log_options(self.guild)
-            if log_options is not None:
-                channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
-                await self.reply(
-                    ctx,
-                    f"Default logging is configured for {channel.mention}"
-                    + f"\n```\n{log_options!r}\n```",
-                )
-            else:
-                await self.reply(ctx, f"No default logging is configured")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        log_options = await self.store.get_default_log_options(self.guild)
+        if log_options:
+            channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
+            await self.reply(
+                ctx,
+                f"Default logging is configured for {channel.mention}"
+                + f"\n```\n{log_options!r}\n```",
+            )
+        else:
+            await self.reply(ctx, f"No default logging is configured")
 
     async def set_default_log_options(
         self,
@@ -140,90 +145,71 @@ class AutomodGuildState(CogGuildState):
         emoji: Optional[str],
         color: Optional[Color],
     ):
-        try:
-            new_log_options = AutomodLogOptions(
-                channel=channel.id,
-                stacktrace=stacktrace,
-                emoji=emoji,
-                color=color,
+        new_log_options = LogOptions(
+            channel=channel.id,
+            stacktrace=stacktrace,
+            emoji=emoji,
+            color=color,
+        )
+        old_log_options = await self.store.set_default_log_options(
+            self.guild, new_log_options
+        )
+        if old_log_options:
+            old_log_channel = cast(
+                TextChannel, self.bot.get_channel(old_log_options.channel)
             )
-            old_log_options = await self.store.set_default_log_options(
-                self.guild, new_log_options
+            await self.reply(
+                ctx,
+                f"Moved default logging from {old_log_channel.mention}"
+                + f" to {channel.mention}",
             )
-            if old_log_options:
-                old_log_channel = cast(
-                    TextChannel, self.bot.get_channel(old_log_options.channel)
-                )
-                await self.reply(
-                    ctx,
-                    f"Moved default logging from {old_log_channel.mention}"
-                    + f" to {channel.mention}",
-                )
-            else:
-                await self.reply(
-                    ctx, f"Configured default logging for {channel.mention}"
-                )
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        else:
+            await self.reply(ctx, f"Configured default logging for {channel.mention}")
 
     async def remove_default_log_options(self, ctx: GuildContext):
-        try:
-            old_log_options = await self.store.set_default_log_options(self.guild, None)
-            if old_log_options is not None:
-                channel = cast(
-                    TextChannel, self.bot.get_channel(old_log_options.channel)
-                )
-                await self.reply(ctx, f"Removed default logging from {channel.mention}")
-            else:
-                await self.reply(ctx, f"No default logging is configured")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        old_log_options = await self.store.set_default_log_options(self.guild, None)
+        if old_log_options:
+            channel = cast(TextChannel, self.bot.get_channel(old_log_options.channel))
+            await self.reply(ctx, f"Removed default logging from {channel.mention}")
+        else:
+            await self.reply(ctx, f"No default logging is configured")
 
     async def show_permitted_roles(self, ctx: GuildContext):
-        try:
-            permitted_roles = await self.store.get_permitted_roles(self.guild)
-            if permitted_roles is not None:
-                count_permitted_roles = len(permitted_roles)
-                role_mentions = permitted_roles.to_mentions(self.guild)
-                await self.reply(
-                    ctx,
-                    f"There are {count_permitted_roles} roles permitted to manage"
-                    + f" automod: {role_mentions}",
-                )
-            else:
-                await self.reply(ctx, f"No roles are permitted to manage automod")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        permitted_roles = await self.store.get_permitted_roles(self.guild)
+        if permitted_roles:
+            count_permitted_roles = len(permitted_roles)
+            role_mentions = permitted_roles.to_mentions(self.guild)
+            await self.reply(
+                ctx,
+                f"There are {count_permitted_roles} roles permitted to manage"
+                + f" automod: {role_mentions}",
+            )
+        else:
+            await self.reply(ctx, f"No roles are permitted to manage automod")
 
     async def set_permitted_roles(self, ctx: GuildContext, *roles: Role):
-        try:
-            new_permitted_roles = RoleSet(set(role.id for role in roles))
-            new_role_mentions = new_permitted_roles.to_mentions(self.guild)
-            old_permitted_roles = await self.store.set_permitted_roles(
-                self.guild, new_permitted_roles
+        new_permitted_roles = RoleSet(set(role.id for role in roles))
+        new_role_mentions = new_permitted_roles.to_mentions(self.guild)
+        old_permitted_roles = await self.store.set_permitted_roles(
+            self.guild, new_permitted_roles
+        )
+        if old_permitted_roles:
+            old_role_mentions = old_permitted_roles.to_mentions(self.guild)
+            await self.reply(
+                ctx,
+                f"Changed permitted roles from {old_role_mentions}"
+                + f" to {new_role_mentions}",
             )
-            if old_permitted_roles is not None:
-                old_role_mentions = old_permitted_roles.to_mentions(self.guild)
-                await self.reply(
-                    ctx,
-                    f"Changed permitted roles from {old_role_mentions}"
-                    + f" to {new_role_mentions}",
-                )
-            else:
-                await self.reply(ctx, f"Changed permitted roles to {new_role_mentions}")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        else:
+            await self.reply(ctx, f"Changed permitted roles to {new_role_mentions}")
 
     async def clear_permitted_roles(self, ctx: GuildContext):
-        try:
-            old_permitted_roles = await self.store.set_permitted_roles(self.guild, None)
-            if old_permitted_roles is not None:
-                role_mentions = old_permitted_roles.to_mentions(self.guild)
-                await self.reply(ctx, f"Cleared all permitted roles: {role_mentions}")
-            else:
-                await self.reply(ctx, f"No roles are permitted to manage automod")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        old_permitted_roles = await self.store.set_permitted_roles(self.guild, None)
+        if old_permitted_roles:
+            role_mentions = old_permitted_roles.to_mentions(self.guild)
+            await self.reply(ctx, f"Cleared all permitted roles: {role_mentions}")
+        else:
+            await self.reply(ctx, f"No roles are permitted to manage automod")
 
     async def show_rules(self, ctx: GuildContext, query: str = ""):
         if query:
@@ -294,56 +280,39 @@ class AutomodGuildState(CogGuildState):
             await self.reply(ctx, f"No rule found matching `{query}`")
 
     async def add_rule(self, ctx: GuildContext, body: str):
-        try:
-            data = self._parse_body(body)
-            rule = await self.store.add_rule(self.guild, data)
-            await self.reply(ctx, f"Added automod rule `{rule.name}`")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        data = self._parse_body(body)
+        rule = await self.store.add_rule(self.guild, data)
+        await self.reply(ctx, f"Added automod rule `{rule.name}`")
 
     async def remove_rule(self, ctx: GuildContext, name: str):
-        # Wrap this in case of multiple confirmations.
-        try:
-            # Get the corresponding rule.
-            rule = await self.store.require_rule(self.guild, name)
-            # Then ask for confirmation to actually remove it.
-            conf = await confirm_with_reaction(
-                self.bot,
-                ctx,
-                f"Are you sure you want to remove automod rule `{rule.name}`?",
-            )
-            # If the answer was yes, attempt to remove the rule and send a response.
-            if conf == ConfirmationResult.YES:
-                removed_rule = await self.store.remove_rule(self.guild, rule.name)
-                await self.reply(ctx, f"Removed automod rule `{removed_rule.name}`")
-            # If the answer was no, send a response.
-            elif conf == ConfirmationResult.NO:
-                await self.reply(ctx, f"Did not remove automod rule `{rule.name}`")
-        # If a known error occurred, send a response.
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        # Get the corresponding rule.
+        rule = await self.store.require_rule(self.guild, name)
+        # Then ask for confirmation to actually remove it.
+        conf = await confirm_with_reaction(
+            self.bot,
+            ctx,
+            f"Are you sure you want to remove automod rule `{rule.name}`?",
+        )
+        # If the answer was yes, attempt to remove the rule and send a response.
+        if conf == ConfirmationResult.YES:
+            removed_rule = await self.store.remove_rule(self.guild, rule.name)
+            await self.reply(ctx, f"Removed automod rule `{removed_rule.name}`")
+        # If the answer was no, send a response.
+        elif conf == ConfirmationResult.NO:
+            await self.reply(ctx, f"Did not remove automod rule `{rule.name}`")
 
     async def modify_rule(self, ctx: GuildContext, name: str, body: str):
-        try:
-            data = self._parse_body(body)
-            rule = await self.store.modify_rule(self.guild, name, data)
-            await self.reply(ctx, f"Modified automod rule `{rule.name}`")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        data = self._parse_body(body)
+        rule = await self.store.modify_rule(self.guild, name, data)
+        await self.reply(ctx, f"Modified automod rule `{rule.name}`")
 
     async def enable_rule(self, ctx: GuildContext, name: str):
-        try:
-            rule = await self.store.enable_rule(self.guild, name)
-            await self.reply(ctx, f"Enabled automod rule `{rule.name}`")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        rule = await self.store.enable_rule(self.guild, name)
+        await self.reply(ctx, f"Enabled automod rule `{rule.name}`")
 
     async def disable_rule(self, ctx: GuildContext, name: str):
-        try:
-            rule = await self.store.disable_rule(self.guild, name)
-            await self.reply(ctx, f"Disabled automod rule `{rule.name}`")
-        except ResponsiveException as ex:
-            await ex.respond(ctx)
+        rule = await self.store.disable_rule(self.guild, name)
+        await self.reply(ctx, f"Disabled automod rule `{rule.name}`")
 
     async def member_has_permission(self, member: Member) -> bool:
         permitted_roles = await self.store.get_permitted_roles(self.guild)
