@@ -25,11 +25,11 @@ class StatusDetails:
 
         # Get additional bot details, if available.
         self.started_at: Optional[datetime] = None
-        self.connected_since: Optional[datetime] = None
+        self.last_reconnect: Optional[datetime] = None
         self.uptime: Optional[timedelta] = None
         if cb := check_commander_bot(bot):
             self.started_at = cb.started_at
-            self.connected_since = cb.connected_since
+            self.last_reconnect = cb.connected_since
             self.uptime = cb.uptime
 
     def _get_epoch(self, dt: Optional[datetime]) -> Optional[int]:
@@ -55,7 +55,7 @@ class StatusDetails:
             "Discord.py version": f"`{self.discord_py_version}`",
             "CommanderBot version": f"`{self.commanderbot_version}`",
             "Started": f"<t:{self._get_epoch(self.started_at)}:R>",
-            "Last reconnect": f"<t:{self._get_epoch(self.connected_since)}:R>",
+            "Last reconnect": f"<t:{self._get_epoch(self.last_reconnect)}:R>",
             "Uptime": f"`{self._format_timedelta(self.uptime)}`",
         }
         non_empty_rows = {k: v for k, v in all_rows.items() if v}
