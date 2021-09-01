@@ -1,30 +1,14 @@
 import os
 import re
 import traceback
-from typing import Any, AsyncIterable, List, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, AsyncIterable, List, Mapping, Optional, Set, TypeVar
 
 from discord import Member, User
-from discord.ext.commands import Bot, Cog
+from discord.ext.commands import Bot
 
-from commanderbot.core.commander_bot_base import CommanderBotBase
 from commanderbot.lib.types import RoleID
 
 T = TypeVar("T")
-
-
-def check_commander_bot(bot: Bot) -> Optional[CommanderBotBase]:
-    if isinstance(bot, CommanderBotBase):
-        return bot
-
-
-def add_configured_cog(bot: Bot, ext_name: str, cog_class: Type[Cog]):
-    cog = None
-    if cb := check_commander_bot(bot):
-        if options := cb.get_extension_options(ext_name):
-            cog = cog_class(bot, **options)
-    if not cog:
-        cog = cog_class(bot)
-    bot.add_cog(cog)
 
 
 def is_bot(bot: Bot, user: Any) -> bool:

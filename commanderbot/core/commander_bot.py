@@ -1,52 +1,25 @@
-from dataclasses import dataclass
+import sys
 from datetime import datetime, timedelta
 from logging import Logger, getLogger
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-import discord
 from discord.ext.commands import Context
-from discord.ext.commands.errors import (
-    BotMissingPermissions,
-    CheckFailure,
-    CommandNotFound,
-    MissingPermissions,
-    NoPrivateMessage,
-    UserInputError,
-)
 
 from commanderbot.core.commander_bot_base import CommanderBotBase
-from commanderbot.lib.allowed_mentions import AllowedMentions
-from commanderbot.lib.intents import Intents
-from commanderbot.lib.responsive_exception import ResponsiveException
-
-__all__ = (
-    "ConfiguredExtension",
-    "CommanderBot",
+from commanderbot.core.configured_extension import ConfiguredExtension
+from commanderbot.core.error_handling import (
+    CommandErrorHandler,
+    ErrorHandling,
+    EventErrorHandler,
 )
-
-
-@dataclass
-class ConfiguredExtension:
-    name: str
-    disabled: bool = False
-    options: Optional[Dict[str, Any]] = None
-
-    @staticmethod
-    def deserialize(data: Union[str, Dict[str, Any]]) -> "ConfiguredExtension":
-        if isinstance(data, str):
-            # Extensions starting with a `!` are disabled.
-            disabled = data.startswith("!")
-            return ConfiguredExtension(name=data, disabled=disabled)
-        try:
-            return ConfiguredExtension(**data)
-        except Exception as ex:
-            raise ValueError(f"Invalid extension configuration: {data}") from ex
+from commanderbot.lib import AllowedMentions, EventData, Intents
 
 
 class CommanderBot(CommanderBotBase):
     def __init__(self, *args, **kwargs):
         # Account for options that don't belong to the discord.py Bot base.
         extensions_data = kwargs.pop("extensions", None)
+
         # Account for options that need further processing.
         intents = Intents.from_field_optional(kwargs, "intents")
         allowed_mentions = AllowedMentions.from_field_optional(
@@ -56,13 +29,20 @@ class CommanderBot(CommanderBotBase):
             intents=intents or Intents.default(),
             allowed_mentions=allowed_mentions or AllowedMentions.not_everyone(),
         )
+
         # Initialize discord.py Bot base.
         super().__init__(*args, **kwargs)
+
         # Grab our own logger instance.
         self.log: Logger = getLogger("CommanderBot")
+
         # Remember when we started and the last time we connected.
         self._started_at: datetime = datetime.utcnow()
         self._connected_since: Optional[datetime] = None
+
+        # Create an error handling component.
+        self.error_handling = ErrorHandling(log=self.log)
+
         # Warn about a lack of configured intents.
         if intents is None:
             self.log.warning(
@@ -70,6 +50,7 @@ class CommanderBot(CommanderBotBase):
             )
         else:
             self.log.info(f"Using intents flags: {self.intents.value}")
+
         # Configure extensions.
         self.configured_extensions: Dict[str, ConfiguredExtension] = {}
         if extensions_data:
@@ -84,7 +65,7 @@ class CommanderBot(CommanderBotBase):
         self.log.info(f"Processing {len(extensions_data)} extensions...")
 
         all_extensions: List[ConfiguredExtension] = [
-            ConfiguredExtension.deserialize(entry) for entry in extensions_data
+            ConfiguredExtension.from_data(entry) for entry in extensions_data
         ]
 
         self.configured_extensions = {}
@@ -105,18 +86,6 @@ class CommanderBot(CommanderBotBase):
                 self.log.exception(f"Failed to load extension: {ext.name}")
 
         self.log.info(f"Finished loading extensions.")
-
-    async def reply(
-        self,
-        ctx: Context,
-        content: str,
-        allowed_mentions: Optional[discord.AllowedMentions] = None,
-    ) -> discord.Message:
-        """Wraps `Context.reply()` with all mentions disabled by default."""
-        return await ctx.message.reply(
-            content,
-            allowed_mentions=allowed_mentions or AllowedMentions.none(),
-        )
 
     # @implements CommanderBotBase
     @property
@@ -139,6 +108,14 @@ class CommanderBot(CommanderBotBase):
         if configured_extension := self.configured_extensions.get(ext_name):
             return configured_extension.options
 
+    # @implements CommanderBotBase
+    def add_event_error_handler(self, handler: EventErrorHandler):
+        self.error_handling.add_event_error_handler(handler)
+
+    # @implements CommanderBotBase
+    def add_command_error_handler(self, handler: CommandErrorHandler):
+        self.error_handling.add_command_error_handler(handler)
+
     # @overrides Bot
     async def on_connect(self):
         self.log.warning("Connected to Discord.")
@@ -149,26 +126,14 @@ class CommanderBot(CommanderBotBase):
         self.log.warning("Disconnected from Discord.")
 
     # @overrides Bot
+    async def on_error(self, event_method: str, *args: Any, **kwargs: Any):
+        _, ex, _ = sys.exc_info()
+        if isinstance(ex, Exception):
+            event_data = EventData(event_method, args, kwargs)
+            await self.error_handling.on_event_error(ex, event_data)
+        else:
+            await super().on_error(event_method, *args, **kwargs)
+
+    # @overrides Bot
     async def on_command_error(self, ctx: Context, ex: Exception):
-        match ex:
-            case CommandNotFound():
-                pass
-            case UserInputError():
-                await self.reply(ctx, f"😬 Bad input: {ex}")
-                await ctx.send_help(ctx.command)
-            case MissingPermissions():
-                await self.reply(ctx, f"😠 You don't have permission to do that.")
-            case BotMissingPermissions():
-                await self.reply(ctx, f"😳 I don't have permission to do that.")
-            case NoPrivateMessage():
-                await self.reply(ctx, f"🤐 You can't do that in a private message.")
-            case CheckFailure():
-                await self.reply(ctx, f"🤔 You can't do that.")
-            case ResponsiveException():
-                await ex.respond(ctx)
-            case _:
-                try:
-                    raise ex
-                except:
-                    self.log.exception(f"Ignoring exception in command: {ctx.command}")
-                await self.reply(ctx, f"🔥 Something went wrong trying to do that.")
+        await self.error_handling.on_command_error(ex, ctx)
