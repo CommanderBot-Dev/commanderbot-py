@@ -8,15 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-- Added `allowed_mentions` to `reply_to_message` action
-- Added a new `mentions_removed_from_message` trigger
+- Implemented a new cog `stacktracer` for error logging (#55)
+- `automod`: Added a new [`mentions_removed_from_message`](https://github.com/CommanderBot-Dev/commanderbot-py/wiki/Extension:-automod#mentions_removed_from_message-trigger) trigger
+- `automod`: Added `allowed_mentions` field to [`reply_to_message`](https://github.com/CommanderBot-Dev/commanderbot-py/wiki/Extension:-automod#reply_to_message-action) action
 
 ### Changed
 
-- `quote` now includes attachments and embeds on the original message
-- `quote` now accounts for the read permissions of the person trying to quote
+- `status` now uses an embed (#45)
+
+### Fixed
+
+- `quote`: Now includes attachments and embeds on the original message
+- `quote`: Now accounts for the read permissions of the person trying to quote
 - `ChannelsGuard` now accounts for threads, by determining the root channel
-- `status` now uses an embed
 
 ## [0.16.0] - 2021-08-30
 
@@ -57,11 +61,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-- Added `manifest` command that generates Bedrock manifests
+- Added `manifest` command that generates Bedrock manifests (#51)
 
 ### Changed
 
-- Improved emoji parsing logic for the `vote` command
+- Improved emoji parsing logic for the `vote` command (#45)
 
 ## [0.14.0] - 2021-08-25
 
