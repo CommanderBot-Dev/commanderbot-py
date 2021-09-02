@@ -3,8 +3,8 @@ import re
 import traceback
 from typing import Any, AsyncIterable, List, Mapping, Optional, Set, TypeVar
 
-from discord import Member, User
-from discord.ext.commands import Bot
+from discord import Member, TextChannel, Thread, User
+from discord.ext.commands import Bot, Context
 
 from commanderbot.lib.types import RoleID
 
@@ -62,3 +62,29 @@ def sanitize_stacktrace(error: Exception) -> str:
     lines = [re.sub(r'File "([^"]+)"', shorten, line, 1) for line in lines]
 
     return "".join(lines)
+
+
+def format_command_context(ctx: Context) -> str:
+    parts = []
+
+    if author := ctx.author:
+        parts.append(author.mention)
+    else:
+        parts.append("`Unknown User`")
+
+    if channel := ctx.channel:
+        if isinstance(channel, TextChannel | Thread):
+            parts.append(f"in {channel.mention}")
+        else:
+            parts.append(f"in channel `{channel}` (ID `{channel.id}`)")
+    elif guild := ctx.guild:
+        parts.append(f"in guild `{guild}` (ID `{guild.id}`)")
+
+    lines = [
+        " ".join(parts) + ":",
+        "```",
+        str(ctx.command),
+        "```",
+    ]
+
+    return "\n".join(lines)
