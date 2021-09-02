@@ -7,11 +7,11 @@ from discord.ext.commands import Bot, Context
 from commanderbot.lib.event_data import EventData
 
 EventErrorHandler: TypeAlias = Callable[
-    [Exception, EventData, bool], Coroutine[Any, Any, Any]
+    [Exception, EventData, bool], Coroutine[Any, Any, Optional[bool]]
 ]
 
 CommandErrorHandler: TypeAlias = Callable[
-    [Exception, Context, bool], Coroutine[Any, Any, Any]
+    [Exception, Context, bool], Coroutine[Any, Any, Optional[bool]]
 ]
 
 

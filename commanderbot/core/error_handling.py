@@ -7,6 +7,7 @@ from discord.ext.commands import Context
 from discord.ext.commands.errors import (
     BotMissingPermissions,
     CheckFailure,
+    CommandInvokeError,
     CommandNotFound,
     MissingPermissions,
     NoPrivateMessage,
@@ -23,6 +24,12 @@ class ErrorHandling:
 
     event_error_handlers: List[EventErrorHandler] = field(default_factory=list)
     command_error_handlers: List[CommandErrorHandler] = field(default_factory=list)
+
+    def _get_root_error(self, error: Exception) -> Exception:
+        if isinstance(error, CommandInvokeError):
+            return error.original
+        else:
+            return error
 
     def add_event_error_handler(self, handler: EventErrorHandler):
         self.event_error_handlers.append(handler)
@@ -42,27 +49,54 @@ class ErrorHandling:
             allowed_mentions=allowed_mentions or AllowedMentions.none(),
         )
 
-    async def on_event_error(self, error: Exception, event_data: EventData):
-        # TODO Can we handle certain types of event errors? #enhance
-        handled = False
+    async def on_event_error(self, ex: Exception, event_data: EventData):
+        # Extract the root error.
+        error = self._get_root_error(ex)
 
-        # Re-raise the error so that it can be printed to the console.
-        try:
-            raise error
-        except:
-            self.log.exception(f"Ignoring exception in event `{event_data.name}`")
+        # Attempt to handle the error ourselves.
+        handled = await self.try_handle_event_error(error, event_data)
 
         # Run the error through our registered event error handlers.
         for handler in self.event_error_handlers:
             try:
-                await handler(error, event_data, handled)
+                if result := await handler(error, event_data, handled):
+                    handled = result
             except:
                 # If something went wrong here, print another exception to the console.
                 self.log.exception("Handler for command errors caused another error:")
 
-    async def on_command_error(self, error: Exception, ctx: Context):
-        # Attempt to handle the error.
-        handled = await self.try_handle_command_error(ctx, error)
+        # If it wasn't handled, re-raise so it can be printed to the console.
+        if not handled:
+            try:
+                raise error
+            except:
+                self.log.exception(
+                    f"Ignoring unhandled exception in event `{event_data.name}`"
+                )
+
+    async def try_handle_event_error(
+        self, error: Exception, event_data: EventData
+    ) -> bool:
+        # TODO Can we handle certain types of event errors? #enhance
+        return False
+
+    async def on_command_error(self, ex: Exception, ctx: Context):
+        # Extract the root error.
+        error = self._get_root_error(ex)
+
+        # Attempt to handle the error ourselves.
+        handled = await self.try_handle_command_error(error, ctx)
+
+        # Pipe the error through our registered command error handlers, regardless of
+        # whether the error was handled. Handlers can decide on their own whether to do
+        # anything with errors that have already been handled.
+        for handler in self.command_error_handlers:
+            try:
+                if result := await handler(error, ctx, handled):
+                    handled = result
+            except:
+                # If something went wrong here, print another exception to the console.
+                self.log.exception("Handler for command errors caused another error:")
 
         # If it wasn't handled, re-raise so it can be printed to the console, and then
         # let the user know something went wrong.
@@ -70,20 +104,13 @@ class ErrorHandling:
             try:
                 raise error
             except:
+                cog_name = ctx.cog.__cog_name__ if ctx.cog else None
                 self.log.exception(
-                    f"Ignoring exception in cog `{ctx.cog}` from command: {ctx.command}"
+                    f"Ignoring unhandled exception in cog `{cog_name}` from command: `{ctx.command}`"
                 )
             await self.reply(ctx, f"🔥 Something went wrong trying to do that.")
 
-        # Run the error through our registered command error handlers.
-        for handler in self.command_error_handlers:
-            try:
-                await handler(error, ctx, handled)
-            except:
-                # If something went wrong here, print another exception to the console.
-                self.log.exception("Handler for command errors caused another error:")
-
-    async def try_handle_command_error(self, ctx: Context, error: Exception) -> bool:
+    async def try_handle_command_error(self, error: Exception, ctx: Context) -> bool:
         if isinstance(error, CommandNotFound):
             return True
         elif isinstance(error, UserInputError):
@@ -105,4 +132,5 @@ class ErrorHandling:
         elif isinstance(error, ResponsiveException):
             await error.respond(ctx)
             return True
+
         return False
