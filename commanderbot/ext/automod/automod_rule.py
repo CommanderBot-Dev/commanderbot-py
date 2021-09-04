@@ -92,10 +92,10 @@ class AutomodRule:
             parts.append(self.description)
         return " ".join(parts)
 
-    def poll_triggers(self, event: AutomodEvent) -> bool:
+    async def poll_triggers(self, event: AutomodEvent) -> bool:
         """Check whether the event activates any triggers."""
         for trigger in self.triggers:
-            if trigger.poll(event):
+            if await trigger.poll(event):
                 return True
         return False
 

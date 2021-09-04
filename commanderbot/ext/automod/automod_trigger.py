@@ -28,7 +28,7 @@ class AutomodTrigger(AutomodEntity, Protocol):
 
     description: Optional[str]
 
-    def poll(self, event: AutomodEvent) -> Optional[bool]:
+    async def poll(self, event: AutomodEvent) -> Optional[bool]:
         """Check whether an event activates the trigger."""
 
 
@@ -58,17 +58,17 @@ class AutomodTriggerBase(AutomodEntityBase):
             description=data.get("description"),
         )
 
-    def poll(self, event: AutomodEvent) -> bool:
+    async def poll(self, event: AutomodEvent) -> bool:
         # Verify that we care about this event type.
         event_type = type(event)
         if event_type not in self.event_types:
             return False
         # Check whether the event should be ignored.
-        if self.ignore(event):
+        if await self.ignore(event):
             return False
         return True
 
-    def ignore(self, event: AutomodEvent) -> bool:
+    async def ignore(self, event: AutomodEvent) -> bool:
         """Override this if more than just the event type needs to be checked."""
         return False
 

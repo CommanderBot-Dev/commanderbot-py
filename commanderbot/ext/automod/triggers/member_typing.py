@@ -3,10 +3,7 @@ from typing import Optional, Type, TypeVar
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import (
-    AutomodTrigger,
-    AutomodTriggerBase,
-)
+from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
 from commanderbot.lib import ChannelsGuard, JsonObject, RolesGuard
 
 ST = TypeVar("ST")
@@ -52,7 +49,7 @@ class MemberTyping(AutomodTriggerBase):
             return False
         return self.roles.ignore(event.member)
 
-    def ignore(self, event: AutomodEvent) -> bool:
+    async def ignore(self, event: AutomodEvent) -> bool:
         return self.ignore_by_channel(event) or self.ignore_by_role(event)
 
 

@@ -49,7 +49,7 @@ class MentionsRemovedFromMessage(AutomodTriggerBase):
             victim_roles=victim_roles,
         )
 
-    def ignore(self, event: AutomodEvent) -> bool:
+    async def ignore(self, event: AutomodEvent) -> bool:
         # Make sure we care about the channel.
         if self.channels and self.channels.ignore(event.channel):
             return True
