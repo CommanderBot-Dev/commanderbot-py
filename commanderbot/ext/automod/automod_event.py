@@ -4,16 +4,13 @@ from typing import Any, ClassVar, Dict, Iterable, Optional, Protocol, Tuple, Typ
 from discord import Member, TextChannel, Thread, User
 from discord.ext.commands import Bot
 
-from commanderbot.lib import (
-    ShallowFormatter,
-    TextMessage,
-    TextReaction,
-    ValueFormatter,
-)
+from commanderbot.ext.automod.automod_event_state import AutomodEventState
+from commanderbot.lib import ShallowFormatter, TextMessage, TextReaction, ValueFormatter
 from commanderbot.lib.utils import yield_member_date_fields
 
 
 class AutomodEvent(Protocol):
+    state: AutomodEventState
     bot: Bot
 
     @property
@@ -60,6 +57,7 @@ class AutomodEvent(Protocol):
 # @implements AutomodEvent
 @dataclass
 class AutomodEventBase:
+    state: AutomodEventState
     bot: Bot
 
     _metadata: Dict[str, Any] = field(init=False, default_factory=dict)
