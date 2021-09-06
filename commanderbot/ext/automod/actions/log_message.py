@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, Optional, Type, TypeVar
 
 from discord import Color
@@ -7,7 +7,7 @@ from discord.abc import Messageable
 from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.lib import AllowedMentions, ChannelID, JsonObject, ValueFormatter
-from commanderbot.lib.utils import color_from_field_optional
+from commanderbot.lib.utils import color_from_field_optional, message_to_file
 
 ST = TypeVar("ST")
 
@@ -27,6 +27,8 @@ class LogMessage(AutomodActionBase):
         The emoji used to represent the type of message.
     color
         The emoji used to represent the type of message.
+    attach_message
+        Whether to attach the message-in-context (as a text file) to the log message.
     fields
         A custom set of fields to display as part of the message. The key should
         correspond to an event field, and the value is the title to use for it.
@@ -39,6 +41,7 @@ class LogMessage(AutomodActionBase):
     channel: Optional[ChannelID] = None
     emoji: Optional[str] = None
     color: Optional[Color] = None
+    attach_message: Optional[bool] = None
     fields: Optional[Dict[str, str]] = None
     allowed_mentions: Optional[AllowedMentions] = None
 
@@ -53,6 +56,7 @@ class LogMessage(AutomodActionBase):
             emoji=data.get("emoji"),
             color=color,
             fields=data.get("fields"),
+            attach_message=data.get("attach_message"),
             allowed_mentions=allowed_mentions,
         )
 
@@ -83,7 +87,15 @@ class LogMessage(AutomodActionBase):
                 parts.append(fields_str)
             content = " ".join(parts)
             allowed_mentions = self.allowed_mentions or AllowedMentions.none()
-            await channel.send(content, allowed_mentions=allowed_mentions)
+            if self.attach_message and (message := event.message):
+                message_file = message_to_file(message)
+                await channel.send(
+                    content,
+                    file=message_file,
+                    allowed_mentions=allowed_mentions,
+                )
+            else:
+                await channel.send(content, allowed_mentions=allowed_mentions)
 
 
 def create_action(data: JsonObject) -> AutomodAction:
