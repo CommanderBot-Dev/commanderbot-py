@@ -1,6 +1,7 @@
 import os
 import re
 import traceback
+from datetime import datetime, timezone
 from typing import Any, AsyncIterable, List, Mapping, Optional, Set, TypeVar
 
 from discord import Member, TextChannel, Thread, User
@@ -88,3 +89,7 @@ def format_command_context(ctx: Context) -> str:
     ]
 
     return "\n".join(lines)
+
+
+def utcnow_aware() -> datetime:
+    return datetime.utcnow().replace(tzinfo=timezone.utc)
