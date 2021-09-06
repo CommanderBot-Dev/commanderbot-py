@@ -11,6 +11,7 @@ from commanderbot.lib import RoleID
 @dataclass
 class AddRolesToTargetBase(AutomodActionBase):
     roles: Tuple[RoleID]
+    reason: Optional[str] = None
 
     def get_target(self, event: AutomodEvent) -> Optional[Member]:
         raise NotImplementedError()
@@ -21,4 +22,4 @@ class AddRolesToTargetBase(AutomodActionBase):
             # TODO Warn about unresolved roles. #logging
             roles = [guild.get_role(role_id) for role_id in self.roles]
             roles = [role for role in roles if role]
-            await member.add_roles(*roles)
+            await member.add_roles(*roles, reason=self.reason)
