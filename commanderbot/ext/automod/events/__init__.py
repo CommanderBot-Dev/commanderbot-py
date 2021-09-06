@@ -4,6 +4,7 @@ from .member_typing import *
 from .member_updated import *
 from .message_deleted import *
 from .message_edited import *
+from .message_frequency_changed import *
 from .message_sent import *
 from .raw_message_deleted import *
 from .raw_message_edited import *

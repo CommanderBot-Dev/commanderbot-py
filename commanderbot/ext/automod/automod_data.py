@@ -3,10 +3,20 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
+from typing import (
+    AsyncIterable,
+    DefaultDict,
+    Dict,
+    Iterable,
+    Optional,
+    Set,
+    Type,
+    TypeVar,
+)
 
 from discord import Guild
 
+from commanderbot.ext.automod.automod_bucket import AutomodBucket
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.lib import (
@@ -18,6 +28,9 @@ from commanderbot.lib import (
 )
 from commanderbot.lib.json import to_data
 from commanderbot.lib.utils import dict_without_ellipsis
+
+BT = TypeVar("BT", bound=AutomodBucket)
+
 
 RulesByEventType = DefaultDict[Type[AutomodEvent], Set[AutomodRule]]
 
@@ -303,3 +316,17 @@ class AutomodData:
     # @implements AutomodStore
     async def increment_rule_hits(self, guild: Guild, name: str) -> AutomodRule:
         return self.guilds[guild.id].increment_rule_hits_by_name(name)
+
+    # @implements AutomodStore
+    async def get_bucket(
+        self, guild: Guild, name: str, bucket_type: Type[BT]
+    ) -> Optional[BT]:
+        # IMPL
+        ...
+
+    # @implements AutomodStore
+    async def require_bucket(
+        self, guild: Guild, name: str, bucket_type: Type[BT]
+    ) -> BT:
+        # IMPL
+        ...

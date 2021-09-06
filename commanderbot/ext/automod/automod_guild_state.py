@@ -21,6 +21,7 @@ from discord import (
 from yaml import YAMLError
 
 from commanderbot.ext.automod import events
+from commanderbot.ext.automod.automod_bucket import AutomodBucket
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.ext.automod.automod_store import AutomodStore
@@ -93,13 +94,6 @@ class AutomodGuildState(CogGuildState):
                 await self.store.increment_rule_hits(self.guild, rule.name)
         except Exception as error:
             await self._handle_rule_error(rule, error)
-
-    async def _do_event(self, event: AutomodEvent):
-        # Run rules in parallel so that they don't need to wait for one another. They
-        # run separately so that when a rule fails it doesn't stop the others.
-        rules = await async_expand(self.store.rules_for_event(self.guild, event))
-        tasks = [self._do_event_for_rule(event, rule) for rule in rules]
-        await asyncio.gather(*tasks)
 
     def _parse_body(self, body: str) -> JsonObject:
         content = body.strip("\n").strip("`")
@@ -323,54 +317,70 @@ class AutomodGuildState(CogGuildState):
 
     # @@ EVENT HANDLERS
 
+    async def dispatch_event(self, event: AutomodEvent):
+        # Run rules in parallel so that they don't need to wait for one another. They
+        # run separately so that when a rule fails it doesn't stop the others.
+        rules = await async_expand(self.store.rules_for_event(self.guild, event))
+        if rules:
+            tasks = [self._do_event_for_rule(event, rule) for rule in rules]
+            await asyncio.gather(*tasks)
+
     async def on_typing(
         self, channel: TextChannel | Thread, member: Member, when: datetime
     ):
-        await self._do_event(events.MemberTyping(self, self.bot, channel, member, when))
+        await self.dispatch_event(
+            events.MemberTyping(self, self.bot, channel, member, when)
+        )
 
     async def on_message(self, message: TextMessage):
-        await self._do_event(events.MessageSent(self, self.bot, message))
+        await self.dispatch_event(events.MessageSent(self, self.bot, message))
 
     async def on_message_delete(self, message: TextMessage):
-        await self._do_event(events.MessageDeleted(self, self.bot, message))
+        await self.dispatch_event(events.MessageDeleted(self, self.bot, message))
 
     async def on_message_edit(self, before: TextMessage, after: TextMessage):
-        await self._do_event(events.MessageEdited(self, self.bot, before, after))
+        await self.dispatch_event(events.MessageEdited(self, self.bot, before, after))
 
     async def on_reaction_add(self, reaction: TextReaction, member: Member):
-        await self._do_event(events.ReactionAdded(self, self.bot, reaction, member))
+        await self.dispatch_event(
+            events.ReactionAdded(self, self.bot, reaction, member)
+        )
 
     async def on_reaction_remove(self, reaction: TextReaction, member: Member):
-        await self._do_event(events.ReactionRemoved(self, self.bot, reaction, member))
+        await self.dispatch_event(
+            events.ReactionRemoved(self, self.bot, reaction, member)
+        )
 
     async def on_member_join(self, member: Member):
-        await self._do_event(events.MemberJoined(self, self.bot, member))
+        await self.dispatch_event(events.MemberJoined(self, self.bot, member))
 
     async def on_member_remove(self, member: Member):
-        await self._do_event(events.MemberLeft(self, self.bot, member))
+        await self.dispatch_event(events.MemberLeft(self, self.bot, member))
 
     async def on_member_update(self, before: Member, after: Member):
-        await self._do_event(events.MemberUpdated(self, self.bot, before, after))
+        await self.dispatch_event(events.MemberUpdated(self, self.bot, before, after))
 
     async def on_user_update(self, before: User, after: User, member: Member):
-        await self._do_event(events.UserUpdated(self, self.bot, before, after, member))
+        await self.dispatch_event(
+            events.UserUpdated(self, self.bot, before, after, member)
+        )
 
     async def on_user_ban(self, user: User):
-        await self._do_event(events.UserBanned(self, self.bot, user))
+        await self.dispatch_event(events.UserBanned(self, self.bot, user))
 
     async def on_user_unban(self, user: User):
-        await self._do_event(events.UserUnbanned(self, self.bot, user))
+        await self.dispatch_event(events.UserUnbanned(self, self.bot, user))
 
     # @@ RAW EVENT HANDLERS
 
     async def on_raw_message_delete(self, payload: RawMessageDeleteEvent):
-        await self._do_event(events.RawMessageDeleted(self, self.bot, payload))
+        await self.dispatch_event(events.RawMessageDeleted(self, self.bot, payload))
 
     async def on_raw_message_edit(self, payload: RawMessageUpdateEvent):
-        await self._do_event(events.RawMessageEdited(self, self.bot, payload))
+        await self.dispatch_event(events.RawMessageEdited(self, self.bot, payload))
 
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
-        await self._do_event(events.RawReactionAdded(self, self.bot, payload))
+        await self.dispatch_event(events.RawReactionAdded(self, self.bot, payload))
 
     async def on_raw_reaction_remove(self, payload: RawReactionActionEvent):
-        await self._do_event(events.RawReactionRemoved(self, self.bot, payload))
+        await self.dispatch_event(events.RawReactionRemoved(self, self.bot, payload))

@@ -1,10 +1,13 @@
-from typing import AsyncIterable, Optional, Protocol
+from typing import AsyncIterable, Optional, Protocol, Type, TypeVar
 
 from discord import Guild
 
+from commanderbot.ext.automod.automod_bucket import AutomodBucket
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.lib import JsonObject, LogOptions, RoleSet
+
+BT = TypeVar("BT", bound=AutomodBucket)
 
 
 class AutomodStore(Protocol):
@@ -63,4 +66,14 @@ class AutomodStore(Protocol):
         ...
 
     async def increment_rule_hits(self, guild: Guild, name: str) -> AutomodRule:
+        ...
+
+    async def get_bucket(
+        self, guild: Guild, name: str, bucket_type: Type[BT]
+    ) -> Optional[BT]:
+        ...
+
+    async def require_bucket(
+        self, guild: Guild, name: str, bucket_type: Type[BT]
+    ) -> BT:
         ...

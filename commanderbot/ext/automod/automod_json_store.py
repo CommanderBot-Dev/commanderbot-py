@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import AsyncIterable, Optional
+from typing import AsyncIterable, Optional, Type, TypeVar
 
 from discord import Guild
 
+from commanderbot.ext.automod.automod_bucket import AutomodBucket
 from commanderbot.ext.automod.automod_data import AutomodData
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.automod_store import AutomodRule
@@ -13,6 +14,8 @@ from commanderbot.lib import (
     LogOptions,
     RoleSet,
 )
+
+BT = TypeVar("BT", bound=AutomodBucket)
 
 
 # @implements AutomodStore
@@ -125,3 +128,17 @@ class AutomodJsonStore(CogStore):
         modified_rule = await cache.increment_rule_hits(guild, name)
         await self.db.dirty()
         return modified_rule
+
+    # @implements AutomodStore
+    async def get_bucket(
+        self, guild: Guild, name: str, bucket_type: Type[BT]
+    ) -> Optional[BT]:
+        cache = await self.db.get_cache()
+        return await cache.get_bucket(guild, name, bucket_type)
+
+    # @implements AutomodStore
+    async def require_bucket(
+        self, guild: Guild, name: str, bucket_type: Type[BT]
+    ) -> BT:
+        cache = await self.db.get_cache()
+        return await cache.require_bucket(guild, name, bucket_type)
