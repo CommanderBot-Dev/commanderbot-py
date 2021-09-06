@@ -49,12 +49,11 @@ class AutomodRule:
     """
 
     name: str
+    description: Optional[str]
     added_on: datetime
     modified_on: datetime
     disabled: bool
     hits: int
-
-    description: Optional[str]
 
     log: Optional[LogOptions]
 
