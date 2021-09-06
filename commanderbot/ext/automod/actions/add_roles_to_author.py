@@ -20,6 +20,8 @@ class AddRolesToAuthor(AddRolesToTargetBase):
     ----------
     roles
         The roles to add.
+    reason
+        The reason why roles were added, if any.
     """
 
     def get_target(self, event: AutomodEvent) -> Optional[Member]:
