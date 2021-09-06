@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional, Type, TypeVar
 
 from discord import Member
@@ -7,7 +7,7 @@ from discord import Member
 from commanderbot.ext.automod.automod_condition import AutomodConditionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.lib import JsonObject
-from commanderbot.lib.utils import timedelta_from_field_optional
+from commanderbot.lib.utils import timedelta_from_field_optional, utcnow_aware
 
 ST = TypeVar("ST")
 
@@ -34,7 +34,7 @@ class TargetAccountAgeBase(AutomodConditionBase):
         member = self.get_target(event)
         if member is None:
             return False
-        now = datetime.utcnow()
+        now = utcnow_aware()
         created_at = member.created_at
         age = now - created_at
         is_older = (self.more_than is None) or (age > self.more_than)
