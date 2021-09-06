@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import (
     Any,
     ClassVar,
@@ -12,7 +12,7 @@ from typing import (
 )
 
 from commanderbot.ext.automod.utils import deserialize_module_object
-from commanderbot.lib import JsonObject
+from commanderbot.lib import JsonObject, JsonSerializable
 
 SelfType = TypeVar("SelfType")
 
@@ -27,7 +27,7 @@ class AutomodEntity(Protocol):
 
 # @implements AutomodEntity
 @dataclass
-class AutomodEntityBase:
+class AutomodEntityBase(JsonSerializable):
     """
     Contains common base logic for automod triggers, conditions, and actions.
 
@@ -38,8 +38,6 @@ class AutomodEntityBase:
     default_module_prefix: ClassVar[str] = ""
     module_function_name: ClassVar[str] = ""
 
-    type: str = field(init=False)
-
     ST = TypeVar("ST", bound="AutomodEntityBase")
 
     @classmethod
@@ -48,7 +46,7 @@ class AutomodEntityBase:
         return cls(**data)
 
     @classmethod
-    def _get_type_string(cls) -> str:
+    def get_type_string(cls) -> str:
         """Override this if the external type field requires special handling."""
         if not cls.default_module_prefix:
             raise ValueError(
@@ -62,8 +60,13 @@ class AutomodEntityBase:
             return short_type
         return full_type
 
-    def __post_init__(self):
-        self.type = self._get_type_string()
+    # @implements JsonSerializable
+    def to_json(self) -> Any:
+        # We use a custom implementation to include `type` at serialization-time only.
+        type_str = self.get_type_string()
+        data = dict(type=type_str)
+        data.update(self.__dict__)
+        return data
 
 
 ET = TypeVar("ET", bound="AutomodEntityBase")
