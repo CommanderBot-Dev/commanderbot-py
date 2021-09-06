@@ -1,14 +1,16 @@
 import asyncio
+import io
 import json
 from dataclasses import dataclass
 from datetime import datetime
 from json import JSONDecodeError
-from typing import Optional, cast
+from typing import Any, Optional, cast
 
 import yaml
 from discord import (
     AllowedMentions,
     Color,
+    File,
     Member,
     RawMessageDeleteEvent,
     RawMessageUpdateEvent,
@@ -268,14 +270,13 @@ class AutomodGuildState(CogGuildState):
             rule = rules[0]
             rule_data = to_data(rule)
             rule_yaml = yaml.safe_dump(rule_data, sort_keys=False)
-            lines = [
-                f"`{rule.name}`",
-                "```yaml",
-                rule_yaml,
-                "```",
-            ]
-            content = "\n".join(lines)
-            await self.reply(ctx, content)
+            filename = f"{rule.name}.yaml"
+            fp = cast(Any, io.StringIO(rule_yaml))
+            file = File(fp=fp, filename=filename)
+            await ctx.message.reply(
+                file=file,
+                allowed_mentions=AllowedMentions.none(),
+            )
         else:
             await self.reply(ctx, f"No rule found matching `{query}`")
 
