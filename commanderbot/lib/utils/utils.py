@@ -1,10 +1,13 @@
+import io
+import json
 import os
+import pprint
 import re
 import traceback
 from datetime import datetime, timezone
-from typing import Any, AsyncIterable, List, Mapping, Optional, Set, TypeVar
+from typing import Any, AsyncIterable, List, Mapping, Optional, Set, TypeVar, cast
 
-from discord import Member, TextChannel, Thread, User
+from discord import File, Member, Message, TextChannel, Thread, User
 from discord.ext.commands import Bot, Context
 
 from commanderbot.lib.types import RoleID
@@ -93,3 +96,24 @@ def format_command_context(ctx: Context) -> str:
 
 def utcnow_aware() -> datetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
+
+
+def message_to_file(message: Message, filename: Optional[str] = None) -> File:
+    filename = filename or "message.md"
+    file_lines = []
+    if message.content:
+        file_lines.append(message.content)
+    if message.attachments:
+        file_lines += ["", "#### Attachments"]
+        for att in message.attachments:
+            att_json = json.dumps(att.to_dict(), indent=2)
+            file_lines.append(f"\n```json\n{att_json}\n```")
+    if message.embeds:
+        file_lines += ["", "#### Embeds"]
+        for embed in message.embeds:
+            embed_json = json.dumps(embed.to_dict(), indent=2)
+            file_lines.append(f"\n```json\n{embed_json}\n```")
+    file_content = "\n".join(file_lines)
+    fp = cast(Any, io.StringIO(file_content))
+    file = File(fp=fp, filename=filename)
+    return file
