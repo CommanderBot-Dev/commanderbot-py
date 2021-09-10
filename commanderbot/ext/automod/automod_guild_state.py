@@ -29,7 +29,6 @@ from commanderbot.ext.automod.automod_store import AutomodStore
 from commanderbot.lib import (
     CogGuildState,
     GuildContext,
-    JsonObject,
     LogOptions,
     ResponsiveException,
     RoleSet,
@@ -38,7 +37,13 @@ from commanderbot.lib import (
 )
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 from commanderbot.lib.json import to_data
-from commanderbot.lib.utils import async_expand, sanitize_stacktrace
+from commanderbot.lib.utils import (
+    JsonPath,
+    JsonPathOp,
+    async_expand,
+    query_json_path,
+    sanitize_stacktrace,
+)
 
 
 @dataclass
@@ -103,22 +108,20 @@ class AutomodGuildState(CogGuildState):
         tasks = [self._do_event_for_rule(event, rule) for rule in rules]
         await asyncio.gather(*tasks)
 
-    def _parse_body(self, body: str) -> JsonObject:
+    def _parse_body(self, body: str) -> Any:
         content = body.strip("\n").strip("`")
         kind, _, content = content.partition("\n")
         if kind == "json":
             try:
-                data = json.loads(content)
+                return json.loads(content)
             except JSONDecodeError as ex:
                 raise ResponsiveException(str(ex)) from ex
-        elif kind == "yaml":
+        if kind == "yaml":
             try:
-                data = yaml.safe_load(content)
+                return yaml.safe_load(content)
             except YAMLError as ex:
                 raise ResponsiveException(str(ex)) from ex
-        else:
-            raise ResponsiveException("Missing code block declared as `json` or `yaml`")
-        return data
+        raise ResponsiveException("Missing code block declared as `json` or `yaml`")
 
     async def reply(self, ctx: GuildContext, content: str):
         """Wraps `Context.reply()` with some extension-default boilerplate."""
@@ -264,19 +267,44 @@ class AutomodGuildState(CogGuildState):
         else:
             await self.reply(ctx, f"No rules available")
 
-    async def print_rule(self, ctx: GuildContext, query: str):
+    async def print_rule(
+        self,
+        ctx: GuildContext,
+        query: str,
+        path: Optional[JsonPath] = None,
+    ):
         rules = await async_expand(self.store.query_rules(self.guild, query))
         if rules:
+            # If multiple rules were found, just use the first.
             rule = rules[0]
+
+            # Turn the rule into raw data.
             rule_data = to_data(rule)
-            rule_yaml = yaml.safe_dump(rule_data, sort_keys=False)
-            filename = f"{rule.name}.yaml"
-            fp = cast(Any, io.StringIO(rule_yaml))
-            file = File(fp=fp, filename=filename)
-            await ctx.message.reply(
-                file=file,
-                allowed_mentions=AllowedMentions.none(),
-            )
+
+            # Take a sub-section of the data, if necessary.
+            output_data = rule_data
+            if path:
+                output_data = query_json_path(output_data, path)
+
+            # Turn the data into a YAML string.
+            output_yaml = yaml.safe_dump(output_data, sort_keys=False)
+
+            # If the output can fit into a code block, just send a response.
+            # IMPL Make the message size threshold configurable.
+            if len(output_yaml) < 1900:
+                content = f"```yaml\n{output_yaml}\n```"
+                await self.reply(ctx, content)
+
+            # Otherwise, stuff it into a file and send it as an attachment.
+            else:
+                filename = f"{rule.name}.yaml"
+                fp = cast(Any, io.StringIO(output_yaml))
+                file = File(fp=fp, filename=filename)
+                await ctx.message.reply(
+                    file=file,
+                    allowed_mentions=AllowedMentions.none(),
+                )
+
         else:
             await self.reply(ctx, f"No rule found matching `{query}`")
 
@@ -302,9 +330,16 @@ class AutomodGuildState(CogGuildState):
         elif conf == ConfirmationResult.NO:
             await self.reply(ctx, f"Did not remove automod rule `{rule.name}`")
 
-    async def modify_rule(self, ctx: GuildContext, name: str, body: str):
+    async def modify_rule(
+        self,
+        ctx: GuildContext,
+        name: str,
+        path: JsonPath,
+        op: JsonPathOp,
+        body: str,
+    ):
         data = self._parse_body(body)
-        rule = await self.store.modify_rule(self.guild, name, data)
+        rule = await self.store.modify_rule(self.guild, name, path, op, data)
         await self.reply(ctx, f"Modified automod rule `{rule.name}`")
 
     async def enable_rule(self, ctx: GuildContext, name: str):

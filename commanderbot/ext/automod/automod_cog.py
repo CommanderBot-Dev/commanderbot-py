@@ -36,7 +36,7 @@ from commanderbot.lib import (
     UnsupportedDatabaseOptions,
     checks,
 )
-from commanderbot.lib.utils import is_bot
+from commanderbot.lib.utils import is_bot, parse_json_path, parse_json_path_op
 
 
 def make_automod_store(bot: Bot, cog: Cog, options: AutomodOptions) -> AutomodStore:
@@ -384,15 +384,21 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
         name="show",
         brief="List and show automod rules.",
     )
-    async def cmd_automod_rules_show(self, ctx: GuildContext, *, query: str = ""):
+    async def cmd_automod_rules_show(self, ctx: GuildContext, query: str):
         await self.state[ctx.guild].show_rules(ctx, query)
 
     @cmd_automod_rules.command(
         name="print",
         brief="Print the code of an automod rule.",
     )
-    async def cmd_automod_rules_print(self, ctx: GuildContext, *, query: str):
-        await self.state[ctx.guild].print_rule(ctx, query)
+    async def cmd_automod_rules_print(
+        self,
+        ctx: GuildContext,
+        query: str,
+        path: Optional[str],
+    ):
+        parsed_path = parse_json_path(path) if path else None
+        await self.state[ctx.guild].print_rule(ctx, query, parsed_path)
 
     @cmd_automod_rules.command(
         name="add",
@@ -413,9 +419,17 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
         brief="Modify an automod rule",
     )
     async def cmd_automod_rules_modify(
-        self, ctx: GuildContext, name: str, *, body: str
+        self,
+        ctx: GuildContext,
+        name: str,
+        path: str,
+        op: str,
+        *,
+        body: str,
     ):
-        await self.state[ctx.guild].modify_rule(ctx, name, body)
+        parsed_path = parse_json_path(path)
+        parsed_op = parse_json_path_op(op)
+        await self.state[ctx.guild].modify_rule(ctx, name, parsed_path, parsed_op, body)
 
     @cmd_automod_rules.command(
         name="enable",
