@@ -139,7 +139,7 @@ class MessageFrequency(AutomodBucketBase):
         interval = self._message_to_interval(message)
         interval_bucket = self._state.interval_buckets[interval]
 
-        # Within this interval, get/create and then the user's ticket.
+        # Within this interval, get/create and increment the user's ticket.
         author = message.author
         user_ticket = interval_bucket[author.id]
         user_ticket.increment(message)
