@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
+from typing import Any, AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
 
 from discord import Guild
 
@@ -17,7 +17,12 @@ from commanderbot.lib import (
     RoleSet,
 )
 from commanderbot.lib.json import to_data
-from commanderbot.lib.utils import dict_without_ellipsis
+from commanderbot.lib.utils import (
+    JsonPath,
+    JsonPathOp,
+    dict_without_ellipsis,
+    update_json_with_path,
+)
 
 RulesByEventType = DefaultDict[Type[AutomodEvent], Set[AutomodRule]]
 
@@ -163,18 +168,30 @@ class AutomodGuildData:
         self.remove_rule(rule)
         return rule
 
-    def modify_rule_raw(self, name: str, changes: JsonObject) -> AutomodRule:
+    def modify_rule_raw(
+        self,
+        name: str,
+        path: JsonPath,
+        op: JsonPathOp,
+        data: Any,
+    ) -> AutomodRule:
         # Start with the serialized form of the original rule.
         old_rule = self.require_rule(name)
         new_data = to_data(old_rule)
+
         # Update the modification timestamp. Note that it may still be overidden.
         new_data["modified_on"] = datetime.utcnow().isoformat()
-        # Create a new rule by cascading the given changes over the original data.
-        new_data.update(changes)
+
+        # Update the new rule data using the given changes.
+        update_json_with_path(new_data, path, op, data)
+
+        # Create a new rule out of the modified data.
         new_rule = AutomodRule.from_data(new_data)
+
         # Remove the old rule, and then add the new one.
         self.remove_rule(old_rule)
         self.add_rule(new_rule)
+
         # Return the new rule.
         return new_rule
 
@@ -287,9 +304,14 @@ class AutomodData:
 
     # @implements AutomodStore
     async def modify_rule(
-        self, guild: Guild, name: str, data: JsonObject
+        self,
+        guild: Guild,
+        name: str,
+        path: JsonPath,
+        op: JsonPathOp,
+        data: Any,
     ) -> AutomodRule:
-        return self.guilds[guild.id].modify_rule_raw(name, data)
+        return self.guilds[guild.id].modify_rule_raw(name, path, op, data)
 
     # @implements AutomodStore
     async def enable_rule(self, guild: Guild, name: str) -> AutomodRule:
