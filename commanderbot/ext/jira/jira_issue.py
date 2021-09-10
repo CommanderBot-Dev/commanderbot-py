@@ -23,12 +23,14 @@ class StatusColor(Enum):
 
 @dataclass
 class JiraIssue:
+    issue_id: str
     url: str
     icon_url: str
-    issue_id: str
     summary: str
+    reporter: str
     assignee: str
-    created_on: datetime
+    created: datetime
+    updated: datetime
     status: str
     status_color: StatusColor
     resolution: str
@@ -39,11 +41,14 @@ class JiraIssue:
     @property
     def fields(self) -> dict:
         return {
+            "Reported by": self.reporter,
             "Assigned to": self.assignee,
-            "Created": f"<t:{int(self.created_on.timestamp())}:R>",
-            "Status": self.status,
-            "Resolution": self.resolution,
+            "Created": f"<t:{int(self.created.timestamp())}:R>",
+            "Updated": f"<t:{int(self.updated.timestamp())}:R>",
             "Since version": self.since_version,
             "Fix version": self.fix_version,
+            "Status": self.status,
+            "Resolution": self.resolution,
             "Votes": self.votes,
         }
+        

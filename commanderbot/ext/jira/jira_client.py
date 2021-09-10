@@ -1,33 +1,57 @@
 from datetime import datetime
-from typing import Optional
 
 import aiohttp
 
 from commanderbot.ext.jira.jira_issue import JiraIssue, StatusColor
+from commanderbot.lib.responsive_exception import ResponsiveException
+
+
+class JiraException(ResponsiveException):
+    pass
+
+
+class ConnectionError(JiraException):
+    def __init__(self, url: str):
+        self.url = url
+        super().__init__(f"Could not connect to `{self.url}`")
+
+
+class UnauthorizedAccess(JiraException):
+    def __init__(self, issue_id: str):
+        self.issue_id = issue_id
+        super().__init__(
+            f"**{self.issue_id}** could not be accessed because it may be private"
+        )
+
+
+class IssueNotFound(JiraException):
+    def __init__(self, issue_id: str):
+        self.issue_id = issue_id
+        super().__init__(f"**{self.issue_id}** was not found")
 
 
 class JiraClient:
     def __init__(self, url: str):
         self.url = url
 
-    @staticmethod
-    async def _request_data(url: str) -> dict:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                return await response.json()
-
-    async def get_issue(self, issue_id: str) -> Optional[JiraIssue]:
+    async def _request_data(self, issue_id: str) -> dict:
         try:
-            data: dict = await self._request_data(
-                f"{self.url}/rest/api/latest/issue/{issue_id}"
-            )
-        except KeyError:
-            return None
-            
-        # Extract fields into their own dictionary
-        if "fields" not in data.keys():
-            return None
+            rest_url: str = f"{self.url}/rest/api/latest/issue/{issue_id}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(rest_url, raise_for_status=True) as response:
+                    return await response.json()
 
+        except aiohttp.ClientConnectorError:
+            raise ConnectionError(self.url)
+
+        except aiohttp.ClientResponseError as ex:
+            if ex.status == 401:
+                raise UnauthorizedAccess(issue_id)
+            else:
+                raise IssueNotFound(issue_id)
+
+    async def get_issue(self, issue_id: str) -> JiraIssue:
+        data: dict = await self._request_data(issue_id)
         fields: dict = data["fields"]
 
         assignee: str = "Unassigned"
@@ -48,17 +72,17 @@ class JiraClient:
 
         return JiraIssue(
             url=f"{self.url}/browse/{issue_id}",
-            icon_url=f"{self.url}/favicon.png",
+            icon_url=f"{self.url}/jira-favicon-hires.png",
             issue_id=issue_id,
-
             summary=fields["summary"],
-            created_on=datetime.strptime(fields["created"], "%Y-%m-%dT%H:%M:%S.%f%z"),
+            reporter=fields["reporter"]["displayName"],
+            created=datetime.strptime(fields["created"], "%Y-%m-%dT%H:%M:%S.%f%z"),
+            updated=datetime.strptime(fields["updated"], "%Y-%m-%dT%H:%M:%S.%f%z"),
             status=fields["status"]["name"],
             status_color=StatusColor.from_str(
                 fields["status"]["statusCategory"]["colorName"]
             ),
             votes=fields["votes"]["votes"],
-
             assignee=assignee,
             resolution=resolution,
             since_version=since_version,

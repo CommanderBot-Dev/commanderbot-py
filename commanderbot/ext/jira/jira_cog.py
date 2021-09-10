@@ -17,23 +17,17 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
         # Make uppercase so the project ID is valid
         issue_id = issue_id.upper()
 
-        # Get issue or print an error if it couldn't be requested
-        issue: Optional[JiraIssue] = await self.jira_client.get_issue(issue_id)
-        if not issue:
-            await ctx.send(
-                f"**{issue_id}** is not accessible."
-                " This may be due to it being private or it may not exist."
-            )
-            return
+        # Try to get the issue
+        issue: JiraIssue = await self.jira_client.get_issue(issue_id)
 
         # Create issue embed
         issue_embed: Embed = Embed(
-            title=f"{issue.summary}",
+            title=f"[{issue.issue_id}] {issue.summary}",
             url=issue.url,
             color=issue.status_color.value,
         )
 
-        issue_embed.set_author(name=issue.issue_id, url=issue.url, icon_url=issue.icon_url)
+        issue_embed.set_thumbnail(url=issue.icon_url)
 
         for k, v in issue.fields.items():
             issue_embed.add_field(name=k, value=v)
