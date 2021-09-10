@@ -23,7 +23,6 @@ from discord import (
 from yaml import YAMLError
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_bucket import AutomodBucket
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.ext.automod.automod_store import AutomodStore
