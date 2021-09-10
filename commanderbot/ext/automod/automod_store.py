@@ -1,4 +1,4 @@
-from typing import AsyncIterable, Optional, Protocol, Type, TypeVar
+from typing import Any, AsyncIterable, Optional, Protocol, Type, TypeVar
 
 from discord import Guild
 
@@ -6,6 +6,7 @@ from commanderbot.ext.automod.automod_bucket import AutomodBucket
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.lib import JsonObject, LogOptions, RoleSet
+from commanderbot.lib.utils import JsonPath, JsonPathOp
 
 BT = TypeVar("BT", bound=AutomodBucket)
 
@@ -55,7 +56,12 @@ class AutomodStore(Protocol):
         ...
 
     async def modify_rule(
-        self, guild: Guild, name: str, data: JsonObject
+        self,
+        guild: Guild,
+        name: str,
+        path: JsonPath,
+        op: JsonPathOp,
+        data: Any,
     ) -> AutomodRule:
         ...
 
