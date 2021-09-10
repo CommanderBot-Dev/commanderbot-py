@@ -126,7 +126,7 @@ class AutomodGuildData:
     def all_rules(self) -> Iterable[AutomodRule]:
         yield from self.rules.values()
 
-    async def rules_for_event(self, event: AutomodEvent) -> Iterable[AutomodRule]:
+    async def rules_for_event(self, event: AutomodEvent) -> AsyncIterable[AutomodRule]:
         event_type = type(event)
         # Start with the initial set of possible rules, based on the event type.
         for rule in self.rules_by_event_type[event_type]:
@@ -292,8 +292,7 @@ class AutomodData:
     async def rules_for_event(
         self, guild: Guild, event: AutomodEvent
     ) -> AsyncIterable[AutomodRule]:
-        rules = await self.guilds[guild.id].rules_for_event(event)
-        for rule in rules:
+        async for rule in self.guilds[guild.id].rules_for_event(event):
             yield rule
 
     # @implements AutomodStore
