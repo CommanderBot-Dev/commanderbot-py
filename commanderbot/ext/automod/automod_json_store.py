@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncIterable, Optional
+from typing import Any, AsyncIterable, Optional
 
 from discord import Guild
 
@@ -13,6 +13,7 @@ from commanderbot.lib import (
     LogOptions,
     RoleSet,
 )
+from commanderbot.lib.utils import JsonPath, JsonPathOp
 
 
 # @implements AutomodStore
@@ -98,10 +99,15 @@ class AutomodJsonStore(CogStore):
 
     # @implements AutomodStore
     async def modify_rule(
-        self, guild: Guild, name: str, data: JsonObject
+        self,
+        guild: Guild,
+        name: str,
+        path: JsonPath,
+        op: JsonPathOp,
+        data: Any,
     ) -> AutomodRule:
         cache = await self.db.get_cache()
-        modified_rule = await cache.modify_rule(guild, name, data)
+        modified_rule = await cache.modify_rule(guild, name, path, op, data)
         await self.db.dirty()
         return modified_rule
 
