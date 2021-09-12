@@ -1,5 +1,3 @@
-from typing import Optional
-
 from discord import Embed
 from discord.ext.commands import Bot, Cog, Context, command
 
@@ -20,9 +18,14 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
         # Try to get the issue
         issue: JiraIssue = await self.jira_client.get_issue(issue_id)
 
+        # Create embed title and limit it to 256 characters
+        title: str = f"[{issue.issue_id}] {issue.summary}"
+        if len(title) > 256:
+            title = f"{title[:253]}..."
+
         # Create issue embed
         issue_embed: Embed = Embed(
-            title=f"[{issue.issue_id}] {issue.summary}",
+            title=title,
             url=issue.url,
             color=issue.status_color.value,
         )
