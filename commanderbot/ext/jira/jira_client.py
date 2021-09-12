@@ -13,15 +13,7 @@ class JiraException(ResponsiveException):
 class IssueNotFound(JiraException):
     def __init__(self, issue_id: str):
         self.issue_id = issue_id
-        super().__init__(f"`{self.issue_id}` was not found")
-
-
-class PrivateIssue(JiraException):
-    def __init__(self, issue_id: str):
-        self.issue_id = issue_id
-        super().__init__(
-            f"`{self.issue_id}` could not be accessed because it's a private issue"
-        )
+        super().__init__(f"`{self.issue_id}` does not exist or it may be private")
 
 
 class ConnectionError(JiraException):
@@ -33,7 +25,7 @@ class ConnectionError(JiraException):
 class RequestError(JiraException):
     def __init__(self, issue_id: str):
         self.issue_id = issue_id
-        super().__init__(f"Error while requesting `{self.issue_id}`")
+        super().__init__(f"There was an error while requesting `{self.issue_id}`")
 
 
 class JiraClient:
@@ -47,12 +39,9 @@ class JiraClient:
                 async with session.get(issue_url, raise_for_status=True) as response:
                     return await response.json()
 
-        except aiohttp.ClientResponseError as ex:
-            if ex.status == 401:
-                raise PrivateIssue(issue_id)
-            else:
-                raise IssueNotFound(issue_id)
-
+        except aiohttp.ClientResponseError:
+            raise IssueNotFound(issue_id)
+                
         except aiohttp.ClientConnectorError:
             raise ConnectionError(self.url)
 
