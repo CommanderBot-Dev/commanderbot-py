@@ -41,7 +41,7 @@ class JiraClient:
 
         except aiohttp.ClientResponseError:
             raise IssueNotFound(issue_id)
-                
+
         except aiohttp.ClientConnectorError:
             raise ConnectionError(self.url)
 

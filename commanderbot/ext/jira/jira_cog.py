@@ -1,3 +1,5 @@
+from logging import Logger, getLogger
+
 from discord import Embed
 from discord.ext.commands import Bot, Cog, Context, command
 
@@ -8,8 +10,17 @@ from commanderbot.ext.jira.jira_issue import JiraIssue
 class JiraCog(Cog, name="commanderbot.ext.jira"):
     def __init__(self, bot: Bot, **options):
         self.bot: Bot = bot
-        self.jira_client: JiraClient = JiraClient(options.get("url", "bugs.mojang.com"))
+        self.log: Logger = getLogger(self.qualified_name)
 
+        # Get the URL from the config
+        url = options.get("url", "")
+        if not url:
+            # Log an error if it doesn't exist
+            self.log.error("No Jira URL was given in the bot config")
+
+        # Create the Jira client
+        self.jira_client: JiraClient = JiraClient(url)
+            
     @command(name="jira", aliases=["bug"])
     async def cmd_jira(self, ctx: Context, issue_id: str):
         # Make uppercase so the project ID is valid
