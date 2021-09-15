@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - `automod`: Added support for JSON paths for easier configuration of rules
 
+### Changed
+
+- `jira`: Overhauled the issue requesting logic and the embed colors now reflect the status of the bug
+
 ## [0.17.0] - 2021-09-02
 
 ### Added

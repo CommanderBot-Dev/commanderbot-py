@@ -1,109 +1,49 @@
-import aiohttp
+from logging import Logger, getLogger
+
 from discord import Embed
 from discord.ext.commands import Bot, Cog, Context, command
 
+from commanderbot.ext.jira.jira_client import JiraClient
+from commanderbot.ext.jira.jira_issue import JiraIssue
+
 
 class JiraCog(Cog, name="commanderbot.ext.jira"):
-    def __init__(self, bot: Bot):
+    def __init__(self, bot: Bot, **options):
         self.bot: Bot = bot
+        self.log: Logger = getLogger(self.qualified_name)
 
-        self.resolution_table = {
-            "https://bugs.mojang.com/rest/api/2/resolution/1": "Fixed",
-            "https://bugs.mojang.com/rest/api/2/resolution/2": "Won't Fix",
-            "https://bugs.mojang.com/rest/api/2/resolution/3": "Duplicate",
-            "https://bugs.mojang.com/rest/api/2/resolution/4": "Incomplete",
-            "https://bugs.mojang.com/rest/api/2/resolution/5": "Cannot Reproduce",
-            "https://bugs.mojang.com/rest/api/2/resolution/6": "Works as Intended",
-            "https://bugs.mojang.com/rest/api/2/resolution/7": "Invalid",
-            "https://bugs.mojang.com/rest/api/2/resolution/10001": "Awaiting Response",
-            "https://bugs.mojang.com/rest/api/2/resolution/10003": "Done",
-        }
+        # Get the URL from the config
+        url = options.get("url", "")
+        if not url:
+            # Log an error if the URL doesn't exist
+            self.log.error("No Jira URL was given in the bot config")
 
-        self.status_table = {
-            "https://bugs.mojang.com/rest/api/2/status/1": "Open",
-            "https://bugs.mojang.com/rest/api/2/status/3": "In Progress",
-            "https://bugs.mojang.com/rest/api/2/status/4": "Reopened",
-            "https://bugs.mojang.com/rest/api/2/status/5": "Resolved",
-            "https://bugs.mojang.com/rest/api/2/status/6": "Closed",
-            "https://bugs.mojang.com/rest/api/2/status/10200": "Postponed",
-        }
-
-    # TODO think about keeping a global `session` object for the cog
-    async def _request_data(self, url):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                return await response.json()
-
-    # TODO remove hardcoded status and resolve values and add config for JIRA URL and bug ID format
+        # Create the Jira client
+        self.jira_client: JiraClient = JiraClient(url)
+            
     @command(name="jira", aliases=["bug"])
-    async def cmd_jira(self, ctx: Context, bug_id: str):
-        # Assume the parameter is a URL, so get the ID from it
-        if "/" in bug_id:
-            bug_id = bug_id.split("/")[-1]
+    async def cmd_jira(self, ctx: Context, issue_id: str):
+        # Make uppercase so the project ID is valid
+        issue_id = issue_id.upper()
 
-        try:
-            data = await self._request_data(
-                f"https://bugs.mojang.com/rest/api/latest/issue/{bug_id}"
-            )
-            report_data = data["fields"]
+        # Try to get the issue
+        issue: JiraIssue = await self.jira_client.get_issue(issue_id)
 
-        # Bug report doesn't exist
-        except KeyError:
-            await ctx.send(
-                f"**{bug_id.upper()}** is not accessible."
-                " This may be due to it being private or it may not exist."
-            )
-            return
+        # Create embed title and limit it to 256 characters
+        title: str = f"[{issue.issue_id}] {issue.summary}"
+        if len(title) > 256:
+            title = f"{title[:253]}..."
 
-        title = f"[{bug_id.upper()}] {report_data['summary']}"
-        if report_data["assignee"] is None:
-            assignee = "Unassigned"
-        else:
-            assignee = report_data["assignee"]["name"]
-        reporter = report_data["reporter"]["displayName"]
-        creation_date = report_data["created"][:10]
-        since_version = report_data["versions"][0]["name"]
-
-        jira_embed = Embed(
-            title=title, url=f"https://bugs.mojang.com/browse/{bug_id}", color=0x00ACED
+        # Create issue embed
+        issue_embed: Embed = Embed(
+            title=title,
+            url=issue.url,
+            color=issue.status_color.value,
         )
-        jira_embed.add_field(name="Reporter", value=reporter, inline=True)
-        jira_embed.add_field(name="Assignee", value=assignee, inline=True)
-        jira_embed.add_field(name="Created On", value=creation_date, inline=True)
-        jira_embed.add_field(name="Since Version", value=since_version, inline=True)
 
-        # The bug report is still open
-        if report_data["resolution"] is None:
-            status = self.status_table[report_data["status"]["self"]]
-            votes = report_data["votes"]["votes"]
+        issue_embed.set_thumbnail(url=issue.icon_url)
 
-            """
-            if not report_data["customfield_10500"]:
-                confirmation = "Unconfirmed"
-            confirmation = report_data["customfield_10500"]["value"]
-            """
+        for k, v in issue.fields.items():
+            issue_embed.add_field(name=k, value=v)
 
-            jira_embed.add_field(name="Status", value=status, inline=True)
-            jira_embed.add_field(name="Votes", value=votes, inline=True)
-            # jira_embed.add_field(name="Confirmation", value=confirmation, inline=True)
-
-        # The bug report is closed
-        else:
-            resolution_status = self.resolution_table[report_data["resolution"]["self"]]
-            resolve_date = report_data["resolutiondate"][:10]
-            if not report_data["fixVersions"]:
-                fix_version = "None"
-            else:
-                fix_version = report_data["fixVersions"][0]["name"]
-
-            jira_embed.add_field(
-                name="Resolution", value=resolution_status, inline=True
-            )
-            jira_embed.add_field(name="Resolved On", value=resolve_date, inline=True)
-            jira_embed.add_field(name="Fix Version", value=fix_version, inline=True)
-
-        jira_embed.set_footer(
-            text=str(ctx.message.author),
-            icon_url=str(ctx.message.author.display_avatar.url),
-        )
-        await ctx.send(embed=jira_embed)
+        await ctx.send(embed=issue_embed)
