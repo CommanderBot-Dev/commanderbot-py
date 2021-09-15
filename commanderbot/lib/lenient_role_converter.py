@@ -18,7 +18,7 @@ class CannotDisambiguateRole(BadArgument):
     def __init__(self, argument: str, roles: List[Role]):
         self.argument: str = argument
         count_roles = len(roles)
-        role_names = " ".join(role.name for role in roles)
+        role_names = " ".join(f"`{role.name}`" for role in roles)
         super().__init__(
             f"Cannot disambiguate role `{argument}` with {count_roles} matches: "
             + role_names
