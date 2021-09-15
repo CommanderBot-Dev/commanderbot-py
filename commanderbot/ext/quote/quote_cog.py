@@ -47,7 +47,7 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
         quote_ts = f"<t:{created_at_ts}:R>"
         if message.edited_at is not None:
             edited_at_ts = int(message.edited_at.timestamp())
-            quote_ts += f" (edited <ts:{edited_at_ts}:R>)"
+            quote_ts += f" (edited <t:{edited_at_ts}:R>)"
         lines.append(
             f"{ctx.author.mention} {phrasing} {message.author.mention}"
             + f" in {channel.mention} from {quote_ts}:"
