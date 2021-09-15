@@ -23,8 +23,9 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
             
     @command(name="jira", aliases=["bug"])
     async def cmd_jira(self, ctx: Context, issue_id: str):
-        # Make uppercase so the project ID is valid
-        issue_id = issue_id.upper()
+        # Extract the issue ID if the command was given a URL. Issue IDs given
+        # directly are not affected
+        issue_id = issue_id.split("?")[0].split("/")[-1].upper()
 
         # Try to get the issue
         issue: JiraIssue = await self.jira_client.get_issue(issue_id)
