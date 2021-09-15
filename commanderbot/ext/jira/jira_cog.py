@@ -15,7 +15,7 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
         # Get the URL from the config
         url = options.get("url", "")
         if not url:
-            # Log an error if it doesn't exist
+            # Log an error if the URL doesn't exist
             self.log.error("No Jira URL was given in the bot config")
 
         # Create the Jira client
