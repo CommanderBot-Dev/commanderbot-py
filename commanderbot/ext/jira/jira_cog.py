@@ -1,3 +1,4 @@
+import re
 from logging import Logger, getLogger
 
 from discord import Embed
@@ -6,6 +7,7 @@ from discord.ext.commands import Bot, Cog, Context, command
 from commanderbot.ext.jira.jira_client import JiraClient
 from commanderbot.ext.jira.jira_issue import JiraIssue
 
+ISSUE_ID_PATTERN = re.compile(r"\w+-\d+")
 
 class JiraCog(Cog, name="commanderbot.ext.jira"):
     def __init__(self, bot: Bot, **options):
@@ -26,6 +28,11 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
         # Extract the issue ID if the command was given a URL. Issue IDs given
         # directly are not affected
         issue_id = issue_id.split("?")[0].split("/")[-1].upper()
+
+        # Check if the issue ID is in the correct format
+        if not ISSUE_ID_PATTERN.match(issue_id):
+            await ctx.message.reply("Jira issues must use the `<project>-<id>` format")
+            return
 
         # Try to get the issue
         issue: JiraIssue = await self.jira_client.get_issue(issue_id)
