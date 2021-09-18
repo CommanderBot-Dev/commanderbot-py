@@ -25,7 +25,7 @@ class IssueHasNoFields(JiraException):
         super().__init__(f"`{self.issue_id}` does not not have any fields")
 
 
-class InvalidIssueID(JiraException):
+class InvalidIssueFormat(JiraException):
     def __init__(self):
         super().__init__("Jira issues must use the `<project>-<id>` format")
 
@@ -65,7 +65,7 @@ class JiraClient:
     async def get_issue(self, issue_id: str) -> JiraIssue:
         # Check if issue ID is using the correct format
         if not ISSUE_ID_PATTERN.match(issue_id):
-            raise InvalidIssueID
+            raise InvalidIssueFormat
 
         # Request issue data and get its fields
         data: dict = await self._request_issue_data(issue_id)
