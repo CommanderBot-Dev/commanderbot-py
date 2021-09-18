@@ -1,9 +1,12 @@
+import re
 from datetime import datetime
 
 import aiohttp
 
 from commanderbot.ext.jira.jira_issue import JiraIssue, StatusColor
 from commanderbot.lib.responsive_exception import ResponsiveException
+
+ISSUE_ID_PATTERN = re.compile(r"\w+-\d+")
 
 
 class JiraException(ResponsiveException):
@@ -14,6 +17,17 @@ class IssueNotFound(JiraException):
     def __init__(self, issue_id: str):
         self.issue_id = issue_id
         super().__init__(f"`{self.issue_id}` does not exist or it may be private")
+
+
+class IssueHasNoFields(JiraException):
+    def __init__(self, issue_id: str):
+        self.issue_id = issue_id
+        super().__init__(f"`{self.issue_id}` does not not have any fields")
+
+
+class InvalidIssueID(JiraException):
+    def __init__(self):
+        super().__init__("Jira issues must use the `<project>-<id>` format")
 
 
 class ConnectionError(JiraException):
@@ -49,9 +63,17 @@ class JiraClient:
             raise RequestError(issue_id)
 
     async def get_issue(self, issue_id: str) -> JiraIssue:
-        data: dict = await self._request_issue_data(issue_id)
-        fields: dict = data["fields"]
+        # Check if issue ID is using the correct format
+        if not ISSUE_ID_PATTERN.match(issue_id):
+            raise InvalidIssueID
 
+        # Request issue data and get its fields
+        data: dict = await self._request_issue_data(issue_id)
+        fields: dict = data.get("fields", {})
+        if not fields:
+            raise IssueHasNoFields(issue_id)
+
+        # Extract data from fields and construct an issue
         assignee: str = "Unassigned"
         if user := fields.get("assignee"):
             assignee = user["displayName"]
