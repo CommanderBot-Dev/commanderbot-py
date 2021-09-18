@@ -22,7 +22,7 @@ class IssueNotFound(JiraException):
 class IssueHasNoFields(JiraException):
     def __init__(self, issue_id: str):
         self.issue_id = issue_id
-        super().__init__(f"`{self.issue_id}` does not not have any fields")
+        super().__init__(f"`{self.issue_id}` does not have any fields")
 
 
 class InvalidIssueFormat(JiraException):
