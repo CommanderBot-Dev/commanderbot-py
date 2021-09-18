@@ -20,7 +20,7 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
 
         # Create the Jira client
         self.jira_client: JiraClient = JiraClient(url)
-            
+
     @command(name="jira", aliases=["bug"])
     async def cmd_jira(self, ctx: Context, issue_id: str):
         # Extract the issue ID if the command was given a URL. Issue IDs given
