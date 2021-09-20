@@ -27,18 +27,18 @@ class FaqGuildState(CogGuildState):
     store: FaqStore
     options: FaqOptions
 
-    _prefix: Optional[str] = field(init=False, default=LAZY)
-    _match: Optional[re.Pattern] = field(init=False, default=LAZY)
+    _prefix_pattern: Optional[re.Pattern] = field(init=False, default=LAZY)
+    _match_pattern: Optional[re.Pattern] = field(init=False, default=LAZY)
 
-    async def get_prefix(self) -> Optional[str]:
-        if self._prefix is LAZY:
-            self._prefix = await self.store.get_prefix(self.guild)
-        return self._prefix
+    async def get_prefix_pattern(self) -> Optional[re.Pattern]:
+        if self._prefix_pattern is LAZY:
+            self._prefix_pattern = await self.store.get_prefix_pattern(self.guild)
+        return self._prefix_pattern
 
-    async def get_match(self) -> Optional[re.Pattern]:
-        if self._match is LAZY:
-            self._match = await self.store.get_match(self.guild)
-        return self._match
+    async def get_match_pattern(self) -> Optional[re.Pattern]:
+        if self._match_pattern is LAZY:
+            self._match_pattern = await self.store.get_match_pattern(self.guild)
+        return self._match_pattern
 
     async def _send_faq(self, destination: Messageable, faq: FaqEntry):
         await self.store.increment_faq_hits(faq)
@@ -66,16 +66,21 @@ class FaqGuildState(CogGuildState):
     async def on_message(self, message: TextMessage):
         content = message.content
 
-        prefix = await self.get_prefix()
-        match = await self.get_match()
+        prefix_pattern = await self.get_prefix_pattern()
+        match_pattern = await self.get_match_pattern()
 
         # Check if the prefix is being used.
-        if prefix and self.options.allow_prefix and content.startswith(prefix):
-            name = content[len(prefix) :]
+        if (
+            prefix_pattern
+            and self.options.allow_prefix
+            and (prefix_match := prefix_pattern.match(content))
+        ):
+            name = "".join(prefix_match.groups())
             await self._show_faq(message.channel, name)
+            return
 
         # Otherwise scan the message using the match pattern, if any.
-        elif match and self.options.allow_match:
+        if match_pattern and self.options.allow_match:
             faqs = await self.store.get_faqs_by_match(
                 self.guild, content, self.options.match_cap
             )
@@ -177,38 +182,44 @@ class FaqGuildState(CogGuildState):
         else:
             await ctx.send(f"Removed tags for FAQ `{faq.key}`")
 
-    async def show_prefix(self, ctx: GuildContext):
-        if prefix := await self.store.get_prefix(self.guild):
-            await ctx.send(f"FAQ shortcut prefix is currently set to: `{prefix}`")
+    async def show_prefix_pattern(self, ctx: GuildContext):
+        if prefix := await self.store.get_prefix_pattern(self.guild):
+            await ctx.send(
+                f"FAQ prefix pattern is currently set to: `{prefix.pattern}`"
+            )
         else:
-            await ctx.send("No FAQ shortcut prefix is currently configured")
+            await ctx.send("No FAQ prefix pattern is currently configured")
 
-    async def set_prefix(self, ctx: GuildContext, prefix: str):
-        result = await self.store.set_prefix(self.guild, prefix)
-        self._prefix = result
-        await ctx.send(f"Set FAQ shortcut prefix to: `{prefix}`")
+    async def set_prefix_pattern(self, ctx: GuildContext, prefix: str):
+        try:
+            result = await self.store.set_prefix_pattern(self.guild, prefix)
+        except re.error as ex:
+            await ctx.send(f"Invalid pattern: {ex}")
+        else:
+            self._prefix_pattern = result
+            await ctx.send(f"Set FAQ prefix pattern to: `{prefix}`")
 
-    async def clear_prefix(self, ctx: GuildContext):
-        await self.store.set_prefix(self.guild, None)
-        self._prefix = None
-        await ctx.send(f"Removed FAQ shortcut prefix")
+    async def clear_prefix_pattern(self, ctx: GuildContext):
+        await self.store.set_prefix_pattern(self.guild, None)
+        self._prefix_pattern = None
+        await ctx.send(f"Removed FAQ prefix pattern")
 
-    async def show_match(self, ctx: GuildContext):
-        if match := await self.store.get_match(self.guild):
+    async def show_match_pattern(self, ctx: GuildContext):
+        if match := await self.store.get_match_pattern(self.guild):
             await ctx.send(f"FAQ match pattern is currently set to: `{match.pattern}`")
         else:
             await ctx.send("No FAQ match pattern is currently configured")
 
-    async def set_match(self, ctx: GuildContext, match: str):
+    async def set_match_pattern(self, ctx: GuildContext, match: str):
         try:
-            result = await self.store.set_match(self.guild, match)
+            result = await self.store.set_match_pattern(self.guild, match)
         except re.error as ex:
             await ctx.send(f"Invalid pattern: {ex}")
         else:
-            self._match = result
+            self._match_pattern = result
             await ctx.send(f"Set FAQ match pattern to: `{match}`")
 
-    async def clear_match(self, ctx: GuildContext):
-        await self.store.set_match(self.guild, None)
-        self._match = None
+    async def clear_match_pattern(self, ctx: GuildContext):
+        await self.store.set_match_pattern(self.guild, None)
+        self._match_pattern = None
         await ctx.send(f"Removed FAQ match pattern")

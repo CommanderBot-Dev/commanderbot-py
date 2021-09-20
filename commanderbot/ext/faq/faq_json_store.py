@@ -19,28 +19,30 @@ class FaqJsonStore(CogStore):
     db: JsonFileDatabaseAdapter[FaqData]
 
     # @implements FaqStore
-    async def get_prefix(self, guild: Guild) -> Optional[str]:
+    async def get_prefix_pattern(self, guild: Guild) -> Optional[re.Pattern]:
         cache = await self.db.get_cache()
-        return await cache.get_prefix(guild)
+        return await cache.get_prefix_pattern(guild)
 
     # @implements FaqStore
-    async def set_prefix(self, guild: Guild, prefix: Optional[str]) -> Optional[str]:
+    async def set_prefix_pattern(
+        self, guild: Guild, prefix: Optional[str]
+    ) -> Optional[re.Pattern]:
         cache = await self.db.get_cache()
-        result = await cache.set_prefix(guild, prefix)
+        result = await cache.set_prefix_pattern(guild, prefix)
         await self.db.dirty()
         return result
 
     # @implements FaqStore
-    async def get_match(self, guild: Guild) -> Optional[re.Pattern]:
+    async def get_match_pattern(self, guild: Guild) -> Optional[re.Pattern]:
         cache = await self.db.get_cache()
-        return await cache.get_match(guild)
+        return await cache.get_match_pattern(guild)
 
     # @implements FaqStore
-    async def set_match(
+    async def set_match_pattern(
         self, guild: Guild, match: Optional[str]
     ) -> Optional[re.Pattern]:
         cache = await self.db.get_cache()
-        result = await cache.set_match(guild, match)
+        result = await cache.set_match_pattern(guild, match)
         await self.db.dirty()
         return result
 

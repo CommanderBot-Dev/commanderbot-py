@@ -100,7 +100,7 @@ class FaqDataFaqEntry:
 @dataclass
 class FaqDataGuild:
     faq_entries: Dict[str, FaqDataFaqEntry] = field(default_factory=dict)
-    prefix: Optional[str] = None
+    prefix: Optional[re.Pattern] = None
     match: Optional[re.Pattern] = None
 
     faq_entries_by_alias: Dict[str, FaqDataFaqEntry] = field(
@@ -110,13 +110,14 @@ class FaqDataGuild:
     @staticmethod
     def deserialize(data: JsonObject) -> "FaqDataGuild":
         # Note that aliases will be constructed from entries, during post-init.
+        raw_prefix = data.get("prefix")
         raw_match = data.get("match")
         return FaqDataGuild(
             faq_entries={
                 key: FaqDataFaqEntry.deserialize(raw_entry, key)
                 for key, raw_entry in data.get("faq_entries", {}).items()
             },
-            prefix=data.get("prefix"),
+            prefix=re.compile(raw_prefix) if raw_prefix else None,
             match=re.compile(raw_match) if raw_match else None,
         )
 
@@ -135,21 +136,21 @@ class FaqDataGuild:
 
     def serialize(self) -> JsonObject:
         return dict_without_falsies(
-            prefix=self.prefix,
+            prefix=self.prefix.pattern if self.prefix else None,
             match=self.match.pattern if self.match else None,
             faq_entries={
                 key: entry.serialize() for key, entry in self.faq_entries.items()
             },
         )
 
-    def get_prefix(self, guild: Guild) -> Optional[str]:
+    def get_prefix(self) -> Optional[re.Pattern]:
         return self.prefix
 
-    def set_prefix(self, prefix: Optional[str]) -> Optional[str]:
-        self.prefix = prefix
+    def set_prefix(self, prefix: Optional[str]) -> Optional[re.Pattern]:
+        self.prefix = re.compile(prefix) if prefix else None
         return self.prefix
 
-    def get_match(self, guild: Guild) -> Optional[re.Pattern]:
+    def get_match(self) -> Optional[re.Pattern]:
         return self.match
 
     def set_match(self, match: Optional[str]) -> Optional[re.Pattern]:
@@ -315,19 +316,21 @@ class FaqData:
         )
 
     # @implements FaqStore
-    async def get_prefix(self, guild: Guild) -> Optional[str]:
-        return self.guilds[guild.id].get_prefix(guild)
+    async def get_prefix_pattern(self, guild: Guild) -> Optional[re.Pattern]:
+        return self.guilds[guild.id].get_prefix()
 
     # @implements FaqStore
-    async def set_prefix(self, guild: Guild, prefix: Optional[str]) -> Optional[str]:
+    async def set_prefix_pattern(
+        self, guild: Guild, prefix: Optional[str]
+    ) -> Optional[re.Pattern]:
         return self.guilds[guild.id].set_prefix(prefix)
 
     # @implements FaqStore
-    async def get_match(self, guild: Guild) -> Optional[re.Pattern]:
-        return self.guilds[guild.id].get_match(guild)
+    async def get_match_pattern(self, guild: Guild) -> Optional[re.Pattern]:
+        return self.guilds[guild.id].get_match()
 
     # @implements FaqStore
-    async def set_match(
+    async def set_match_pattern(
         self, guild: Guild, match: Optional[str]
     ) -> Optional[re.Pattern]:
         return self.guilds[guild.id].set_match(match)

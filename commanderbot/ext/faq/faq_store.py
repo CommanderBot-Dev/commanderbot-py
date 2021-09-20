@@ -53,16 +53,18 @@ class FaqStore(Protocol):
     Abstracts the data storage and persistence of the FAQ cog.
     """
 
-    async def get_prefix(self, guild: Guild) -> Optional[str]:
-        """Get the configured shortcut prefix, if any."""
+    async def get_prefix_pattern(self, guild: Guild) -> Optional[re.Pattern]:
+        """Get the configured prefix pattern, if any."""
 
-    async def set_prefix(self, guild: Guild, prefix: Optional[str]) -> Optional[str]:
-        """Set the shortcut prefix, if any."""
+    async def set_prefix_pattern(
+        self, guild: Guild, prefix: Optional[str]
+    ) -> Optional[re.Pattern]:
+        """Set the prefix pattern, if any."""
 
-    async def get_match(self, guild: Guild) -> Optional[re.Pattern]:
+    async def get_match_pattern(self, guild: Guild) -> Optional[re.Pattern]:
         """Get the configured match pattern, if any."""
 
-    async def set_match(
+    async def set_match_pattern(
         self, guild: Guild, match: Optional[str]
     ) -> Optional[re.Pattern]:
         """Set the match pattern, if any."""

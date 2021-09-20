@@ -226,35 +226,35 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
 
     @cmd_faqs_options.group(
         name="prefix",
-        brief="Configure the FAQ shortcut prefix.",
+        brief="Configure the FAQ prefix pattern.",
     )
     async def cmd_faqs_options_prefix(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
             if ctx.subcommand_passed:
                 await ctx.send_help(self.cmd_faqs_options_prefix)
             else:
-                await self.state[ctx.guild].show_prefix(ctx)
+                await self.state[ctx.guild].show_prefix_pattern(ctx)
 
     @cmd_faqs_options_prefix.command(
         name="show",
-        brief="Show the FAQ shortcut prefix.",
+        brief="Show the FAQ prefix pattern.",
     )
     async def cmd_faqs_options_prefix_show(self, ctx: GuildContext):
-        await self.state[ctx.guild].show_prefix(ctx)
+        await self.state[ctx.guild].show_prefix_pattern(ctx)
 
     @cmd_faqs_options_prefix.command(
         name="set",
-        brief="Set the FAQ shortcut prefix.",
+        brief="Set the FAQ prefix pattern.",
     )
     async def cmd_faqs_options_prefix_set(self, ctx: GuildContext, *, prefix: str):
-        await self.state[ctx.guild].set_prefix(ctx, prefix)
+        await self.state[ctx.guild].set_prefix_pattern(ctx, prefix)
 
     @cmd_faqs_options_prefix.command(
         name="clear",
-        brief="Clear the FAQ shortcut prefix.",
+        brief="Clear the FAQ prefix pattern.",
     )
     async def cmd_faqs_options_prefix_clear(self, ctx: GuildContext):
-        await self.state[ctx.guild].clear_prefix(ctx)
+        await self.state[ctx.guild].clear_prefix_pattern(ctx)
 
     # @@ faqs options match
 
@@ -267,25 +267,25 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
             if ctx.subcommand_passed:
                 await ctx.send_help(self.cmd_faqs_options_match)
             else:
-                await self.state[ctx.guild].show_match(ctx)
+                await self.state[ctx.guild].show_match_pattern(ctx)
 
     @cmd_faqs_options_match.command(
         name="show",
         brief="Show the FAQ match pattern.",
     )
     async def cmd_faqs_options_match_show(self, ctx: GuildContext):
-        await self.state[ctx.guild].show_match(ctx)
+        await self.state[ctx.guild].show_match_pattern(ctx)
 
     @cmd_faqs_options_match.command(
         name="set",
         brief="Set the FAQ match pattern.",
     )
     async def cmd_faqs_options_match_set(self, ctx: GuildContext, *, match: str):
-        await self.state[ctx.guild].set_match(ctx, match)
+        await self.state[ctx.guild].set_match_pattern(ctx, match)
 
     @cmd_faqs_options_match.command(
         name="clear",
         brief="Clear the FAQ match pattern.",
     )
     async def cmd_faqs_options_match_clear(self, ctx: GuildContext):
-        await self.state[ctx.guild].clear_match(ctx)
+        await self.state[ctx.guild].clear_match_pattern(ctx)
