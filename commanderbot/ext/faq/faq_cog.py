@@ -68,7 +68,11 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
                 bot=self.bot,
                 cog=self,
                 factory=lambda guild: FaqGuildState(
-                    bot=bot, cog=self, guild=guild, store=self.store
+                    bot=bot,
+                    cog=self,
+                    guild=guild,
+                    store=self.store,
+                    options=self.options,
                 ),
             ),
             store=self.store,
@@ -93,35 +97,36 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
 
     @commands.command(
         name="faq",
-        brief="Show or list all FAQs.",
+        brief="Show a frequently asked question (FAQ).",
     )
     @checks.guild_only()
-    async def cmd_faq(self, ctx: GuildContext, *, faq_query: Optional[str]):
-        if faq_query:
-            await self.state[ctx.guild].show_faq(ctx, faq_query)
-        else:
-            await self.state[ctx.guild].list_faqs(ctx)
+    async def cmd_faq(self, ctx: GuildContext, *, query: str):
+        await self.state[ctx.guild].show_faq(ctx, query)
 
     # @@ faqs
 
     @commands.group(
         name="faqs",
-        brief="Manage FAQs, or list all FAQs.",
+        brief="Manage FAQs.",
     )
     @checks.guild_only()
     async def cmd_faqs(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
-            if ctx.subcommand_passed:
-                await ctx.send_help(self.cmd_faqs)
-            else:
-                await self.state[ctx.guild].list_faqs(ctx)
+            await ctx.send_help(self.cmd_faqs)
+
+    @cmd_faqs.command(
+        name="search",
+        brief="Search through FAQs.",
+    )
+    async def cmd_faqs_search(self, ctx: GuildContext, *, query: str):
+        await self.state[ctx.guild].search_faqs(ctx, query)
 
     @cmd_faqs.command(
         name="details",
-        brief="Show the details of FAQs.",
+        brief="Show the details of a FAQ.",
     )
-    async def cmd_faqs_details(self, ctx: GuildContext, *, faq_query: str):
-        await self.state[ctx.guild].show_faq_details(ctx, faq_query)
+    async def cmd_faqs_details(self, ctx: GuildContext, *, name: str):
+        await self.state[ctx.guild].show_faq_details(ctx, name)
 
     # @@ faqs add
 
@@ -131,7 +136,7 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
     )
     @checks.is_administrator()
     async def cmd_faqs_add(
-        self, ctx: GuildContext, faq_key: str, *, message_or_content: str
+        self, ctx: GuildContext, key: str, *, message_or_content: str
     ):
         try:
             message = await MessageConverter().convert(ctx, message_or_content)
@@ -144,7 +149,7 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
             content = message_or_content
         await self.state[ctx.guild].add_faq(
             ctx,
-            faq_key,
+            key,
             link=message.jump_url,
             content=content,
         )
@@ -156,8 +161,8 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
         brief="Remove a FAQ.",
     )
     @checks.is_administrator()
-    async def cmd_faqs_remove(self, ctx: GuildContext, faq_key: str):
-        await self.state[ctx.guild].remove_faq(ctx, faq_key)
+    async def cmd_faqs_remove(self, ctx: GuildContext, name: str):
+        await self.state[ctx.guild].remove_faq(ctx, name)
 
     # @@ faqs modify
 
@@ -175,10 +180,8 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
         brief="Modify a FAQ's content.",
     )
     @checks.is_administrator()
-    async def cmd_faqs_modify_content(
-        self, ctx: GuildContext, faq_key: str, content: str
-    ):
-        await self.state[ctx.guild].modify_faq_content(ctx, faq_key, content)
+    async def cmd_faqs_modify_content(self, ctx: GuildContext, name: str, content: str):
+        await self.state[ctx.guild].modify_faq_content(ctx, name, content)
 
     @cmd_faqs_modify.command(
         name="link",
@@ -186,9 +189,9 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
     )
     @checks.is_administrator()
     async def cmd_faqs_modify_link(
-        self, ctx: GuildContext, faq_key: str, link: Optional[str]
+        self, ctx: GuildContext, name: str, link: Optional[str]
     ):
-        await self.state[ctx.guild].modify_faq_link(ctx, faq_key, link)
+        await self.state[ctx.guild].modify_faq_link(ctx, name, link)
 
     @cmd_faqs_modify.command(
         name="aliases",
@@ -196,19 +199,19 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
     )
     @checks.is_administrator()
     async def cmd_faqs_modify_aliases(
-        self, ctx: GuildContext, faq_key: str, *aliases: str
+        self, ctx: GuildContext, name: str, *aliases: str
     ):
-        await self.state[ctx.guild].modify_faq_aliases(ctx, faq_key, aliases)
+        await self.state[ctx.guild].modify_faq_aliases(ctx, name, aliases)
 
     @cmd_faqs_modify.command(
         name="tags",
         brief="Modify a FAQ's tags.",
     )
     @checks.is_administrator()
-    async def cmd_faqs_modify_tags(self, ctx: GuildContext, faq_key: str, *tags: str):
-        await self.state[ctx.guild].modify_faq_tags(ctx, faq_key, tags)
+    async def cmd_faqs_modify_tags(self, ctx: GuildContext, name: str, *tags: str):
+        await self.state[ctx.guild].modify_faq_tags(ctx, name, tags)
 
-    # @@ faqs configure
+    # @@ faqs options
 
     @cmd_faqs.group(
         name="options",
@@ -219,20 +222,70 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_faqs_options)
 
-    @cmd_faqs_options.command(
-        name="prefix",
-        brief="Configure FAQ prefix.",
-    )
-    async def cmd_faqs_options_prefix(
-        self, ctx: GuildContext, *, prefix: Optional[str] = None
-    ):
-        await self.state[ctx.guild].configure_prefix(ctx, prefix)
+    # @@ faqs options prefix
 
-    @cmd_faqs_options.command(
-        name="match",
-        brief="Configure FAQ match pattern.",
+    @cmd_faqs_options.group(
+        name="prefix",
+        brief="Configure the FAQ shortcut prefix.",
     )
-    async def cmd_faqs_options_match(
-        self, ctx: GuildContext, *, match: Optional[str] = None
-    ):
-        await self.state[ctx.guild].configure_match(ctx, match)
+    async def cmd_faqs_options_prefix(self, ctx: GuildContext):
+        if not ctx.invoked_subcommand:
+            if ctx.subcommand_passed:
+                await ctx.send_help(self.cmd_faqs_options_prefix)
+            else:
+                await self.state[ctx.guild].show_prefix(ctx)
+
+    @cmd_faqs_options_prefix.command(
+        name="show",
+        brief="Show the FAQ shortcut prefix.",
+    )
+    async def cmd_faqs_options_prefix_show(self, ctx: GuildContext):
+        await self.state[ctx.guild].show_prefix(ctx)
+
+    @cmd_faqs_options_prefix.command(
+        name="set",
+        brief="Set the FAQ shortcut prefix.",
+    )
+    async def cmd_faqs_options_prefix_set(self, ctx: GuildContext, *, prefix: str):
+        await self.state[ctx.guild].set_prefix(ctx, prefix)
+
+    @cmd_faqs_options_prefix.command(
+        name="clear",
+        brief="Clear the FAQ shortcut prefix.",
+    )
+    async def cmd_faqs_options_prefix_clear(self, ctx: GuildContext):
+        await self.state[ctx.guild].clear_prefix(ctx)
+
+    # @@ faqs options match
+
+    @cmd_faqs_options.group(
+        name="match",
+        brief="Configure the FAQ match pattern.",
+    )
+    async def cmd_faqs_options_match(self, ctx: GuildContext):
+        if not ctx.invoked_subcommand:
+            if ctx.subcommand_passed:
+                await ctx.send_help(self.cmd_faqs_options_match)
+            else:
+                await self.state[ctx.guild].show_match(ctx)
+
+    @cmd_faqs_options_match.command(
+        name="show",
+        brief="Show the FAQ match pattern.",
+    )
+    async def cmd_faqs_options_match_show(self, ctx: GuildContext):
+        await self.state[ctx.guild].show_match(ctx)
+
+    @cmd_faqs_options_match.command(
+        name="set",
+        brief="Set the FAQ match pattern.",
+    )
+    async def cmd_faqs_options_match_set(self, ctx: GuildContext, *, match: str):
+        await self.state[ctx.guild].set_match(ctx, match)
+
+    @cmd_faqs_options_match.command(
+        name="clear",
+        brief="Clear the FAQ match pattern.",
+    )
+    async def cmd_faqs_options_match_clear(self, ctx: GuildContext):
+        await self.state[ctx.guild].clear_match(ctx)
