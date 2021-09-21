@@ -3,7 +3,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, Tuple, cast
 
+from discord import Message
 from discord.abc import Messageable
+from discord.ext.commands import MessageConverter
 
 from commanderbot.ext.faq.faq_options import FaqOptions
 from commanderbot.ext.faq.faq_store import FaqEntry, FaqStore
@@ -129,7 +131,19 @@ class FaqGuildState(CogGuildState):
         else:
             await ctx.send(f"No FAQs matching `{query}`")
 
-    async def add_faq(self, ctx: GuildContext, key: str, link: str, content: str):
+    async def _parse_message_or_content(
+        self, ctx: GuildContext, message_or_content: str
+    ) -> Tuple[str, str]:
+        try:
+            message = await MessageConverter().convert(ctx, message_or_content)
+            content = message.content
+        except:
+            message = ctx.message
+            content = message_or_content
+        return message.jump_url, content
+
+    async def add_faq(self, ctx: GuildContext, key: str, message_or_content: str):
+        link, content = await self._parse_message_or_content(ctx, message_or_content)
         faq = await self.store.add_faq(self.guild, key, link=link, content=content)
         await ctx.send(f"Added FAQ `{faq.key}`")
 
@@ -151,16 +165,14 @@ class FaqGuildState(CogGuildState):
             await ctx.send(f"Did not remove FAQ `{name}`")
         # If no answer was provided, don't do anything.
 
-    async def modify_faq_content(self, ctx: GuildContext, name: str, content: str):
-        faq = await self.store.modify_faq_content(self.guild, name, content)
-        await ctx.send(f"Set content for FAQ `{faq.key}` to:\n>>> `{faq.content}`")
-
-    async def modify_faq_link(self, ctx: GuildContext, name: str, link: Optional[str]):
-        faq = await self.store.modify_faq_link(self.guild, name, link)
-        if link:
-            await ctx.send(f"Set link for FAQ `{faq.key}` to: `{faq.link}`")
-        else:
-            await ctx.send(f"Removed link for FAQ `{faq.key}`")
+    async def modify_faq_content(
+        self, ctx: GuildContext, name: str, message_or_content: str
+    ):
+        link, content = await self._parse_message_or_content(ctx, message_or_content)
+        faq = await self.store.modify_faq_content(
+            self.guild, name, link=link, content=content
+        )
+        await ctx.send(f"Set content for FAQ `{faq.key}` using: {link}")
 
     async def modify_faq_aliases(
         self, ctx: GuildContext, name: str, aliases: Tuple[str, ...]

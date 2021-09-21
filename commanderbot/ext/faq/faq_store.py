@@ -97,12 +97,7 @@ class FaqStore(Protocol):
         ...
 
     async def modify_faq_content(
-        self, guild: Guild, name: str, content: str
-    ) -> FaqEntry:
-        ...
-
-    async def modify_faq_link(
-        self, guild: Guild, name: str, link: Optional[str]
+        self, guild: Guild, name: str, link: str, content: str
     ) -> FaqEntry:
         ...
 

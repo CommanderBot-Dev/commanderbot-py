@@ -226,16 +226,12 @@ class FaqDataGuild:
         # Return it.
         return faq
 
-    def modify_faq_content(self, faq_key: str, content: str) -> FaqDataFaqEntry:
+    def modify_faq_content(
+        self, faq_key: str, link: str, content: str
+    ) -> FaqDataFaqEntry:
         if faq := self.require_faq(faq_key):
             faq.update_modified_on()
             faq.content = content
-            faq.sync()
-            return faq
-        raise NoSuchFaq(faq_key)
-
-    def modify_faq_link(self, faq_key: str, link: Optional[str]) -> FaqDataFaqEntry:
-        if faq := self.require_faq(faq_key):
             faq.link = link
             faq.sync()
             return faq
@@ -371,15 +367,11 @@ class FaqData:
 
     # @implements FaqStore
     async def modify_faq_content(
-        self, guild: Guild, name: str, content: str
+        self, guild: Guild, name: str, link: str, content: str
     ) -> FaqEntry:
-        return self.guilds[guild.id].modify_faq_content(name, content)
-
-    # @implements FaqStore
-    async def modify_faq_link(
-        self, guild: Guild, name: str, link: Optional[str]
-    ) -> FaqEntry:
-        return self.guilds[guild.id].modify_faq_link(name, link)
+        return self.guilds[guild.id].modify_faq_content(
+            name, link=link, content=content
+        )
 
     # @implements FaqStore
     async def modify_faq_aliases(

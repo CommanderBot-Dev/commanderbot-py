@@ -2,7 +2,7 @@ from typing import Optional, cast
 
 from discord import Message, TextChannel, Thread
 from discord.ext import commands
-from discord.ext.commands import Bot, Cog, MessageConverter
+from discord.ext.commands import Bot, Cog
 
 from commanderbot.ext.faq.faq_data import FaqData
 from commanderbot.ext.faq.faq_guild_state import FaqGuildState
@@ -138,21 +138,7 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
     async def cmd_faqs_add(
         self, ctx: GuildContext, key: str, *, message_or_content: str
     ):
-        try:
-            message = await MessageConverter().convert(ctx, message_or_content)
-            assert isinstance(message, Message)
-            content = message.content
-            assert isinstance(content, str)
-        except:
-            message = ctx.message
-            assert isinstance(message, Message)
-            content = message_or_content
-        await self.state[ctx.guild].add_faq(
-            ctx,
-            key,
-            link=message.jump_url,
-            content=content,
-        )
+        await self.state[ctx.guild].add_faq(ctx, key, message_or_content)
 
     # @@ faqs remove
 
@@ -180,18 +166,10 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
         brief="Modify a FAQ's content.",
     )
     @checks.is_administrator()
-    async def cmd_faqs_modify_content(self, ctx: GuildContext, name: str, content: str):
-        await self.state[ctx.guild].modify_faq_content(ctx, name, content)
-
-    @cmd_faqs_modify.command(
-        name="link",
-        brief="Modify a FAQ's link.",
-    )
-    @checks.is_administrator()
-    async def cmd_faqs_modify_link(
-        self, ctx: GuildContext, name: str, link: Optional[str]
+    async def cmd_faqs_modify_content(
+        self, ctx: GuildContext, name: str, *, message_or_content: str
     ):
-        await self.state[ctx.guild].modify_faq_link(ctx, name, link)
+        await self.state[ctx.guild].modify_faq_content(ctx, name, message_or_content)
 
     @cmd_faqs_modify.command(
         name="aliases",

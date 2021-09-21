@@ -94,19 +94,10 @@ class FaqJsonStore(CogStore):
 
     # @implements FaqStore
     async def modify_faq_content(
-        self, guild: Guild, name: str, content: str
+        self, guild: Guild, name: str, link: str, content: str
     ) -> FaqEntry:
         cache = await self.db.get_cache()
-        faq = await cache.modify_faq_content(guild, name, content)
-        await self.db.dirty()
-        return faq
-
-    # @implements FaqStore
-    async def modify_faq_link(
-        self, guild: Guild, name: str, link: Optional[str]
-    ) -> FaqEntry:
-        cache = await self.db.get_cache()
-        faq = await cache.modify_faq_link(guild, name, link)
+        faq = await cache.modify_faq_content(guild, name, link=link, content=content)
         await self.db.dirty()
         return faq
 
