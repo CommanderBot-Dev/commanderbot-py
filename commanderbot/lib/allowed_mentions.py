@@ -1,14 +1,16 @@
-from typing import Any
+from typing import Any, Optional, Type, TypeVar
 
 import discord
 
-from commanderbot.lib.from_data_mixin import FromDataMixin
-from commanderbot.lib.json_serializable import JsonSerializable
+from commanderbot.lib.data import FromData, ToData
 
 __all__ = ("AllowedMentions",)
 
 
-class AllowedMentions(JsonSerializable, discord.AllowedMentions, FromDataMixin):
+ST = TypeVar("ST", bound="AllowedMentions")
+
+
+class AllowedMentions(discord.AllowedMentions, FromData, ToData):
     """Extends `discord.AllowedMentions` to simplify de/serialization."""
 
     @classmethod
@@ -19,17 +21,17 @@ class AllowedMentions(JsonSerializable, discord.AllowedMentions, FromDataMixin):
     def only_replies(cls):
         return cls(everyone=False, users=False, roles=False, replied_user=True)
 
-    # @overrides FromDataMixin
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, str):
             if factory := getattr(cls, data, None):
                 return factory()
         if isinstance(data, dict):
             return cls(**data)
 
-    # @implements JsonSerializable
-    def to_json(self) -> Any:
+    # @overrides ToData
+    def to_data(self) -> Any:
         return dict(
             everyone=self.everyone,
             users=self.users,

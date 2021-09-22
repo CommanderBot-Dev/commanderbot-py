@@ -3,7 +3,7 @@ from typing import Optional, TypeVar
 
 from discord import Member
 
-from commanderbot.ext.automod.automod_condition import AutomodCondition
+from commanderbot.ext.automod.condition import Condition
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.conditions.abc.target_account_age_base import (
     TargetAccountAgeBase,
@@ -30,5 +30,5 @@ class AuthorAccountAge(TargetAccountAgeBase):
         return event.author
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: JsonObject) -> Condition:
     return AuthorAccountAge.from_data(data)

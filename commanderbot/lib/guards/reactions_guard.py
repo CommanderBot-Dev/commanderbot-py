@@ -1,16 +1,19 @@
 from dataclasses import dataclass, field
-from typing import Optional, Set
+from typing import Any, Optional, Set, Type, TypeVar
 
 from discord import Reaction
 
-from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.data import FromData, ToData
 from commanderbot.lib.integer_range import IntegerRange
 
 __all__ = ("ReactionsGuard",)
 
 
+ST = TypeVar("ST")
+
+
 @dataclass
-class ReactionsGuard(FromDataMixin):
+class ReactionsGuard(FromData, ToData):
     """
     Check whether a reaction matches a set of reactions.
 
@@ -29,8 +32,9 @@ class ReactionsGuard(FromDataMixin):
 
     count: Optional[IntegerRange] = None
 
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, dict):
             return cls(
                 include=set(data.get("include", [])),

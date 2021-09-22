@@ -8,8 +8,8 @@ from typing import Any, Iterable, Optional, Type, TypeAlias, TypeVar
 from discord import Member, Message, User
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_bucket import AutomodBucket, AutomodBucketBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.bucket import Bucket, BucketBase
 from commanderbot.lib import ChannelID, JsonObject, UserID
 from commanderbot.lib.utils import timedelta_from_field_optional
 
@@ -56,7 +56,7 @@ class MessageFrequencyState:
 
 
 @dataclass
-class MessageFrequency(AutomodBucketBase):
+class MessageFrequency(BucketBase):
     """
     Track user activity across channels for potential spam.
 
@@ -150,5 +150,5 @@ class MessageFrequency(AutomodBucketBase):
         )
 
 
-def create_bucket(data: JsonObject) -> AutomodBucket:
+def create_bucket(data: JsonObject) -> Bucket:
     return MessageFrequency.from_data(data)

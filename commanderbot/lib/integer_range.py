@@ -1,13 +1,16 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, Type, TypeVar
 
-from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.data import FromData, ToData
 
 __all__ = ("IntegerRange",)
 
 
+ST = TypeVar("ST")
+
+
 @dataclass
-class IntegerRange(FromDataMixin):
+class IntegerRange(FromData, ToData):
     """
     An integer range with optional upper and lower bounds.
 
@@ -22,8 +25,9 @@ class IntegerRange(FromDataMixin):
     min: Optional[int]
     max: Optional[int]
 
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, int):
             return cls(min=data, max=data)
         elif isinstance(data, list):

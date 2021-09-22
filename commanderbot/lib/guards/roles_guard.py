@@ -1,17 +1,20 @@
 from dataclasses import dataclass, field
-from typing import Iterable, List, Optional, Set
+from typing import Any, Iterable, List, Optional, Set, Type, TypeVar
 
 from discord import Member, Role, User
 
-from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.data import FromData, ToData
 from commanderbot.lib.types import RoleID
 from commanderbot.lib.utils import member_roles_from
 
 __all__ = ("RolesGuard",)
 
 
+ST = TypeVar("ST")
+
+
 @dataclass
-class RolesGuard(FromDataMixin):
+class RolesGuard(FromData, ToData):
     """
     Check whether a member matches a set of roles.
 
@@ -26,8 +29,9 @@ class RolesGuard(FromDataMixin):
     include: Set[RoleID] = field(default_factory=set)
     exclude: Set[RoleID] = field(default_factory=set)
 
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, dict):
             return cls(
                 include=set(data.get("include", [])),

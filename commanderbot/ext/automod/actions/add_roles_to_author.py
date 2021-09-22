@@ -1,14 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from discord import Member
 
+from commanderbot.ext.automod.action import Action
 from commanderbot.ext.automod.actions.abc.add_roles_to_target_base import (
     AddRolesToTargetBase,
 )
-from commanderbot.ext.automod.automod_action import AutomodAction
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
 
 
 @dataclass
@@ -28,5 +27,5 @@ class AddRolesToAuthor(AddRolesToTargetBase):
         return event.author
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return AddRolesToAuthor.from_data(data)

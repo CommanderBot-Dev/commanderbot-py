@@ -1,28 +1,25 @@
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 from discord import Member
 
-from commanderbot.ext.automod.automod_condition import AutomodConditionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.condition import ConditionBase
 from commanderbot.lib.utils import timedelta_from_field_optional, utcnow_aware
-
-ST = TypeVar("ST")
 
 
 @dataclass
-class TargetAccountAgeBase(AutomodConditionBase):
+class TargetAccountAgeBase(ConditionBase):
     more_than: Optional[timedelta] = None
     less_than: Optional[timedelta] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         more_than = timedelta_from_field_optional(data, "more_than")
         less_than = timedelta_from_field_optional(data, "less_than")
-        return cls(
-            description=data.get("description"),
+        return dict(
             more_than=more_than,
             less_than=less_than,
         )

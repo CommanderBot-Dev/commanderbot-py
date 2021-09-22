@@ -7,11 +7,6 @@ from commanderbot.lib.extended_json_encoder import ExtendedJsonEncoder
 from commanderbot.lib.types import JsonObject
 
 
-def to_data(obj: Any) -> Any:
-    # TODO There's got to be a direct way to do this... #optimize
-    return json.loads(json.dumps(obj, cls=ExtendedJsonEncoder))
-
-
 def json_load(path: Path) -> JsonObject:
     with open(path) as fp:
         data = json.load(fp)

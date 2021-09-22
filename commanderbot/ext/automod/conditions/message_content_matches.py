@@ -1,22 +1,16 @@
 import unicodedata
 from dataclasses import dataclass
-from typing import Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Optional, Tuple
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-)
 from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.condition import Condition, ConditionBase
 from commanderbot.lib import JsonObject, PatternWrapper
-
-ST = TypeVar("ST")
-
 
 DEFAULT_NORMALIZATION_FORM = "NFKD"
 
 
 @dataclass
-class MessageContentMatches(AutomodConditionBase):
+class MessageContentMatches(ConditionBase):
     """
     Check if message content matches a number of regular expressions.
 
@@ -43,20 +37,18 @@ class MessageContentMatches(AutomodConditionBase):
     use_normalization: Optional[bool] = None
     normalization_form: Optional[str] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         raw_matches = data["matches"]
         if isinstance(raw_matches, (str, dict)):
             matches = [PatternWrapper.from_data(raw_matches)]
         else:
+            assert isinstance(raw_matches, list)
             matches = [PatternWrapper.from_data(item) for item in raw_matches]
-        return cls(
-            description=data.get("description"),
+
+        return dict(
             matches=matches,
-            count=data.get("count"),
-            use_search=data.get("use_search"),
-            use_normalization=data.get("use_normalization"),
-            normalization_form=data.get("normalization_form"),
         )
 
     def is_match(self, pattern: PatternWrapper, content: str) -> bool:
@@ -89,5 +81,5 @@ class MessageContentMatches(AutomodConditionBase):
         return False
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: JsonObject) -> Condition:
     return MessageContentMatches.from_data(data)

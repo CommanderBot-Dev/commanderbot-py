@@ -1,18 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-)
 from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.condition import Condition, ConditionBase
 from commanderbot.lib import JsonObject, RolesGuard
-
-ST = TypeVar("ST")
 
 
 @dataclass
-class MessageMentionsRoles(AutomodConditionBase):
+class MessageMentionsRoles(ConditionBase):
     """
     Check if the message contains role mentions.
 
@@ -24,11 +19,11 @@ class MessageMentionsRoles(AutomodConditionBase):
 
     roles: Optional[RolesGuard] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         roles = RolesGuard.from_data(data.get("roles", {}))
-        return cls(
-            description=data.get("description"),
+        return dict(
             roles=roles,
         )
 
@@ -58,5 +53,5 @@ class MessageMentionsRoles(AutomodConditionBase):
         return True
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: JsonObject) -> Condition:
     return MessageMentionsRoles.from_data(data)

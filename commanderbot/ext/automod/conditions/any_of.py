@@ -1,19 +1,17 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-    deserialize_conditions,
-)
 from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.condition import (
+    Condition,
+    ConditionBase,
+    ConditionCollection,
+)
 from commanderbot.lib import JsonObject
-
-ST = TypeVar("ST")
 
 
 @dataclass
-class AnyOf(AutomodConditionBase):
+class AnyOf(ConditionBase):
     """
     Check if a number of sub-conditions pass (logical OR).
 
@@ -26,17 +24,15 @@ class AnyOf(AutomodConditionBase):
         sub-condition is required to pass.
     """
 
-    conditions: Tuple[AutomodCondition]
+    conditions: ConditionCollection
     count: Optional[int] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
-        raw_conditions = data["conditions"]
-        conditions = deserialize_conditions(raw_conditions)
-        return cls(
-            description=data.get("description"),
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        conditions = ConditionCollection.from_data(data["conditions"])
+        return dict(
             conditions=conditions,
-            count=data.get("count"),
         )
 
     async def check(self, event: AutomodEvent) -> bool:
@@ -49,5 +45,5 @@ class AnyOf(AutomodConditionBase):
         return False
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: JsonObject) -> Condition:
     return AnyOf.from_data(data)

@@ -1,20 +1,17 @@
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Type, TypeVar
+from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_bucket_ref import BucketRef
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
+from commanderbot.ext.automod.bucket import BucketRef
 from commanderbot.ext.automod.buckets.message_frequency import MessageFrequency
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.trigger import Trigger, TriggerBase
 from commanderbot.lib.utils import timedelta_from_field
-
-ST = TypeVar("ST")
 
 
 @dataclass
-class MessageFrequencyChanged(AutomodTriggerBase):
+class MessageFrequencyChanged(TriggerBase):
     """
     Fires when a message author is suspect of spamming.
 
@@ -39,17 +36,13 @@ class MessageFrequencyChanged(AutomodTriggerBase):
     channel_threshold: int
     timeframe: timedelta
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         bucket = BucketRef.from_field(data, "bucket")
-        message_threshold = int(data["message_threshold"])
-        channel_threshold = int(data["channel_threshold"])
         timeframe = timedelta_from_field(data, "timeframe")
-        return cls(
-            description=data.get("description"),
+        return dict(
             bucket=bucket,
-            message_threshold=message_threshold,
-            channel_threshold=channel_threshold,
             timeframe=timeframe,
         )
 
@@ -70,5 +63,5 @@ class MessageFrequencyChanged(AutomodTriggerBase):
         return enough_messages and enough_channels
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: Any) -> Trigger:
     return MessageFrequencyChanged.from_data(data)

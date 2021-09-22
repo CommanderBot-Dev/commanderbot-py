@@ -2,19 +2,21 @@ from typing import Any, AsyncIterable, Optional, Protocol, Type, TypeVar
 
 from discord import Guild
 
-from commanderbot.ext.automod.automod_bucket import AutomodBucket
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_rule import AutomodRule
-from commanderbot.lib import JsonObject, LogOptions, RoleSet
+from commanderbot.ext.automod.node import Node
+from commanderbot.ext.automod.rule import Rule
+from commanderbot.lib import LogOptions, RoleSet
 from commanderbot.lib.utils import JsonPath, JsonPathOp
 
-BT = TypeVar("BT", bound=AutomodBucket)
+NT = TypeVar("NT", bound=Node)
 
 
 class AutomodStore(Protocol):
     """
     Abstracts the data storage and persistence of the automod cog.
     """
+
+    # @@ OPTIONS
 
     async def get_default_log_options(self, guild: Guild) -> Optional[LogOptions]:
         ...
@@ -32,54 +34,56 @@ class AutomodStore(Protocol):
     ) -> Optional[RoleSet]:
         ...
 
-    def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:
+    # @@ NODES
+
+    def all_nodes(self, guild: Guild, node_type: Type[NT]) -> AsyncIterable[NT]:
         ...
 
-    def rules_for_event(
-        self, guild: Guild, event: AutomodEvent
-    ) -> AsyncIterable[AutomodRule]:
+    def query_nodes(
+        self, guild: Guild, node_type: Type[NT], query: str
+    ) -> AsyncIterable[NT]:
         ...
 
-    def query_rules(self, guild: Guild, query: str) -> AsyncIterable[AutomodRule]:
+    async def get_node(
+        self, guild: Guild, node_type: Type[NT], name: str
+    ) -> Optional[NT]:
         ...
 
-    async def get_rule(self, guild: Guild, name: str) -> Optional[AutomodRule]:
+    async def require_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
         ...
 
-    async def require_rule(self, guild: Guild, name: str) -> AutomodRule:
+    async def require_node_with_type(
+        self, guild: Guild, node_type: Type[NT], name: str
+    ) -> NT:
         ...
 
-    async def add_rule(self, guild: Guild, data: JsonObject) -> AutomodRule:
+    async def add_node(self, guild: Guild, node_type: Type[NT], data: Any) -> NT:
         ...
 
-    async def remove_rule(self, guild: Guild, name: str) -> AutomodRule:
+    async def remove_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
         ...
 
-    async def modify_rule(
+    async def modify_node(
         self,
         guild: Guild,
+        node_type: Type[NT],
         name: str,
         path: JsonPath,
         op: JsonPathOp,
         data: Any,
-    ) -> AutomodRule:
+    ) -> NT:
         ...
 
-    async def enable_rule(self, guild: Guild, name: str) -> AutomodRule:
+    # @@ RULES
+
+    def rules_for_event(self, guild: Guild, event: AutomodEvent) -> AsyncIterable[Rule]:
         ...
 
-    async def disable_rule(self, guild: Guild, name: str) -> AutomodRule:
+    async def enable_rule(self, guild: Guild, name: str) -> Rule:
         ...
 
-    async def increment_rule_hits(self, guild: Guild, name: str) -> AutomodRule:
+    async def disable_rule(self, guild: Guild, name: str) -> Rule:
         ...
 
-    async def get_bucket(
-        self, guild: Guild, name: str, bucket_type: Type[BT]
-    ) -> Optional[BT]:
-        ...
-
-    async def require_bucket(
-        self, guild: Guild, name: str, bucket_type: Type[BT]
-    ) -> BT:
+    async def increment_rule_hits(self, guild: Guild, name: str) -> Rule:
         ...

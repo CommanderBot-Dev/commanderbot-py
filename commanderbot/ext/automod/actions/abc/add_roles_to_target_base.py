@@ -3,13 +3,13 @@ from typing import Optional, Tuple
 
 from discord import Guild, Member
 
-from commanderbot.ext.automod.automod_action import AutomodActionBase
+from commanderbot.ext.automod.action import ActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.lib import RoleID
 
 
 @dataclass
-class AddRolesToTargetBase(AutomodActionBase):
+class AddRolesToTargetBase(ActionBase):
     roles: Tuple[RoleID]
     reason: Optional[str] = None
 

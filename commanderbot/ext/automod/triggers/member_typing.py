@@ -1,16 +1,14 @@
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
-from commanderbot.lib import ChannelsGuard, JsonObject, RolesGuard
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.trigger import Trigger, TriggerBase
+from commanderbot.lib import ChannelsGuard, RolesGuard
 
 
 @dataclass
-class MemberTyping(AutomodTriggerBase):
+class MemberTyping(TriggerBase):
     """
     Fires when an `on_typing` event is received.
 
@@ -29,12 +27,12 @@ class MemberTyping(AutomodTriggerBase):
     channels: Optional[ChannelsGuard] = None
     roles: Optional[RolesGuard] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         channels = ChannelsGuard.from_field_optional(data, "channels")
         roles = RolesGuard.from_field_optional(data, "roles")
-        return cls(
-            description=data.get("description"),
+        return dict(
             channels=channels,
             roles=roles,
         )
@@ -53,5 +51,5 @@ class MemberTyping(AutomodTriggerBase):
         return self.ignore_by_channel(event) or self.ignore_by_role(event)
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: Any) -> Trigger:
     return MemberTyping.from_data(data)

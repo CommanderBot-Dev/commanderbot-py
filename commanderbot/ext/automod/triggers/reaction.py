@@ -1,16 +1,14 @@
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
-from commanderbot.lib import ChannelsGuard, JsonObject, ReactionsGuard, RolesGuard
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.trigger import Trigger, TriggerBase
+from commanderbot.lib import ChannelsGuard, ReactionsGuard, RolesGuard
 
 
 @dataclass
-class Reaction(AutomodTriggerBase):
+class Reaction(TriggerBase):
     """
     Fires when an `on_reaction_add` or `on_reaction_remove` event is received.
 
@@ -37,15 +35,15 @@ class Reaction(AutomodTriggerBase):
     author_roles: Optional[RolesGuard] = None
     actor_roles: Optional[RolesGuard] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         reactions = ReactionsGuard.from_field_optional(data, "reactions")
         channels = ChannelsGuard.from_field_optional(data, "channels")
         author_roles = RolesGuard.from_field_optional(data, "author_roles")
         actor_roles = RolesGuard.from_field_optional(data, "actor_roles")
-        return cls(
+        return dict(
             reactions=reactions,
-            description=data.get("description"),
             channels=channels,
             author_roles=author_roles,
             actor_roles=actor_roles,
@@ -80,5 +78,5 @@ class Reaction(AutomodTriggerBase):
         )
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: Any) -> Trigger:
     return Reaction.from_data(data)

@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, Type, TypeVar
 
 from discord import Client, Color, Message, TextChannel, Thread
 
-from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.data import FromData, ToData
 from commanderbot.lib.responsive_exception import ResponsiveException
 from commanderbot.lib.types import ChannelID
 from commanderbot.lib.utils import color_from_field_optional, sanitize_stacktrace
@@ -11,8 +11,11 @@ from commanderbot.lib.utils import color_from_field_optional, sanitize_stacktrac
 __all__ = ("LogOptions",)
 
 
+ST = TypeVar("ST")
+
+
 @dataclass
-class LogOptions(FromDataMixin):
+class LogOptions(FromData, ToData):
     """
     Data container for various log options.
 
@@ -34,8 +37,9 @@ class LogOptions(FromDataMixin):
     emoji: Optional[str] = None
     color: Optional[Color] = None
 
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, int):
             return cls(channel=data)
         elif isinstance(data, dict):

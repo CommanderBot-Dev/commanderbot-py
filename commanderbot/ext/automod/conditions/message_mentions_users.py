@@ -1,15 +1,12 @@
 from dataclasses import dataclass
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-)
 from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.condition import Condition, ConditionBase
 from commanderbot.lib import JsonObject
 
 
 @dataclass
-class MessageMentionsUsers(AutomodConditionBase):
+class MessageMentionsUsers(ConditionBase):
     """Check if the message contains user mentions."""
 
     async def check(self, event: AutomodEvent) -> bool:
@@ -31,5 +28,5 @@ class MessageMentionsUsers(AutomodConditionBase):
         return True
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: JsonObject) -> Condition:
     return MessageMentionsUsers.from_data(data)

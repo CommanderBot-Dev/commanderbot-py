@@ -1,18 +1,16 @@
 from dataclasses import dataclass
-from typing import List, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional
 
 from discord import Member, Message, Role, User
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
-from commanderbot.lib import ChannelsGuard, JsonObject, RolesGuard
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.trigger import Trigger, TriggerBase
+from commanderbot.lib import ChannelsGuard, RolesGuard
 
 
 @dataclass
-class MentionsRemovedFromMessage(AutomodTriggerBase):
+class MentionsRemovedFromMessage(TriggerBase):
     """
     Fires when mentions are removed from a message.
 
@@ -37,13 +35,13 @@ class MentionsRemovedFromMessage(AutomodTriggerBase):
     author_roles: Optional[RolesGuard] = None
     victim_roles: Optional[RolesGuard] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         channels = ChannelsGuard.from_field_optional(data, "channels")
         author_roles = RolesGuard.from_field_optional(data, "author_roles")
         victim_roles = RolesGuard.from_field_optional(data, "victim_roles")
-        return cls(
-            description=data.get("description"),
+        return dict(
             channels=channels,
             author_roles=author_roles,
             victim_roles=victim_roles,
@@ -140,5 +138,5 @@ class MentionsRemovedFromMessage(AutomodTriggerBase):
         return True
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: Any) -> Trigger:
     return MentionsRemovedFromMessage.from_data(data)

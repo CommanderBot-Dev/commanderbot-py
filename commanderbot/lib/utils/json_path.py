@@ -49,9 +49,11 @@ def query_json_path(target: Any, path: JsonPath) -> Any:
     return values
 
 
-def update_json_with_path(target: Any, path: JsonPath, op: JsonPathOp, value: Any):
+def update_json_with_path(
+    target: Any, path: JsonPath, op: JsonPathOp, value: Any
+) -> Any:
     if op == JsonPathOp.set:
-        path.update_or_create(target, value)
+        return path.update_or_create(target, value)
     elif op == JsonPathOp.merge:
         if not isinstance(value, dict):
             raise ValueError(f"Expected `dict`, got `{type(target).__name__}`")
@@ -68,3 +70,4 @@ def update_json_with_path(target: Any, path: JsonPath, op: JsonPathOp, value: An
                 node.value.insert(0, value)
     else:
         raise ResponsiveException(f"Unsupported operation: `{op.value}`")
+    return target

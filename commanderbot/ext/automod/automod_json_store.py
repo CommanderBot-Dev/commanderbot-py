@@ -3,20 +3,16 @@ from typing import Any, AsyncIterable, Optional, Type, TypeVar
 
 from discord import Guild
 
-from commanderbot.ext.automod.automod_bucket import AutomodBucket
 from commanderbot.ext.automod.automod_data import AutomodData
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_store import AutomodRule
-from commanderbot.lib import (
-    CogStore,
-    JsonFileDatabaseAdapter,
-    JsonObject,
-    LogOptions,
-    RoleSet,
-)
+from commanderbot.ext.automod.bucket import Bucket
+from commanderbot.ext.automod.node import Node
+from commanderbot.ext.automod.rule import Rule
+from commanderbot.lib import CogStore, JsonFileDatabaseAdapter, LogOptions, RoleSet
 from commanderbot.lib.utils import JsonPath, JsonPathOp
 
-BT = TypeVar("BT", bound=AutomodBucket)
+BT = TypeVar("BT", bound=Bucket)
+NT = TypeVar("NT", bound=Node)
 
 
 # @implements AutomodStore
@@ -27,6 +23,8 @@ class AutomodJsonStore(CogStore):
     """
 
     db: JsonFileDatabaseAdapter[AutomodData]
+
+    # @@ OPTIONS
 
     # @implements AutomodStore
     async def get_default_log_options(self, guild: Guild) -> Optional[LogOptions]:
@@ -56,95 +54,97 @@ class AutomodJsonStore(CogStore):
         await self.db.dirty()
         return old_value
 
+    # @@ NODES
+
     # @implements AutomodStore
-    async def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:
+    async def all_nodes(self, guild: Guild, node_type: Type[NT]) -> AsyncIterable[NT]:
         cache = await self.db.get_cache()
-        async for rule in cache.all_rules(guild):
-            yield rule
+        async for node in cache.all_nodes(guild, node_type):
+            yield node
+
+    # @implements AutomodStore
+    async def query_nodes(
+        self, guild: Guild, node_type: Type[NT], query: str
+    ) -> AsyncIterable[NT]:
+        cache = await self.db.get_cache()
+        async for node in cache.query_nodes(guild, node_type, query):
+            yield node
+
+    # @implements AutomodStore
+    async def get_node(
+        self, guild: Guild, node_type: Type[NT], name: str
+    ) -> Optional[NT]:
+        cache = await self.db.get_cache()
+        return await cache.get_node(guild, node_type, name)
+
+    # @implements AutomodStore
+    async def require_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        cache = await self.db.get_cache()
+        return await cache.require_node(guild, node_type, name)
+
+    # @implements AutomodStore
+    async def require_node_with_type(
+        self, guild: Guild, node_type: Type[NT], name: str
+    ) -> NT:
+        cache = await self.db.get_cache()
+        return await cache.require_node_with_type(guild, node_type, name)
+
+    # @implements AutomodStore
+    async def add_node(self, guild: Guild, node_type: Type[NT], data: Any) -> NT:
+        cache = await self.db.get_cache()
+        added_node = await cache.add_node(guild, node_type, data)
+        await self.db.dirty()
+        return added_node
+
+    # @implements AutomodStore
+    async def remove_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        cache = await self.db.get_cache()
+        removed_node = await cache.remove_node(guild, node_type, name)
+        await self.db.dirty()
+        return removed_node
+
+    # @implements AutomodStore
+    async def modify_node(
+        self,
+        guild: Guild,
+        node_type: Type[NT],
+        name: str,
+        path: JsonPath,
+        op: JsonPathOp,
+        data: Any,
+    ) -> NT:
+        cache = await self.db.get_cache()
+        modified_node = await cache.modify_node(guild, node_type, name, path, op, data)
+        await self.db.dirty()
+        return modified_node
+
+    # @@ RULES
 
     # @implements AutomodStore
     async def rules_for_event(
         self, guild: Guild, event: AutomodEvent
-    ) -> AsyncIterable[AutomodRule]:
+    ) -> AsyncIterable[Rule]:
         cache = await self.db.get_cache()
         async for rule in cache.rules_for_event(guild, event):
             yield rule
 
     # @implements AutomodStore
-    async def query_rules(self, guild: Guild, query: str) -> AsyncIterable[AutomodRule]:
-        cache = await self.db.get_cache()
-        async for rule in cache.query_rules(guild, query):
-            yield rule
-
-    # @implements AutomodStore
-    async def get_rule(self, guild: Guild, name: str) -> Optional[AutomodRule]:
-        cache = await self.db.get_cache()
-        return await cache.get_rule(guild, name)
-
-    # @implements AutomodStore
-    async def require_rule(self, guild: Guild, name: str) -> AutomodRule:
-        cache = await self.db.get_cache()
-        return await cache.require_rule(guild, name)
-
-    # @implements AutomodStore
-    async def add_rule(self, guild: Guild, data: JsonObject) -> AutomodRule:
-        cache = await self.db.get_cache()
-        added_rule = await cache.add_rule(guild, data)
-        await self.db.dirty()
-        return added_rule
-
-    # @implements AutomodStore
-    async def remove_rule(self, guild: Guild, name: str) -> AutomodRule:
-        cache = await self.db.get_cache()
-        removed_rule = await cache.remove_rule(guild, name)
-        await self.db.dirty()
-        return removed_rule
-
-    # @implements AutomodStore
-    async def modify_rule(
-        self,
-        guild: Guild,
-        name: str,
-        path: JsonPath,
-        op: JsonPathOp,
-        data: Any,
-    ) -> AutomodRule:
-        cache = await self.db.get_cache()
-        modified_rule = await cache.modify_rule(guild, name, path, op, data)
-        await self.db.dirty()
-        return modified_rule
-
-    # @implements AutomodStore
-    async def enable_rule(self, guild: Guild, name: str) -> AutomodRule:
+    async def enable_rule(self, guild: Guild, name: str) -> Rule:
         cache = await self.db.get_cache()
         modified_rule = await cache.enable_rule(guild, name)
         await self.db.dirty()
         return modified_rule
 
     # @implements AutomodStore
-    async def disable_rule(self, guild: Guild, name: str) -> AutomodRule:
+    async def disable_rule(self, guild: Guild, name: str) -> Rule:
         cache = await self.db.get_cache()
         modified_rule = await cache.disable_rule(guild, name)
         await self.db.dirty()
         return modified_rule
 
     # @implements AutomodStore
-    async def increment_rule_hits(self, guild: Guild, name: str) -> AutomodRule:
+    async def increment_rule_hits(self, guild: Guild, name: str) -> Rule:
         cache = await self.db.get_cache()
         modified_rule = await cache.increment_rule_hits(guild, name)
         await self.db.dirty()
         return modified_rule
-
-    # @implements AutomodStore
-    async def get_bucket(
-        self, guild: Guild, name: str, bucket_type: Type[BT]
-    ) -> Optional[BT]:
-        cache = await self.db.get_cache()
-        return await cache.get_bucket(guild, name, bucket_type)
-
-    # @implements AutomodStore
-    async def require_bucket(
-        self, guild: Guild, name: str, bucket_type: Type[BT]
-    ) -> BT:
-        cache = await self.db.get_cache()
-        return await cache.require_bucket(guild, name, bucket_type)

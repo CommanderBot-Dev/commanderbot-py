@@ -1,17 +1,15 @@
-from dataclasses import dataclass, field
-from typing import Optional, Type, TypeVar
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 from discord.abc import Messageable
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
+from commanderbot.ext.automod.action import Action, ActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import AllowedMentions, ChannelID, JsonObject
-
-ST = TypeVar("ST")
+from commanderbot.lib import AllowedMentions, ChannelID
 
 
 @dataclass
-class SendMessage(AutomodActionBase):
+class SendMessage(ActionBase):
     """
     Send a message.
 
@@ -30,19 +28,19 @@ class SendMessage(AutomodActionBase):
     channel: Optional[ChannelID] = None
     allowed_mentions: Optional[AllowedMentions] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         allowed_mentions = AllowedMentions.from_field_optional(data, "allowed_mentions")
-        return cls(
-            description=data.get("description"),
-            content=data.get("content"),
-            channel=data.get("channel"),
+        return dict(
             allowed_mentions=allowed_mentions,
         )
 
     async def resolve_channel(self, event: AutomodEvent) -> Optional[Messageable]:
         if self.channel is not None:
-            return event.bot.get_channel(self.channel)
+            channel = event.bot.get_channel(self.channel)
+            assert isinstance(channel, Messageable)
+            return channel
         return event.channel
 
     async def apply(self, event: AutomodEvent):
@@ -55,5 +53,5 @@ class SendMessage(AutomodActionBase):
             )
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return SendMessage.from_data(data)

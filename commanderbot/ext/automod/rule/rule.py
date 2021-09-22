@@ -1,33 +1,25 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Optional, Type, TypeVar
 
-from commanderbot.ext.automod.automod_action import AutomodAction, deserialize_actions
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    deserialize_conditions,
-)
+from commanderbot.ext.automod.action import ActionCollection
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import (
-    AutomodTrigger,
-    deserialize_triggers,
-)
-from commanderbot.lib import JsonObject, LogOptions
+from commanderbot.ext.automod.condition import ConditionCollection
+from commanderbot.ext.automod.node.node_base import NodeBase
+from commanderbot.ext.automod.trigger import TriggerCollection
+from commanderbot.lib import LogOptions
 from commanderbot.lib.utils import datetime_from_field_optional
+
+ST = TypeVar("ST", bound="Rule")
 
 
 @dataclass
-class AutomodRule:
+class Rule(NodeBase):
     """
     A piece of logic detailing how to perform an automated task.
 
     Attributes
     ----------
-    name
-        The name of the rule. Can be any arbitrary string, but snake_case tends to be
-        easier to type into chat.
     added_on
         The datetime the rule was created.
     modified_on
@@ -36,8 +28,6 @@ class AutomodRule:
         Whether the rule is currently disabled. Defaults to false.
     hits
         How many times the rule's conditions have passed and actions have run.
-    description
-        A human-readable description of the rule.
     log
         Override logging configuration for this rule.
     triggers
@@ -48,8 +38,6 @@ class AutomodRule:
         A list of actions that will all run if the conditions pass.
     """
 
-    name: str
-    description: Optional[str]
     added_on: datetime
     modified_on: datetime
     disabled: bool
@@ -57,16 +45,30 @@ class AutomodRule:
 
     log: Optional[LogOptions]
 
-    triggers: List[AutomodTrigger]
-    conditions: List[AutomodCondition]
-    actions: List[AutomodAction]
+    triggers: TriggerCollection
+    conditions: ConditionCollection
+    actions: ActionCollection
 
-    @staticmethod
-    def from_data(data: JsonObject) -> AutomodRule:
+    # @overrides FromData
+    @classmethod
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
+        if not isinstance(data, dict):
+            return
         now = datetime.utcnow()
         added_on = datetime_from_field_optional(data, "added_on") or now
         modified_on = datetime_from_field_optional(data, "modified_on") or now
-        return AutomodRule(
+        triggers = (
+            TriggerCollection.from_field_optional(data, "triggers")
+            or TriggerCollection()
+        )
+        conditions = (
+            ConditionCollection.from_field_optional(data, "conditions")
+            or ConditionCollection()
+        )
+        actions = (
+            ActionCollection.from_field_optional(data, "actions") or ActionCollection()
+        )
+        return cls(
             name=data["name"],
             added_on=added_on,
             modified_on=modified_on,
@@ -74,21 +76,20 @@ class AutomodRule:
             hits=data.get("hits", 0),
             description=data.get("description"),
             log=LogOptions.from_field_optional(data, "log"),
-            triggers=deserialize_triggers(data.get("triggers", [])),
-            conditions=deserialize_conditions(data.get("conditions", [])),
-            actions=deserialize_actions(data.get("actions", [])),
+            triggers=triggers,
+            conditions=conditions,
+            actions=actions,
         )
 
     def __hash__(self) -> int:
         return hash(self.name)
 
+    # @overrides NodeBase
     def build_title(self) -> str:
         parts = []
         if self.disabled:
             parts.append("(Disabled)")
-        parts.append(f"{self.name}:")
-        if self.description:
-            parts.append(self.description)
+        parts.append(super().build_title())
         return " ".join(parts)
 
     async def poll_triggers(self, event: AutomodEvent) -> bool:

@@ -1,12 +1,12 @@
 from dataclasses import dataclass
+from typing import Any
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
+from commanderbot.ext.automod.action import Action, ActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
 
 
 @dataclass
-class DeleteMessage(AutomodActionBase):
+class DeleteMessage(ActionBase):
     """
     Delete the message in context.
     """
@@ -16,5 +16,5 @@ class DeleteMessage(AutomodActionBase):
             await message.delete()
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return DeleteMessage.from_data(data)

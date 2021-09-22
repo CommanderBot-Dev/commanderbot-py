@@ -1,17 +1,13 @@
 from dataclasses import dataclass
-from typing import Type, TypeVar
+from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot.ext.automod.automod_bucket import AutomodBucket
-from commanderbot.ext.automod.automod_bucket_ref import BucketRef
+from commanderbot.ext.automod.action import Action, ActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.bucket import BucketRef
 
 
 @dataclass
-class AddToBucket(AutomodActionBase):
+class AddToBucket(ActionBase):
     """
     Add the event to a bucket.
 
@@ -21,13 +17,13 @@ class AddToBucket(AutomodActionBase):
         The bucket to add to.
     """
 
-    bucket: BucketRef[AutomodBucket]
+    bucket: BucketRef
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         bucket = BucketRef.from_field(data, "bucket")
-        return cls(
-            description=data.get("description"),
+        return dict(
             bucket=bucket,
         )
 
@@ -37,5 +33,5 @@ class AddToBucket(AutomodActionBase):
         await bucket.add(event)
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return AddToBucket.from_data(data)

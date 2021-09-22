@@ -1,16 +1,14 @@
 from dataclasses import dataclass
-from typing import List, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
-from commanderbot.lib import ChannelsGuard, JsonObject, RolesGuard
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.trigger import Trigger, TriggerBase
+from commanderbot.lib import ChannelsGuard, RolesGuard
 
 
 @dataclass
-class Message(AutomodTriggerBase):
+class Message(TriggerBase):
     """
     Fires when an `on_message` or `on_message_edit` event is received.
 
@@ -36,15 +34,15 @@ class Message(AutomodTriggerBase):
     channels: Optional[ChannelsGuard] = None
     author_roles: Optional[RolesGuard] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         content = data.get("content")
         if isinstance(content, str):
             content = [content]
         channels = ChannelsGuard.from_field_optional(data, "channels")
         author_roles = RolesGuard.from_field_optional(data, "author_roles")
-        return cls(
-            description=data.get("description"),
+        return dict(
             content=content,
             channels=channels,
             author_roles=author_roles,
@@ -73,5 +71,5 @@ class Message(AutomodTriggerBase):
         )
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: Any) -> Trigger:
     return Message.from_data(data)

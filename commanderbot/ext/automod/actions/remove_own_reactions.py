@@ -1,13 +1,14 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Any, Tuple
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
+from discord import User
+
+from commanderbot.ext.automod.action import Action, ActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
 
 
 @dataclass
-class RemoveOwnReactions(AutomodActionBase):
+class RemoveOwnReactions(ActionBase):
     """
     Remove the bot's own reactions from the message in context.
 
@@ -21,9 +22,11 @@ class RemoveOwnReactions(AutomodActionBase):
 
     async def apply(self, event: AutomodEvent):
         if message := event.message:
+            bot_user = event.bot.user
+            assert isinstance(bot_user, User)
             for reaction in self.reactions:
-                await message.remove_reaction(reaction, member=event.bot.user)
+                await message.remove_reaction(reaction, member=bot_user)
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return RemoveOwnReactions.from_data(data)

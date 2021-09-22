@@ -1,15 +1,12 @@
 from dataclasses import dataclass
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-)
 from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.condition import Condition, ConditionBase
 from commanderbot.lib import JsonObject
 
 
 @dataclass
-class ThrowError(AutomodConditionBase):
+class ThrowError(ConditionBase):
     """
     Throw an error when checking the condition.
 
@@ -27,5 +24,5 @@ class ThrowError(AutomodConditionBase):
         raise Exception(self.error)
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: JsonObject) -> Condition:
     return ThrowError.from_data(data)

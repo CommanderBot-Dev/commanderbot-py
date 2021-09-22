@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Set
 
 from discord import Color
 
+from commanderbot.lib.data import ToData
 from commanderbot.lib.json_serializable import JsonSerializable
 from commanderbot.lib.utils import color_to_hex, datetime_to_str, timedelta_to_dict
 
@@ -22,6 +23,8 @@ class ExtendedJsonEncoder(json.JSONEncoder):
     """
 
     def default(self, obj: Any) -> Any:
+        if isinstance(obj, ToData):
+            return obj.to_data()
         if isinstance(obj, JsonSerializable):
             return obj.to_json()
         if isinstance(obj, set):

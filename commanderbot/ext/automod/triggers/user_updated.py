@@ -1,15 +1,12 @@
 from dataclasses import dataclass
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_trigger import (
-    AutomodTrigger,
-    AutomodTriggerBase,
-)
+from commanderbot.ext.automod.trigger import Trigger, TriggerBase
 from commanderbot.lib import JsonObject
 
 
 @dataclass
-class UserUpdated(AutomodTriggerBase):
+class UserUpdated(TriggerBase):
     """
     Fires when an `on_user_update` event is received.
 
@@ -24,5 +21,5 @@ class UserUpdated(AutomodTriggerBase):
     event_types = (events.UserUpdated,)
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: JsonObject) -> Trigger:
     return UserUpdated.from_data(data)

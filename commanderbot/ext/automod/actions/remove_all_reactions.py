@@ -1,12 +1,12 @@
 from dataclasses import dataclass
+from typing import Any
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
+from commanderbot.ext.automod.action import Action, ActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
 
 
 @dataclass
-class RemoveAllReactions(AutomodActionBase):
+class RemoveAllReactions(ActionBase):
     """
     Remove all reactions from the message in context.
     """
@@ -16,5 +16,5 @@ class RemoveAllReactions(AutomodActionBase):
             await message.clear_reactions()
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return RemoveAllReactions.from_data(data)

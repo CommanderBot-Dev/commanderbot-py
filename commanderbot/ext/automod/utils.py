@@ -2,7 +2,7 @@ from collections import defaultdict
 from importlib import import_module
 from typing import Any, DefaultDict
 
-from commanderbot.lib import JsonObject, ResponsiveException
+from commanderbot.lib import ResponsiveException
 
 module_function_cache: DefaultDict[str, DefaultDict[str, Any]] = defaultdict(
     lambda: defaultdict(lambda: None)
@@ -41,23 +41,28 @@ class InvalidModuleFunction(Exception):
 
 
 def deserialize_module_object(
-    data: JsonObject,
+    data: Any,
     default_module_prefix: str,
     function_name: str,
 ) -> Any:
+    """Use a `type` field to dynamically construct an object from another module."""
+
     # get the type name
-    type_name = str(data.pop("type"))
+    type_name = data.pop("type", None)
     if not type_name:
         raise MissingTypeField()
+
     # determine the module name
     module_name = type_name
     if "." not in type_name:
         module_name = f"{default_module_prefix}.{type_name}"
+
     # attempt to resolve the module function
     try:
         func = resolve_module_function(module_name, function_name)
     except Exception as ex:
         raise InvalidModule(module_name, function_name) from ex
+
     # attempt to call the function to create the object
     try:
         obj = func(data)

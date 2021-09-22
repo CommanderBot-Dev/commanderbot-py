@@ -1,15 +1,12 @@
 from dataclasses import dataclass
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_trigger import (
-    AutomodTrigger,
-    AutomodTriggerBase,
-)
+from commanderbot.ext.automod.trigger import Trigger, TriggerBase
 from commanderbot.lib import JsonObject
 
 
 @dataclass
-class MemberLeft(AutomodTriggerBase):
+class MemberLeft(TriggerBase):
     """
     Fires when an `on_member_remove` event is received.
 
@@ -19,5 +16,5 @@ class MemberLeft(AutomodTriggerBase):
     event_types = (events.MemberLeft,)
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: JsonObject) -> Trigger:
     return MemberLeft.from_data(data)

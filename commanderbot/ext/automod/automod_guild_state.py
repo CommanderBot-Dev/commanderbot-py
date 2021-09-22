@@ -24,8 +24,9 @@ from yaml import YAMLError
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.ext.automod.automod_store import AutomodStore
+from commanderbot.ext.automod.node.node_kind import NodeKind
+from commanderbot.ext.automod.rule import Rule
 from commanderbot.lib import (
     CogGuildState,
     GuildContext,
@@ -36,7 +37,6 @@ from commanderbot.lib import (
     TextReaction,
 )
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
-from commanderbot.lib.json import to_data
 from commanderbot.lib.utils import (
     JsonPath,
     JsonPathOp,
@@ -59,9 +59,7 @@ class AutomodGuildState(CogGuildState):
 
     store: AutomodStore
 
-    async def _get_log_options_for_rule(
-        self, rule: AutomodRule
-    ) -> Optional[LogOptions]:
+    async def _get_log_options_for_rule(self, rule: Rule) -> Optional[LogOptions]:
         # First try to grab the rule's specific logging configuration, if any.
         if rule.log:
             return rule.log
@@ -69,7 +67,7 @@ class AutomodGuildState(CogGuildState):
         # also not exist, hence why it's optional.
         return await self.store.get_default_log_options(self.guild)
 
-    async def _handle_rule_error(self, rule: AutomodRule, error: Exception):
+    async def _handle_rule_error(self, rule: Rule, error: Exception):
         error_message = f"Rule `{rule.name}` caused an error:"
 
         # Re-raise the error so that it can be printed to the console.
@@ -94,7 +92,7 @@ class AutomodGuildState(CogGuildState):
             # If something went wrong here, print another exception to the console.
             self.log.exception("Failed to log message to error channel")
 
-    async def _do_event_for_rule(self, event: AutomodEvent, rule: AutomodRule):
+    async def _do_event_for_rule(self, event: AutomodEvent, rule: Rule):
         try:
             if await rule.run(event):
                 await self.store.increment_rule_hits(self.guild, rule.name)
@@ -122,6 +120,13 @@ class AutomodGuildState(CogGuildState):
             content,
             allowed_mentions=AllowedMentions.none(),
         )
+
+    async def member_has_permission(self, member: Member) -> bool:
+        permitted_roles = await self.store.get_permitted_roles(self.guild)
+        if permitted_roles is None:
+            return False
+        has_permission = permitted_roles.member_has_some(member)
+        return has_permission
 
     async def show_default_log_options(self, ctx: GuildContext):
         log_options = await self.store.get_default_log_options(self.guild)
@@ -209,22 +214,135 @@ class AutomodGuildState(CogGuildState):
         else:
             await self.reply(ctx, f"No roles are permitted to manage automod")
 
-    async def show_rules(self, ctx: GuildContext, query: str = ""):
+    # @@ NODES
+
+    async def list_nodes(
+        self,
+        ctx: GuildContext,
+        node_kind: NodeKind,
+        query: Optional[str] = None,
+    ):
         if query:
-            rules = await async_expand(self.store.query_rules(self.guild, query))
+            nodes = await async_expand(
+                self.store.query_nodes(self.guild, node_kind.node_type, query)
+            )
         else:
-            rules = await async_expand(self.store.all_rules(self.guild))
-        count_rules = len(rules)
-        if count_rules > 1:
-            lines = ["```"]
-            sorted_rules = sorted(rules, key=lambda rule: (rule.disabled, rule.name))
-            for rule in sorted_rules:
-                lines.append(rule.build_title())
-            lines.append("```")
+            nodes = await async_expand(
+                self.store.all_nodes(self.guild, node_kind.node_type)
+            )
+        if nodes:
+            # Build each node's title.
+            titles = [node.build_title() for node in nodes]
+
+            # Sort the node titles alphabetically.
+            sorted_titles = sorted(titles)
+
+            # Print out a code block with the node titles.
+            lines = [
+                "```",
+                *sorted_titles,
+                "```",
+            ]
             content = "\n".join(lines)
             await self.reply(ctx, content)
-        elif count_rules == 1:
+
+        else:
+            await self.reply(ctx, f"No automod {node_kind} found matching `{query}`")
+
+    async def print_node(
+        self,
+        ctx: GuildContext,
+        node_kind: NodeKind,
+        query: str,
+        path: Optional[JsonPath] = None,
+    ):
+        nodes = await async_expand(
+            self.store.query_nodes(self.guild, node_kind.node_type, query)
+        )
+        if nodes:
+            # If multiple nodes were found, just use the first.
+            node = nodes[0]
+
+            # Turn the node into raw data.
+            node_data = node.to_data()
+
+            # Take a sub-section of the data, if necessary.
+            output_data = node_data
+            if path:
+                output_data = query_json_path(output_data, path)
+
+            # Turn the data into a YAML string.
+            output_yaml = yaml.safe_dump(output_data, sort_keys=False)
+
+            # If the output can fit into a code block, just send a response.
+            # IMPL Make the message size threshold configurable.
+            if len(output_yaml) < 1900:
+                content = f"```yaml\n{output_yaml}\n```"
+                await self.reply(ctx, content)
+
+            # Otherwise, stuff it into a file and send it as an attachment.
+            else:
+                filename = f"{node.name}.yaml"
+                fp = cast(Any, io.StringIO(output_yaml))
+                file = File(fp=fp, filename=filename)
+                await ctx.message.reply(
+                    file=file,
+                    allowed_mentions=AllowedMentions.none(),
+                )
+
+        else:
+            await self.reply(ctx, f"No automod {node_kind} found matching `{query}`")
+
+    async def add_node(self, ctx: GuildContext, node_kind: NodeKind, body: str):
+        data = self._parse_body(body)
+        node = await self.store.add_node(self.guild, node_kind.node_type, data)
+        await self.reply(ctx, f"Added automod {node_kind} `{node.name}`")
+
+    async def remove_node(self, ctx: GuildContext, node_kind: NodeKind, name: str):
+        # Get the corresponding node.
+        node = await self.store.require_node(self.guild, node_kind.node_type, name)
+
+        # Then ask for confirmation to actually remove it.
+        conf = await confirm_with_reaction(
+            self.bot,
+            ctx,
+            f"Are you sure you want to remove automod {node_kind} `{node.name}`?",
+        )
+
+        # If the answer was yes, attempt to remove the node and send a response.
+        if conf == ConfirmationResult.YES:
+            removed_node = await self.store.remove_node(
+                self.guild, node_kind.node_type, node.name
+            )
+            await self.reply(ctx, f"Removed automod {node_kind} `{removed_node.name}`")
+
+        # If the answer was no, send a response.
+        elif conf == ConfirmationResult.NO:
+            await self.reply(ctx, f"Did not remove automod {node_kind} `{node.name}`")
+
+    async def modify_node(
+        self,
+        ctx: GuildContext,
+        node_kind: NodeKind,
+        name: str,
+        path: JsonPath,
+        op: JsonPathOp,
+        body: str,
+    ):
+        data = self._parse_body(body)
+        node = await self.store.modify_node(
+            self.guild, node_kind.node_type, name, path, op, data
+        )
+        await self.reply(ctx, f"Modified automod {node_kind} `{node.name}`")
+
+    # @@ RULES
+
+    async def explain_rule(self, ctx: GuildContext, query: str):
+        rules = await async_expand(self.store.query_nodes(self.guild, Rule, query))
+        if rules:
+            # If multiple nodes were found, just use the first.
             rule = rules[0]
+
             now = datetime.utcnow()
             added_on_timestamp = rule.added_on.isoformat()
             added_on_delta = now - rule.added_on
@@ -255,85 +373,9 @@ class AutomodGuildState(CogGuildState):
             lines.append("```")
             content = "\n".join(lines)
             await self.reply(ctx, content)
-        elif query:
-            await self.reply(ctx, f"No rules matching `{query}`")
-        else:
-            await self.reply(ctx, f"No rules available")
-
-    async def print_rule(
-        self,
-        ctx: GuildContext,
-        query: str,
-        path: Optional[JsonPath] = None,
-    ):
-        rules = await async_expand(self.store.query_rules(self.guild, query))
-        if rules:
-            # If multiple rules were found, just use the first.
-            rule = rules[0]
-
-            # Turn the rule into raw data.
-            rule_data = to_data(rule)
-
-            # Take a sub-section of the data, if necessary.
-            output_data = rule_data
-            if path:
-                output_data = query_json_path(output_data, path)
-
-            # Turn the data into a YAML string.
-            output_yaml = yaml.safe_dump(output_data, sort_keys=False)
-
-            # If the output can fit into a code block, just send a response.
-            # IMPL Make the message size threshold configurable.
-            if len(output_yaml) < 1900:
-                content = f"```yaml\n{output_yaml}\n```"
-                await self.reply(ctx, content)
-
-            # Otherwise, stuff it into a file and send it as an attachment.
-            else:
-                filename = f"{rule.name}.yaml"
-                fp = cast(Any, io.StringIO(output_yaml))
-                file = File(fp=fp, filename=filename)
-                await ctx.message.reply(
-                    file=file,
-                    allowed_mentions=AllowedMentions.none(),
-                )
 
         else:
-            await self.reply(ctx, f"No rule found matching `{query}`")
-
-    async def add_rule(self, ctx: GuildContext, body: str):
-        data = self._parse_body(body)
-        rule = await self.store.add_rule(self.guild, data)
-        await self.reply(ctx, f"Added automod rule `{rule.name}`")
-
-    async def remove_rule(self, ctx: GuildContext, name: str):
-        # Get the corresponding rule.
-        rule = await self.store.require_rule(self.guild, name)
-        # Then ask for confirmation to actually remove it.
-        conf = await confirm_with_reaction(
-            self.bot,
-            ctx,
-            f"Are you sure you want to remove automod rule `{rule.name}`?",
-        )
-        # If the answer was yes, attempt to remove the rule and send a response.
-        if conf == ConfirmationResult.YES:
-            removed_rule = await self.store.remove_rule(self.guild, rule.name)
-            await self.reply(ctx, f"Removed automod rule `{removed_rule.name}`")
-        # If the answer was no, send a response.
-        elif conf == ConfirmationResult.NO:
-            await self.reply(ctx, f"Did not remove automod rule `{rule.name}`")
-
-    async def modify_rule(
-        self,
-        ctx: GuildContext,
-        name: str,
-        path: JsonPath,
-        op: JsonPathOp,
-        body: str,
-    ):
-        data = self._parse_body(body)
-        rule = await self.store.modify_rule(self.guild, name, path, op, data)
-        await self.reply(ctx, f"Modified automod rule `{rule.name}`")
+            await self.reply(ctx, f"No automod rules matching `{query}`")
 
     async def enable_rule(self, ctx: GuildContext, name: str):
         rule = await self.store.enable_rule(self.guild, name)
@@ -342,13 +384,6 @@ class AutomodGuildState(CogGuildState):
     async def disable_rule(self, ctx: GuildContext, name: str):
         rule = await self.store.disable_rule(self.guild, name)
         await self.reply(ctx, f"Disabled automod rule `{rule.name}`")
-
-    async def member_has_permission(self, member: Member) -> bool:
-        permitted_roles = await self.store.get_permitted_roles(self.guild)
-        if permitted_roles is None:
-            return False
-        has_permission = permitted_roles.member_has_some(member)
-        return has_permission
 
     # @@ EVENT HANDLERS
 

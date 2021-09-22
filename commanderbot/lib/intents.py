@@ -1,19 +1,21 @@
-from typing import Any
+from typing import Any, Optional, Type, TypeVar
 
 import discord
 
-from commanderbot.lib.from_data_mixin import FromDataMixin
-from commanderbot.lib.json_serializable import JsonSerializable
+from commanderbot.lib.data import FromData, ToData
 
 __all__ = ("Intents",)
 
 
-class Intents(JsonSerializable, discord.Intents, FromDataMixin):
+ST = TypeVar("ST", bound="Intents")
+
+
+class Intents(discord.Intents, FromData, ToData):
     """Extends `discord.Intents` to simplify de/serialization."""
 
-    # @overrides FromDataMixin
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, int):
             return cls._from_value(data)
         elif isinstance(data, str):
@@ -22,6 +24,6 @@ class Intents(JsonSerializable, discord.Intents, FromDataMixin):
         elif isinstance(data, dict):
             return cls(**data)
 
-    # @implements JsonSerializable
-    def to_json(self) -> Any:
+    # @overrides ToData
+    def to_data(self) -> Any:
         return self.__dict__
