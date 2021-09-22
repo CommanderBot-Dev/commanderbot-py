@@ -75,6 +75,9 @@ class FaqStore(Protocol):
     async def require_faq_by_name(self, guild: Guild, name: str) -> FaqEntry:
         """Return the FAQ matching by exact key or alias."""
 
+    async def get_all_faqs(self, guild: Guild) -> List[FaqEntry]:
+        """Return all available FAQs."""
+
     async def get_faqs_by_query(
         self, guild: Guild, query: str, cap: int
     ) -> List[FaqEntry]:

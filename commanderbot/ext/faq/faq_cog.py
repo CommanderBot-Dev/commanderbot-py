@@ -107,12 +107,22 @@ class FaqCog(Cog, name="commanderbot.ext.faq"):
 
     @commands.group(
         name="faqs",
-        brief="Manage FAQs.",
+        brief="Search and manage FAQs.",
     )
     @checks.guild_only()
     async def cmd_faqs(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
-            await ctx.send_help(self.cmd_faqs)
+            if ctx.subcommand_passed:
+                await ctx.send_help(self.cmd_faqs)
+            else:
+                await self.state[ctx.guild].list_faqs(ctx)
+
+    @cmd_faqs.command(
+        name="list",
+        brief="List available FAQs.",
+    )
+    async def cmd_faqs_list(self, ctx: GuildContext):
+        await self.state[ctx.guild].list_faqs(ctx)
 
     @cmd_faqs.command(
         name="search",

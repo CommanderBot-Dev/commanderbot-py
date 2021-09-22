@@ -340,6 +340,10 @@ class FaqData:
         return self.guilds[guild.id].require_faq(name)
 
     # @implements FaqStore
+    async def get_all_faqs(self, guild: Guild) -> List[FaqEntry]:
+        return list(self.guilds[guild.id].faq_entries.values())
+
+    # @implements FaqStore
     async def get_faqs_by_query(
         self, guild: Guild, query: str, cap: int
     ) -> List[FaqEntry]:
