@@ -235,7 +235,7 @@ class AutomodGuildState(CogGuildState):
             titles = [node.build_title() for node in nodes]
 
             # Sort the node titles alphabetically.
-            sorted_titles = sorted(titles)
+            sorted_titles = sorted(titles, key=lambda title: title.lower())
 
             # Print out a code block with the node titles.
             lines = [
