@@ -57,6 +57,11 @@ class FaqJsonStore(CogStore):
         return await cache.require_faq_by_name(guild, name)
 
     # @implements FaqStore
+    async def get_all_faqs(self, guild: Guild) -> List[FaqEntry]:
+        cache = await self.db.get_cache()
+        return await cache.get_all_faqs(guild)
+
+    # @implements FaqStore
     async def get_faqs_by_query(
         self, guild: Guild, query: str, cap: int
     ) -> List[FaqEntry]:
