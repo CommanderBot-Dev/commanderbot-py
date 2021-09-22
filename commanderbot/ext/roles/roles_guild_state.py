@@ -33,6 +33,14 @@ SAFE_PERMS.speak = True
 SAFE_PERMS.stream = True
 SAFE_PERMS.use_voice_activation = True
 
+ROLE_TIPS = "\n".join([
+    ">>> Tips for providing roles:",
+    "- You can provide multiple roles in one command",
+    "- Use a word that uniquely identifies each role",
+    "- If multiple words are required, surround them with spaces",
+    "- If all else fails, use the role's ID",
+])
+
 
 @dataclass
 class RolesGuildState(CogGuildState):
@@ -207,9 +215,7 @@ class RolesGuildState(CogGuildState):
     async def show_all_roles(self, ctx: GuildContext):
         if role_pairs := await self.get_all_role_pairs():
             role_pairs_str = self.stringify_role_pairs(role_pairs)
-            await self.reply(
-                ctx, f"There are {len(role_pairs)} roles registered:\n{role_pairs_str}"
-            )
+            await self.reply(ctx, f"There are {len(role_pairs)} roles registered:\n{role_pairs_str}\n{ROLE_TIPS}")
         else:
             await self.reply(ctx, f"🤷 There are no roles registered.")
 
@@ -220,7 +226,7 @@ class RolesGuildState(CogGuildState):
             role_pairs_str = self.stringify_role_pairs(role_pairs)
             await self.reply(
                 ctx,
-                f"There are {len(role_pairs)} roles relevant to you:\n{role_pairs_str}",
+                f"There are {len(role_pairs)} roles relevant to you:\n{role_pairs_str}\n{ROLE_TIPS}",
             )
         else:
             await self.reply(ctx, f"🤷 There are no roles relevant to you.")

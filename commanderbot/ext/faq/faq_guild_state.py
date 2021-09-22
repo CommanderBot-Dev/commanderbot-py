@@ -1,12 +1,18 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional, Tuple, cast
 
-from commanderbot.ext.faq.faq_store import FaqStore
+from discord import Message
+from discord.abc import Messageable
+from discord.ext.commands import MessageConverter
+
+from commanderbot.ext.faq.faq_options import FaqOptions
+from commanderbot.ext.faq.faq_store import FaqEntry, FaqStore
 from commanderbot.lib import CogGuildState, GuildContext, TextMessage
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
-from commanderbot.lib.utils import async_expand
+
+LAZY: None = cast(None, object())
 
 
 @dataclass
@@ -21,139 +27,211 @@ class FaqGuildState(CogGuildState):
     """
 
     store: FaqStore
+    options: FaqOptions
+
+    _prefix_pattern: Optional[re.Pattern] = field(init=False, default=LAZY)
+    _match_pattern: Optional[re.Pattern] = field(init=False, default=LAZY)
+
+    async def get_prefix_pattern(self) -> Optional[re.Pattern]:
+        if self._prefix_pattern is LAZY:
+            self._prefix_pattern = await self.store.get_prefix_pattern(self.guild)
+        return self._prefix_pattern
+
+    async def get_match_pattern(self) -> Optional[re.Pattern]:
+        if self._match_pattern is LAZY:
+            self._match_pattern = await self.store.get_match_pattern(self.guild)
+        return self._match_pattern
+
+    async def _send_faq(self, destination: Messageable, faq: FaqEntry):
+        await self.store.increment_faq_hits(faq)
+        await destination.send(faq.content)
+
+    async def _show_faq(self, destination: Messageable, name: str):
+        # Check for FAQ by name (key/alias).
+        if faq := await self.store.get_faq_by_name(self.guild, name):
+            await self._send_faq(destination, faq)
+
+        # If none matched, suggest FAQs if any are produced by a generic query.
+        elif faqs := await self.store.get_faqs_by_query(
+            self.guild, name, self.options.query_cap
+        ):
+            sorted_faqs = sorted(faqs, key=lambda faq: faq.key)
+            keys = " ".join(f"`{faq.key}`" for faq in sorted_faqs)
+            await destination.send(
+                f"No FAQ named `{name}`, but maybe you meant: {keys}"
+            )
+
+        # Otherwise, let the user know nothing was found.
+        else:
+            await destination.send(f"No FAQ named `{name}`")
 
     async def on_message(self, message: TextMessage):
-        # Check the message for any inline FAQ queries.
-        if faq_entries := await self.store.scan_for_faqs(self.guild, message.content):
-            for faq_entry in faq_entries:
-                await self.store.increment_faq_hits(faq_entry)
-                await message.channel.send(faq_entry.content)
+        content = message.content
 
-    async def show_faq(self, ctx: GuildContext, faq_query: str):
-        if faq_entries := await async_expand(
-            self.store.query_faq_entries(self.guild, faq_query)
+        prefix_pattern = await self.get_prefix_pattern()
+        match_pattern = await self.get_match_pattern()
+
+        # Check if the prefix is being used.
+        if (
+            prefix_pattern
+            and self.options.allow_prefix
+            and (prefix_match := prefix_pattern.match(content))
         ):
-            for faq_entry in faq_entries:
-                await self.store.increment_faq_hits(faq_entry)
-                await ctx.send(faq_entry.content)
-        else:
-            await ctx.send(f"No FAQs matching `{faq_query}`")
+            name = "".join(prefix_match.groups())
+            await self._show_faq(message.channel, name)
+            return
 
-    async def show_faq_details(self, ctx: GuildContext, faq_query: str):
-        if faq_entries := await async_expand(
-            self.store.query_faq_entries(self.guild, faq_query)
-        ):
-            for faq_entry in faq_entries:
-                aliases_str = ", ".join(faq_entry.sorted_aliases)
-                tags_str = ", ".join(faq_entry.sorted_tags)
-                now = datetime.utcnow()
-                added_on_timestamp = faq_entry.added_on.isoformat()
-                added_on_delta = now - faq_entry.added_on
-                added_on_str = f"{added_on_timestamp} ({added_on_delta})"
-                modified_on_delta = now - faq_entry.modified_on
-                modified_on_timestamp = faq_entry.modified_on.isoformat()
-                modified_on_str = f"{modified_on_timestamp} ({modified_on_delta})"
-                lines = [
-                    f"Link: <{faq_entry.link}>",
-                    "```",
-                    f"Key:         {faq_entry.key}",
-                    f"Aliases:     {aliases_str}",
-                    f"Tags:        {tags_str}",
-                    f"Added on:    {added_on_str}",
-                    f"Modified on: {modified_on_str}",
-                    f"Hits:        {faq_entry.hits}",
-                    "```",
-                ]
-                content = "\n".join(lines)
-                await ctx.send(content)
-        else:
-            await ctx.send(f"No FAQs matching `{faq_query}`")
-
-    async def list_faqs(self, ctx: GuildContext):
-        if faq_entries := await self.store.get_faq_entries(self.guild):
-            # Sort entries alphabetically by key.
-            sorted_faq_entries = sorted(
-                faq_entries, key=lambda faq_entry: faq_entry.key
+        # Otherwise scan the message using the match pattern, if any.
+        if match_pattern and self.options.allow_match:
+            faqs = await self.store.get_faqs_by_match(
+                self.guild, content, self.options.match_cap
             )
-            count = len(sorted_faq_entries)
-            faq_keys = (entry.key for entry in sorted_faq_entries)
-            text = f"There are {count} FAQs available: `" + "` `".join(faq_keys) + "`"
+            for faq in faqs:
+                await self._send_faq(message.channel, faq)
+
+    async def show_faq(self, ctx: GuildContext, name: str):
+        await self._show_faq(ctx, name)
+
+    async def show_faq_details(self, ctx: GuildContext, name: str):
+        if faq := await self.store.get_faq_by_name(self.guild, name):
+            aliases_str = ", ".join(faq.sorted_aliases)
+            tags_str = ", ".join(faq.sorted_tags)
+            now = datetime.utcnow()
+            added_on_timestamp = faq.added_on.isoformat()
+            added_on_delta = now - faq.added_on
+            added_on_str = f"{added_on_timestamp} ({added_on_delta})"
+            modified_on_delta = now - faq.modified_on
+            modified_on_timestamp = faq.modified_on.isoformat()
+            modified_on_str = f"{modified_on_timestamp} ({modified_on_delta})"
+            lines = [
+                f"Link: <{faq.link}>",
+                "```",
+                f"Key:         {faq.key}",
+                f"Aliases:     {aliases_str}",
+                f"Tags:        {tags_str}",
+                f"Added on:    {added_on_str}",
+                f"Modified on: {modified_on_str}",
+                f"Hits:        {faq.hits}",
+                "```",
+            ]
+            content = "\n".join(lines)
+            await ctx.send(content)
+        else:
+            await ctx.send(f"No FAQ named `{name}`")
+
+    async def search_faqs(self, ctx: GuildContext, query: str):
+        if faqs := await self.store.get_faqs_by_query(
+            self.guild, query, cap=self.options.query_cap
+        ):
+            sorted_faqs = sorted(faqs, key=lambda faq: faq.key)
+            keys = " ".join(f"`{faq.key}`" for faq in sorted_faqs)
+            count = len(sorted_faqs)
+            text = f"Here are {count} FAQs matching `{query}`: {keys}"
             await ctx.send(text)
         else:
-            await ctx.send(f"No FAQs available")
+            await ctx.send(f"No FAQs matching `{query}`")
 
-    async def add_faq(self, ctx: GuildContext, faq_key: str, link: str, content: str):
-        faq_entry = await self.store.add_faq(
-            self.guild, faq_key, link=link, content=content
-        )
-        await ctx.send(f"Added FAQ `{faq_entry.key}`")
+    async def _parse_message_or_content(
+        self, ctx: GuildContext, message_or_content: str
+    ) -> Tuple[str, str]:
+        try:
+            message = await MessageConverter().convert(ctx, message_or_content)
+            content = message.content
+        except:
+            message = ctx.message
+            content = message_or_content
+        return message.jump_url, content
 
-    async def remove_faq(self, ctx: GuildContext, faq_key: str):
+    async def add_faq(self, ctx: GuildContext, key: str, message_or_content: str):
+        link, content = await self._parse_message_or_content(ctx, message_or_content)
+        faq = await self.store.add_faq(self.guild, key, link=link, content=content)
+        await ctx.send(f"Added FAQ `{faq.key}`")
+
+    async def remove_faq(self, ctx: GuildContext, name: str):
         # Get the corresponding FAQ entry.
-        faq_entry = await self.store.require_faq_entry(self.guild, faq_key)
+        faq = await self.store.require_faq_by_name(self.guild, name)
         # Then ask for confirmation to actually remove it.
         conf = await confirm_with_reaction(
             self.bot,
             ctx,
-            f"Are you sure you want to remove FAQ `{faq_entry.key}`?",
+            f"Are you sure you want to remove FAQ `{faq.key}`?",
         )
         # If the answer was yes, attempt to remove the FAQ and send a response.
         if conf == ConfirmationResult.YES:
-            removed_entry = await self.store.remove_faq(self.guild, faq_key)
+            removed_entry = await self.store.remove_faq(self.guild, name)
             await ctx.send(f"Removed FAQ `{removed_entry.key}`")
         # If the answer was no, send a response.
         elif conf == ConfirmationResult.NO:
-            await ctx.send(f"Did not remove FAQ `{faq_key}`")
+            await ctx.send(f"Did not remove FAQ `{name}`")
         # If no answer was provided, don't do anything.
 
-    async def modify_faq_content(self, ctx: GuildContext, faq_key: str, content: str):
-        faq_entry = await self.store.modify_faq_content(self.guild, faq_key, content)
-        await ctx.send(
-            f"Set content for FAQ `{faq_entry.key}` to:\n>>> `{faq_entry.content}`"
-        )
-
-    async def modify_faq_link(
-        self, ctx: GuildContext, faq_key: str, link: Optional[str]
+    async def modify_faq_content(
+        self, ctx: GuildContext, name: str, message_or_content: str
     ):
-        faq_entry = await self.store.modify_faq_link(self.guild, faq_key, link)
-        if link:
-            await ctx.send(f"Set link for FAQ `{faq_entry.key}` to: `{faq_entry.link}`")
-        else:
-            await ctx.send(f"Removed link for FAQ `{faq_entry.key}`")
+        link, content = await self._parse_message_or_content(ctx, message_or_content)
+        faq = await self.store.modify_faq_content(
+            self.guild, name, link=link, content=content
+        )
+        await ctx.send(f"Set content for FAQ `{faq.key}` using: {link}")
 
     async def modify_faq_aliases(
-        self, ctx: GuildContext, faq_key: str, aliases: Tuple[str, ...]
+        self, ctx: GuildContext, name: str, aliases: Tuple[str, ...]
     ):
-        faq_entry = await self.store.modify_faq_aliases(self.guild, faq_key, aliases)
+        faq = await self.store.modify_faq_aliases(self.guild, name, aliases)
         if aliases:
-            aliases_str = "`" + "` `".join(faq_entry.sorted_aliases) + "`"
-            await ctx.send(f"Set aliases for FAQ `{faq_entry.key}` to: {aliases_str}")
+            aliases_str = "`" + "` `".join(faq.sorted_aliases) + "`"
+            await ctx.send(f"Set aliases for FAQ `{faq.key}` to: {aliases_str}")
         else:
-            await ctx.send(f"Removed aliases for FAQ `{faq_entry.key}`")
+            await ctx.send(f"Removed aliases for FAQ `{faq.key}`")
 
     async def modify_faq_tags(
-        self, ctx: GuildContext, faq_key: str, tags: Tuple[str, ...]
+        self, ctx: GuildContext, name: str, tags: Tuple[str, ...]
     ):
-        faq_entry = await self.store.modify_faq_tags(self.guild, faq_key, tags)
+        faq = await self.store.modify_faq_tags(self.guild, name, tags)
         if tags:
-            tags_str = "`" + "` `".join(faq_entry.sorted_tags) + "`"
-            await ctx.send(f"Set tags for FAQ `{faq_entry.key}` to: {tags_str}")
+            tags_str = "`" + "` `".join(faq.sorted_tags) + "`"
+            await ctx.send(f"Set tags for FAQ `{faq.key}` to: {tags_str}")
         else:
-            await ctx.send(f"Removed tags for FAQ `{faq_entry.key}`")
+            await ctx.send(f"Removed tags for FAQ `{faq.key}`")
 
-    async def configure_prefix(self, ctx: GuildContext, prefix: Optional[str]):
-        await self.store.configure_prefix(self.guild, prefix)
-        if prefix:
-            await ctx.send(f"Set FAQ prefix to: `{prefix}`")
+    async def show_prefix_pattern(self, ctx: GuildContext):
+        if prefix := await self.store.get_prefix_pattern(self.guild):
+            await ctx.send(
+                f"FAQ prefix pattern is currently set to: `{prefix.pattern}`"
+            )
         else:
-            await ctx.send(f"Removed FAQ prefix")
+            await ctx.send("No FAQ prefix pattern is currently configured")
 
-    async def configure_match(self, ctx: GuildContext, match: Optional[str]):
+    async def set_prefix_pattern(self, ctx: GuildContext, prefix: str):
         try:
-            await self.store.configure_match(self.guild, match)
-            if match:
-                await ctx.send(f"Set FAQ match pattern to: `{match}`")
-            else:
-                await ctx.send(f"Removed FAQ match pattern")
+            result = await self.store.set_prefix_pattern(self.guild, prefix)
         except re.error as ex:
             await ctx.send(f"Invalid pattern: {ex}")
+        else:
+            self._prefix_pattern = result
+            await ctx.send(f"Set FAQ prefix pattern to: `{prefix}`")
+
+    async def clear_prefix_pattern(self, ctx: GuildContext):
+        await self.store.set_prefix_pattern(self.guild, None)
+        self._prefix_pattern = None
+        await ctx.send(f"Removed FAQ prefix pattern")
+
+    async def show_match_pattern(self, ctx: GuildContext):
+        if match := await self.store.get_match_pattern(self.guild):
+            await ctx.send(f"FAQ match pattern is currently set to: `{match.pattern}`")
+        else:
+            await ctx.send("No FAQ match pattern is currently configured")
+
+    async def set_match_pattern(self, ctx: GuildContext, match: str):
+        try:
+            result = await self.store.set_match_pattern(self.guild, match)
+        except re.error as ex:
+            await ctx.send(f"Invalid pattern: {ex}")
+        else:
+            self._match_pattern = result
+            await ctx.send(f"Set FAQ match pattern to: `{match}`")
+
+    async def clear_match_pattern(self, ctx: GuildContext):
+        await self.store.set_match_pattern(self.guild, None)
+        self._match_pattern = None
+        await ctx.send(f"Removed FAQ match pattern")

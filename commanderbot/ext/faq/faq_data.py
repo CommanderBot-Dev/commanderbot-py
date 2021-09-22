@@ -1,17 +1,9 @@
+import itertools
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import (
-    AsyncIterable,
-    DefaultDict,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-)
+from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 from discord import Guild
 
@@ -23,6 +15,8 @@ from commanderbot.ext.faq.faq_store import (
 )
 from commanderbot.lib import GuildID, JsonObject
 from commanderbot.lib.utils import dict_without_falsies
+
+TERM_SPLIT_PATTERN = re.compile(r"\W+")
 
 
 # @implements FaqEntry
@@ -37,6 +31,8 @@ class FaqDataFaqEntry:
     aliases: Set[str]
     tags: Set[str]
 
+    match_terms: Set[str] = field(init=False, default_factory=lambda: set())
+
     @staticmethod
     def deserialize(data: JsonObject, key: str) -> "FaqDataFaqEntry":
         return FaqDataFaqEntry(
@@ -49,6 +45,12 @@ class FaqDataFaqEntry:
             aliases=set(data.get("aliases", [])),
             tags=set(data.get("tags", [])),
         )
+
+    def __post_init__(self):
+        self.sync()
+
+    def __hash__(self) -> int:
+        return hash(self.key)
 
     def serialize(self) -> JsonObject:
         return {
@@ -71,15 +73,34 @@ class FaqDataFaqEntry:
     def sorted_tags(self) -> List[str]:
         return sorted(self.tags)
 
+    def _sync_match_terms(self):
+        # Start wirth the key, all aliases, and all tags.
+        terms = set((self.key, *self.aliases, *self.tags))
+        # Also add all of the words from all of these things.
+        for term in terms.copy():
+            for word in TERM_SPLIT_PATTERN.split(term):
+                terms.add(word)
+        self.match_terms = terms
+
+    def sync(self):
+        self._sync_match_terms()
+
     def update_modified_on(self) -> datetime:
         self.modified_on = datetime.utcnow()
         return self.modified_on
+
+    def matches_query(self, query: str) -> bool:
+        query_terms = TERM_SPLIT_PATTERN.split(query)
+        for term in query_terms:
+            if term not in self.match_terms:
+                return False
+        return True
 
 
 @dataclass
 class FaqDataGuild:
     faq_entries: Dict[str, FaqDataFaqEntry] = field(default_factory=dict)
-    prefix: Optional[str] = None
+    prefix: Optional[re.Pattern] = None
     match: Optional[re.Pattern] = None
 
     faq_entries_by_alias: Dict[str, FaqDataFaqEntry] = field(
@@ -89,21 +110,22 @@ class FaqDataGuild:
     @staticmethod
     def deserialize(data: JsonObject) -> "FaqDataGuild":
         # Note that aliases will be constructed from entries, during post-init.
+        raw_prefix = data.get("prefix")
         raw_match = data.get("match")
         return FaqDataGuild(
             faq_entries={
                 key: FaqDataFaqEntry.deserialize(raw_entry, key)
                 for key, raw_entry in data.get("faq_entries", {}).items()
             },
-            prefix=data.get("prefix"),
+            prefix=re.compile(raw_prefix) if raw_prefix else None,
             match=re.compile(raw_match) if raw_match else None,
         )
 
     def __post_init__(self):
         # Build the list of aliases from entries.
-        for entry in self.faq_entries.values():
-            for alias in entry.aliases:
-                self.faq_entries_by_alias[alias] = entry
+        for faq in self.faq_entries.values():
+            for alias in faq.aliases:
+                self.faq_entries_by_alias[alias] = faq
 
     def _is_faq_key_available(self, faq_key: str) -> bool:
         # Check whether the given FAQ key (key or alias) is in either the FAQ map or
@@ -112,57 +134,66 @@ class FaqDataGuild:
             (faq_key in self.faq_entries) or (faq_key in self.faq_entries_by_alias)
         )
 
-    def _get_tags_from_query(self, faq_query: str) -> Set[str]:
-        return set(s[1:] for s in faq_query.split() if s.startswith("#"))
-
     def serialize(self) -> JsonObject:
         return dict_without_falsies(
-            prefix=self.prefix,
+            prefix=self.prefix.pattern if self.prefix else None,
             match=self.match.pattern if self.match else None,
             faq_entries={
                 key: entry.serialize() for key, entry in self.faq_entries.items()
             },
         )
 
-    def require_faq_entry(self, faq_key: str) -> FaqDataFaqEntry:
+    def get_prefix(self) -> Optional[re.Pattern]:
+        return self.prefix
+
+    def set_prefix(self, prefix: Optional[str]) -> Optional[re.Pattern]:
+        self.prefix = re.compile(prefix) if prefix else None
+        return self.prefix
+
+    def get_match(self) -> Optional[re.Pattern]:
+        return self.match
+
+    def set_match(self, match: Optional[str]) -> Optional[re.Pattern]:
+        self.match = re.compile(match) if match else None
+        return self.match
+
+    def get_faq(self, name: str) -> Optional[FaqDataFaqEntry]:
+        # Return the FAQ entry by key, if it exists.
+        if by_key := self.faq_entries.get(name):
+            return by_key
+        # Otherwise try to return it by alias.
+        return self.faq_entries_by_alias.get(name)
+
+    def require_faq(self, name: str) -> FaqDataFaqEntry:
         # Return the FAQ entry, if it exists.
-        if faq_entry := self.faq_entries.get(faq_key):
-            return faq_entry
+        if faq := self.get_faq(name):
+            return faq
         # Otherwise, raise.
-        raise NoSuchFaq(faq_key)
+        raise NoSuchFaq(name)
 
-    def query_faq_entries(self, faq_query: str) -> Iterable[FaqDataFaqEntry]:
-        # First, check for an exact match by key.
-        if by_key := self.faq_entries.get(faq_query):
-            yield by_key
-        # Next, check for a match by alias.
-        elif by_alias := self.faq_entries_by_alias.get(faq_query):
-            yield by_alias
-        # Next, check for any number of matches by tags.
-        elif tags := self._get_tags_from_query(faq_query):
-            # Yield FAQ entries that have *all* of the tags.
-            for faq_entry in self.faq_entries.values():
-                if tags.issubset(faq_entry.tags):
-                    yield faq_entry
+    def iter_faqs_by_query(self, query: str) -> Iterable[FaqDataFaqEntry]:
+        # Yield FAQs that match the query.
+        for faq in self.faq_entries.values():
+            if faq.matches_query(query):
+                yield faq
 
-    def scan_for_faqs(self, text: str) -> Optional[List[FaqEntry]]:
-        # First, if a prefix is configured, check if the text starts with it.
-        if self.prefix and text.startswith(self.prefix):
-            faq_query = text[len(self.prefix) :]
-            return list(self.query_faq_entries(faq_query))
-        # Next, if a match pattern is configured, look for matches in the text.
-        elif self.match:
-            if matches := self.match.findall(text):
-                faq_entries = []
-                for match in matches:
-                    # Make sure not to introduce duplicates.
-                    faq_entries_to_add = [
-                        faq_entry
-                        for faq_entry in self.query_faq_entries(match)
-                        if faq_entry not in faq_entries
-                    ]
-                    faq_entries += faq_entries_to_add
-                return faq_entries
+    def get_faqs_by_query(self, query: str, cap: int) -> List[FaqDataFaqEntry]:
+        return list(itertools.islice(self.iter_faqs_by_query(query), cap))
+
+    def iter_faqs_by_match(self, content: str) -> Iterable[FaqDataFaqEntry]:
+        # If a match pattern is configured, look for matches in the text.
+        if self.match:
+            faqs = set()
+            for match in self.match.finditer(content):
+                query = "".join(match.groups())
+                faq = self.get_faq(query)
+                # Make sure not to introduce duplicates.
+                if faq and (faq not in faqs):
+                    faqs.add(faq)
+                    yield faq
+
+    def get_faqs_by_match(self, content: str, cap: int) -> List[FaqDataFaqEntry]:
+        return list(itertools.islice(self.iter_faqs_by_match(content), cap))
 
     def add_faq(self, faq_key: str, link: str, content: str) -> FaqDataFaqEntry:
         # Ensure the given key is available.
@@ -170,7 +201,7 @@ class FaqDataGuild:
             raise FaqKeyAlreadyExists(faq_key)
         # Create and register a new FAQ entry.
         now = datetime.utcnow()
-        faq_entry = FaqDataFaqEntry(
+        faq = FaqDataFaqEntry(
             key=faq_key,
             added_on=now,
             modified_on=now,
@@ -180,68 +211,67 @@ class FaqDataGuild:
             aliases=set(),
             tags=set(),
         )
-        self.faq_entries[faq_key] = faq_entry
+        self.faq_entries[faq_key] = faq
         # Return the newly-created FAQ entry.
-        return faq_entry
+        return faq
 
-    def remove_faq(self, faq_key: str) -> FaqDataFaqEntry:
-        # Remove and return the FAQ entry, if it exists.
-        if faq_entry := self.faq_entries.pop(faq_key, None):
-            # Make sure to also deregister all of its aliases.
-            for alias in faq_entry.aliases:
-                del self.faq_entries_by_alias[alias]
-            # Return the FAQ entry.
-            return faq_entry
-        # Otherwise, if it does not exist, raise.
-        raise NoSuchFaq(faq_key)
+    def remove_faq(self, name: str) -> FaqDataFaqEntry:
+        # Expect the FAQ entry to exist.
+        faq = self.require_faq(name)
+        # Remove it.
+        del self.faq_entries[faq.key]
+        # Make sure to also deregister all of its aliases.
+        for alias in faq.aliases:
+            del self.faq_entries_by_alias[alias]
+        # Return it.
+        return faq
 
-    def modify_faq_content(self, faq_key: str, content: str) -> FaqDataFaqEntry:
-        if faq_entry := self.require_faq_entry(faq_key):
-            faq_entry.update_modified_on()
-            faq_entry.content = content
-            return faq_entry
-        raise NoSuchFaq(faq_key)
-
-    def modify_faq_link(self, faq_key: str, link: Optional[str]) -> FaqDataFaqEntry:
-        if faq_entry := self.require_faq_entry(faq_key):
-            faq_entry.link = link
-            return faq_entry
+    def modify_faq_content(
+        self, faq_key: str, link: str, content: str
+    ) -> FaqDataFaqEntry:
+        if faq := self.require_faq(faq_key):
+            faq.update_modified_on()
+            faq.content = content
+            faq.link = link
+            faq.sync()
+            return faq
         raise NoSuchFaq(faq_key)
 
     def modify_faq_aliases(
         self, faq_key: str, aliases: Tuple[str, ...]
     ) -> FaqDataFaqEntry:
-        if faq_entry := self.require_faq_entry(faq_key):
+        if faq := self.require_faq(faq_key):
             requested_aliases = set(aliases)
-            aliases_to_add = requested_aliases.difference(faq_entry.aliases)
-            aliases_to_remove = faq_entry.aliases.difference(requested_aliases)
+            aliases_to_add = requested_aliases.difference(faq.aliases)
+            aliases_to_remove = faq.aliases.difference(requested_aliases)
+
             # Ensure that each new alias is available.
             for alias_to_add in aliases_to_add:
                 if not self._is_faq_key_available(alias_to_add):
                     raise FaqAliasUnavailable(alias_to_add)
+
             # Remove old aliases.
             for alias_to_remove in aliases_to_remove:
-                faq_entry.aliases.remove(alias_to_remove)
+                faq.aliases.remove(alias_to_remove)
                 del self.faq_entries_by_alias[alias_to_remove]
+
             # Add new aliases.
             for alias_to_add in aliases_to_add:
-                faq_entry.aliases.add(alias_to_add)
-                self.faq_entries_by_alias[alias_to_add] = faq_entry
-            # Return the FAQ entry.
-            return faq_entry
+                faq.aliases.add(alias_to_add)
+                self.faq_entries_by_alias[alias_to_add] = faq
+
+            # Sync and return the FAQ entry.
+            faq.sync()
+            return faq
+
         raise NoSuchFaq(faq_key)
 
     def modify_faq_tags(self, faq_key: str, tags: Tuple[str, ...]) -> FaqDataFaqEntry:
-        if faq_entry := self.require_faq_entry(faq_key):
-            faq_entry.tags = set(tags)
-            return faq_entry
+        if faq := self.require_faq(faq_key):
+            faq.tags = set(tags)
+            faq.sync()
+            return faq
         raise NoSuchFaq(faq_key)
-
-    def configure_prefix(self, prefix: Optional[str]):
-        self.prefix = prefix
-
-    def configure_match(self, match: Optional[str]):
-        self.match = re.compile(match) if match else None
 
 
 def _guilds_defaultdict_factory() -> DefaultDict[GuildID, FaqDataGuild]:
@@ -282,66 +312,75 @@ class FaqData:
         )
 
     # @implements FaqStore
-    async def get_faq_entries(self, guild: Guild) -> List[FaqEntry]:
-        return [faq_entry for faq_entry in self.guilds[guild.id].faq_entries.values()]
+    async def get_prefix_pattern(self, guild: Guild) -> Optional[re.Pattern]:
+        return self.guilds[guild.id].get_prefix()
 
     # @implements FaqStore
-    async def require_faq_entry(self, guild: Guild, faq_key: str) -> FaqEntry:
-        return self.guilds[guild.id].require_faq_entry(faq_key)
+    async def set_prefix_pattern(
+        self, guild: Guild, prefix: Optional[str]
+    ) -> Optional[re.Pattern]:
+        return self.guilds[guild.id].set_prefix(prefix)
 
     # @implements FaqStore
-    async def query_faq_entries(
-        self, guild: Guild, faq_query: str
-    ) -> AsyncIterable[FaqEntry]:
-        for faq_entry in self.guilds[guild.id].query_faq_entries(faq_query):
-            yield faq_entry
+    async def get_match_pattern(self, guild: Guild) -> Optional[re.Pattern]:
+        return self.guilds[guild.id].get_match()
 
     # @implements FaqStore
-    async def scan_for_faqs(self, guild: Guild, text: str) -> Optional[List[FaqEntry]]:
-        return self.guilds[guild.id].scan_for_faqs(text)
+    async def set_match_pattern(
+        self, guild: Guild, match: Optional[str]
+    ) -> Optional[re.Pattern]:
+        return self.guilds[guild.id].set_match(match)
 
     # @implements FaqStore
-    async def increment_faq_hits(self, faq_entry: FaqEntry):
-        faq_entry.hits += 1
+    async def get_faq_by_name(self, guild: Guild, name: str) -> Optional[FaqEntry]:
+        return self.guilds[guild.id].get_faq(name)
+
+    # @implements FaqStore
+    async def require_faq_by_name(self, guild: Guild, name: str) -> FaqEntry:
+        return self.guilds[guild.id].require_faq(name)
+
+    # @implements FaqStore
+    async def get_faqs_by_query(
+        self, guild: Guild, query: str, cap: int
+    ) -> List[FaqEntry]:
+        return self.guilds[guild.id].get_faqs_by_query(query, cap)
+
+    # @implements FaqStore
+    async def get_faqs_by_match(
+        self, guild: Guild, content: str, cap: int
+    ) -> List[FaqEntry]:
+        return self.guilds[guild.id].get_faqs_by_match(content, cap)
+
+    # @implements FaqStore
+    async def increment_faq_hits(self, faq: FaqEntry):
+        faq.hits += 1
 
     # @implements FaqStore
     async def add_faq(
-        self, guild: Guild, faq_key: str, link: str, content: str
+        self, guild: Guild, key: str, link: str, content: str
     ) -> FaqEntry:
-        return self.guilds[guild.id].add_faq(faq_key, link=link, content=content)
+        return self.guilds[guild.id].add_faq(key, link=link, content=content)
 
     # @implements FaqStore
-    async def remove_faq(self, guild: Guild, faq_key: str) -> FaqEntry:
-        return self.guilds[guild.id].remove_faq(faq_key)
+    async def remove_faq(self, guild: Guild, name: str) -> FaqEntry:
+        return self.guilds[guild.id].remove_faq(name)
 
     # @implements FaqStore
     async def modify_faq_content(
-        self, guild: Guild, faq_key: str, content: str
+        self, guild: Guild, name: str, link: str, content: str
     ) -> FaqEntry:
-        return self.guilds[guild.id].modify_faq_content(faq_key, content)
-
-    # @implements FaqStore
-    async def modify_faq_link(
-        self, guild: Guild, faq_key: str, link: Optional[str]
-    ) -> FaqEntry:
-        return self.guilds[guild.id].modify_faq_link(faq_key, link)
+        return self.guilds[guild.id].modify_faq_content(
+            name, link=link, content=content
+        )
 
     # @implements FaqStore
     async def modify_faq_aliases(
-        self, guild: Guild, faq_key: str, aliases: Tuple[str, ...]
+        self, guild: Guild, name: str, aliases: Tuple[str, ...]
     ) -> FaqEntry:
-        return self.guilds[guild.id].modify_faq_aliases(faq_key, aliases)
+        return self.guilds[guild.id].modify_faq_aliases(name, aliases)
 
     # @implements FaqStore
     async def modify_faq_tags(
-        self, guild: Guild, faq_key: str, tags: Tuple[str, ...]
+        self, guild: Guild, name: str, tags: Tuple[str, ...]
     ) -> FaqEntry:
-        return self.guilds[guild.id].modify_faq_tags(faq_key, tags)
-
-    # @implements FaqStore
-    async def configure_prefix(self, guild: Guild, prefix: Optional[str]):
-        self.guilds[guild.id].configure_prefix(prefix)
-
-    # @implements FaqStore
-    async def configure_match(self, guild: Guild, match: Optional[str]):
-        self.guilds[guild.id].configure_match(match)
+        return self.guilds[guild.id].modify_faq_tags(name, tags)
