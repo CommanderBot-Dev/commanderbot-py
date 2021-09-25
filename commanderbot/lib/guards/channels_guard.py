@@ -39,26 +39,42 @@ class ChannelsGuard(FromData, ToData):
         elif isinstance(data, list):
             return cls(include=set(data))
 
-    def get_root_channel(self, channel: TextChannel | Thread) -> Optional[TextChannel]:
-        if isinstance(channel, TextChannel):
-            return channel
-        return channel.parent
-
     def ignore_by_includes(self, channel: TextChannel | Thread) -> bool:
-        # Ignore channels that are not included, if any.
+        # If includes are not defined, nothing is ignored.
         if not self.include:
             return False
-        if root_channel := self.get_root_channel(channel):
-            return root_channel.id not in self.include
-        return False
+
+        # TODO Should we add extra logic for categories too? #enhance
+
+        # If the channel is a thread, apply some additional containment logic.
+        if isinstance(channel, Thread):
+            # If the thread has a parent channel (it should), check that first.
+            if parent_channel := channel.parent:
+                # If the parent channel is included, ignore the thread only if it's
+                # explicitly excluded.
+                if parent_channel.id in self.include:
+                    return channel.id in self.exclude
+
+        # Otherwise, ignore the channel if and only if it's not included.
+        return channel.id not in self.include
 
     def ignore_by_excludes(self, channel: TextChannel | Thread) -> bool:
         # Ignore channels that are excluded, if any.
         if not self.exclude:
             return False
-        if root_channel := self.get_root_channel(channel):
-            return root_channel.id in self.exclude
-        return False
+
+        # TODO Should we add extra logic for categories too? #enhance
+
+        # If the channel is a thread, apply some additional containment logic.
+        if isinstance(channel, Thread):
+            # If the thread has a parent channel (it should), check that first.
+            if parent_channel := channel.parent:
+                # If the parent channel is excluded, ignore the thread only if it's
+                # not explicitly included.
+                if parent_channel.id in self.exclude:
+                    return channel.id not in self.include
+
+        return channel.id in self.exclude
 
     def ignore(self, channel: Optional[TextChannel | Thread]) -> bool:
         """Determine whether to ignore the channel."""
