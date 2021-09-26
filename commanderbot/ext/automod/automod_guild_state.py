@@ -18,6 +18,7 @@ from discord import (
     Role,
     TextChannel,
     Thread,
+    ThreadMember,
     User,
 )
 from yaml import YAMLError
@@ -378,6 +379,35 @@ class AutomodGuildState(CogGuildState):
 
     async def on_reaction_remove(self, reaction: TextReaction, member: Member):
         await self._do_event(events.ReactionRemoved(self.bot, reaction, member))
+
+    async def on_channel_create(self, channel: TextChannel | Thread):
+        await self._do_event(events.GuildChannelCreated(self.bot, channel))
+
+    async def on_channel_delete(self, channel: TextChannel | Thread):
+        await self._do_event(events.GuildChannelDeleted(self.bot, channel))
+
+    async def on_channel_update(
+        self, before: TextChannel | Thread, after: TextChannel | Thread
+    ):
+        await self._do_event(events.GuildChannelUpdated(self.bot, before, after))
+
+    async def on_thread_join(self, thread: Thread):
+        await self._do_event(events.ThreadJoined(self.bot, thread))
+
+    async def on_thread_remove(self, thread: Thread):
+        await self._do_event(events.ThreadRemoved(self.bot, thread))
+
+    async def on_thread_delete(self, thread: Thread):
+        await self._do_event(events.ThreadDeleted(self.bot, thread))
+
+    async def on_thread_update(self, before: Thread, after: Thread):
+        await self._do_event(events.ThreadUpdated(self.bot, before, after))
+
+    async def on_thread_member_join(self, member: ThreadMember):
+        await self._do_event(events.ThreadMemberJoined(self.bot, member))
+
+    async def on_thread_member_leave(self, member: ThreadMember):
+        await self._do_event(events.ThreadMemberLeft(self.bot, member))
 
     async def on_member_join(self, member: Member):
         await self._do_event(events.MemberJoined(self.bot, member))

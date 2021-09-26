@@ -13,8 +13,10 @@ from discord import (
     Role,
     TextChannel,
     Thread,
+    ThreadMember,
     User,
 )
+from discord.abc import GuildChannel
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog, Context
 
@@ -112,6 +114,21 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
         if not is_bot(self.bot, member):
             return self.state[member.guild]
 
+    def _guild_state_for_channel(
+        self, channel: GuildChannel
+    ) -> Optional[AutomodGuildState]:
+        if isinstance(channel, TextChannel | Thread):
+            return self.state[channel.guild]
+
+    def _guild_state_for_thread(self, thread: Thread) -> Optional[AutomodGuildState]:
+        if (parent := thread.parent) and (guild := parent.guild):
+            return self.state[guild]
+
+    def _guild_state_for_thread_member(
+        self, member: ThreadMember
+    ) -> Optional[AutomodGuildState]:
+        return self._guild_state_for_thread(member.thread)
+
     def _guild_state_for_channel_user(
         self, channel: MessageableChannel, user: User
     ) -> Optional[AutomodGuildState]:
@@ -186,6 +203,67 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
                 reaction=cast(TextReaction, reaction),
                 member=cast(Member, user),
             )
+
+    @Cog.listener()
+    async def on_guild_channel_create(self, channel: GuildChannel):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_guild_channel_create
+        if guild_state := self._guild_state_for_channel(channel):
+            await guild_state.on_channel_create(
+                channel=cast(TextChannel | Thread, channel),
+            )
+
+    @Cog.listener()
+    async def on_guild_channel_delete(self, channel: GuildChannel):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_guild_channel_delete
+        if guild_state := self._guild_state_for_channel(channel):
+            await guild_state.on_channel_delete(
+                channel=cast(TextChannel | Thread, channel),
+            )
+
+    @Cog.listener()
+    async def on_guild_channel_update(self, before: GuildChannel, after: GuildChannel):
+        # https://discordpy.readthedocs.io/en/stable/api.html?highlight=events#discord.on_guild_channel_update
+        if guild_state := self._guild_state_for_channel(after):
+            await guild_state.on_channel_update(
+                before=cast(TextChannel | Thread, before),
+                after=cast(TextChannel | Thread, after),
+            )
+
+    @Cog.listener()
+    async def on_thread_join(self, thread: Thread):
+        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_join
+        if guild_state := self._guild_state_for_thread(thread):
+            await guild_state.on_thread_join(thread)
+
+    @Cog.listener()
+    async def on_thread_remove(self, thread: Thread):
+        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_remove
+        if guild_state := self._guild_state_for_thread(thread):
+            await guild_state.on_thread_remove(thread)
+
+    @Cog.listener()
+    async def on_thread_delete(self, thread: Thread):
+        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_delete
+        if guild_state := self._guild_state_for_thread(thread):
+            await guild_state.on_thread_delete(thread)
+
+    @Cog.listener()
+    async def on_thread_update(self, before: Thread, after: Thread):
+        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_update
+        if guild_state := self._guild_state_for_thread(after):
+            await guild_state.on_thread_update(before, after)
+
+    @Cog.listener()
+    async def on_thread_member_join(self, member: ThreadMember):
+        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_member_join
+        if guild_state := self._guild_state_for_thread_member(member):
+            await guild_state.on_thread_member_join(member)
+
+    @Cog.listener()
+    async def on_thread_member_leave(self, member: ThreadMember):
+        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_member_leave
+        if guild_state := self._guild_state_for_thread_member(member):
+            await guild_state.on_thread_member_leave(member)
 
     @Cog.listener()
     async def on_member_join(self, member: Member):
