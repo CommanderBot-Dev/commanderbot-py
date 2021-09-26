@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Dict, Iterable, Optional, Protocol, Tuple, Type, cast
 
 from discord import Member, TextChannel, Thread, User
@@ -10,6 +11,7 @@ from commanderbot.lib.utils import yield_member_date_fields
 
 class AutomodEvent(Protocol):
     bot: Bot
+    log: Logger
 
     @property
     def channel(self) -> Optional[TextChannel | Thread]:
@@ -60,6 +62,7 @@ class AutomodEvent(Protocol):
 @dataclass
 class AutomodEventBase:
     bot: Bot
+    log: Logger
 
     _metadata: Dict[str, Any] = field(init=False, default_factory=dict)
 
@@ -68,9 +71,11 @@ class AutomodEventBase:
     def __init__(
         self,
         bot: Bot,
+        log: Logger,
         **data: Dict[str, Any],
     ) -> None:
         self.bot = bot
+        self.log = log
         self._metadata = {}
 
     @property

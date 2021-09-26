@@ -363,80 +363,88 @@ class AutomodGuildState(CogGuildState):
     async def on_typing(
         self, channel: TextChannel | Thread, member: Member, when: datetime
     ):
-        await self._do_event(events.MemberTyping(self.bot, channel, member, when))
+        await self._do_event(
+            events.MemberTyping(self.bot, self.log, channel, member, when)
+        )
 
     async def on_message(self, message: TextMessage):
-        await self._do_event(events.MessageSent(self.bot, message))
+        await self._do_event(events.MessageSent(self.bot, self.log, message))
 
     async def on_message_delete(self, message: TextMessage):
-        await self._do_event(events.MessageDeleted(self.bot, message))
+        await self._do_event(events.MessageDeleted(self.bot, self.log, message))
 
     async def on_message_edit(self, before: TextMessage, after: TextMessage):
-        await self._do_event(events.MessageEdited(self.bot, before, after))
+        await self._do_event(events.MessageEdited(self.bot, self.log, before, after))
 
     async def on_reaction_add(self, reaction: TextReaction, member: Member):
-        await self._do_event(events.ReactionAdded(self.bot, reaction, member))
+        await self._do_event(events.ReactionAdded(self.bot, self.log, reaction, member))
 
     async def on_reaction_remove(self, reaction: TextReaction, member: Member):
-        await self._do_event(events.ReactionRemoved(self.bot, reaction, member))
+        await self._do_event(
+            events.ReactionRemoved(self.bot, self.log, reaction, member)
+        )
 
     async def on_channel_create(self, channel: TextChannel | Thread):
-        await self._do_event(events.GuildChannelCreated(self.bot, channel))
+        await self._do_event(events.GuildChannelCreated(self.bot, self.log, channel))
 
     async def on_channel_delete(self, channel: TextChannel | Thread):
-        await self._do_event(events.GuildChannelDeleted(self.bot, channel))
+        await self._do_event(events.GuildChannelDeleted(self.bot, self.log, channel))
 
     async def on_channel_update(
         self, before: TextChannel | Thread, after: TextChannel | Thread
     ):
-        await self._do_event(events.GuildChannelUpdated(self.bot, before, after))
+        await self._do_event(
+            events.GuildChannelUpdated(self.bot, self.log, before, after)
+        )
 
     async def on_thread_join(self, thread: Thread):
-        await self._do_event(events.ThreadJoined(self.bot, thread))
+        await self._do_event(events.ThreadJoined(self.bot, self.log, thread))
 
     async def on_thread_remove(self, thread: Thread):
-        await self._do_event(events.ThreadRemoved(self.bot, thread))
+        await self._do_event(events.ThreadRemoved(self.bot, self.log, thread))
 
     async def on_thread_delete(self, thread: Thread):
-        await self._do_event(events.ThreadDeleted(self.bot, thread))
+        await self._do_event(events.ThreadDeleted(self.bot, self.log, thread))
 
     async def on_thread_update(self, before: Thread, after: Thread):
-        await self._do_event(events.ThreadUpdated(self.bot, before, after))
+        await self._do_event(events.ThreadUpdated(self.bot, self.log, before, after))
 
     async def on_thread_member_join(self, member: ThreadMember):
-        await self._do_event(events.ThreadMemberJoined(self.bot, member))
+        await self._do_event(events.ThreadMemberJoined(self.bot, self.log, member))
 
     async def on_thread_member_leave(self, member: ThreadMember):
-        await self._do_event(events.ThreadMemberLeft(self.bot, member))
+        await self._do_event(events.ThreadMemberLeft(self.bot, self.log, member))
 
     async def on_member_join(self, member: Member):
-        await self._do_event(events.MemberJoined(self.bot, member))
+        await self._do_event(events.MemberJoined(self.bot, self.log, member))
 
     async def on_member_remove(self, member: Member):
-        await self._do_event(events.MemberLeft(self.bot, member))
+        await self._do_event(events.MemberLeft(self.bot, self.log, member))
 
     async def on_member_update(self, before: Member, after: Member):
-        await self._do_event(events.MemberUpdated(self.bot, before, after))
+        await self._do_event(events.MemberUpdated(self.bot, self.log, before, after))
 
     async def on_user_update(self, before: User, after: User, member: Member):
-        await self._do_event(events.UserUpdated(self.bot, before, after, member))
+        await self._do_event(
+            events.UserUpdated(self.bot, self.log, before, after, member)
+        )
 
     async def on_user_ban(self, user: User):
-        await self._do_event(events.UserBanned(self.bot, user))
+        await self._do_event(events.UserBanned(self.bot, self.log, user))
 
     async def on_user_unban(self, user: User):
-        await self._do_event(events.UserUnbanned(self.bot, user))
+        await self._do_event(events.UserUnbanned(self.bot, self.log, user))
 
     # @@ RAW EVENT HANDLERS
 
     async def on_raw_message_delete(self, payload: RawMessageDeleteEvent):
-        await self._do_event(events.RawMessageDeleted(self.bot, payload))
+        await self._do_event(events.RawMessageDeleted(self.bot, self.log, payload))
 
     async def on_raw_message_edit(self, payload: RawMessageUpdateEvent):
-        await self._do_event(events.RawMessageEdited(self.bot, payload))
+        await self._do_event(events.RawMessageEdited(self.bot, self.log, payload))
 
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
-        await self._do_event(events.RawReactionAdded(self.bot, payload))
+        await self._do_event(events.RawReactionAdded(self.bot, self.log, payload))
 
     async def on_raw_reaction_remove(self, payload: RawReactionActionEvent):
-        await self._do_event(events.RawReactionRemoved(self.bot, payload))
+        await self._do_event(events.RawReactionRemoved(self.bot, self.log, payload))
