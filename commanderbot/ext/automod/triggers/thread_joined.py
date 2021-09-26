@@ -1,10 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Type, TypeVar
 
-from discord import Thread
-
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
 from commanderbot.lib import ChannelsGuard, JsonObject
 
@@ -36,23 +33,17 @@ class ThreadJoined(AutomodTriggerBase):
             parent_channels=parent_channels,
         )
 
-    def ignore(self, event: AutomodEvent) -> bool:
-        thread = event.channel
-
-        # If the channel is not a thread, ignore it.
-        if not isinstance(thread, Thread):
-            return True
-
+    def ignore(self, event: events.ThreadJoined) -> bool:
         # If no parent channels are defined, don't ignore the thread.
         if self.parent_channels is None:
             return False
 
         # If the thread has no parent, ignore it.
-        if not thread.parent:
+        if not event.thread.parent:
             return True
 
         # Otherwise, ignore the thread according to its parent.
-        return self.parent_channels.ignore(thread.parent)
+        return self.parent_channels.ignore(event.thread.parent)
 
 
 def create_trigger(data: JsonObject) -> AutomodTrigger:
