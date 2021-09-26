@@ -4,12 +4,7 @@ from typing import Any, ClassVar, Dict, Iterable, Optional, Protocol, Tuple, Typ
 from discord import Member, TextChannel, Thread, User
 from discord.ext.commands import Bot
 
-from commanderbot.lib import (
-    ShallowFormatter,
-    TextMessage,
-    TextReaction,
-    ValueFormatter,
-)
+from commanderbot.lib import ShallowFormatter, TextMessage, TextReaction, ValueFormatter
 from commanderbot.lib.utils import yield_member_date_fields
 
 
@@ -19,6 +14,10 @@ class AutomodEvent(Protocol):
     @property
     def channel(self) -> Optional[TextChannel | Thread]:
         """Return the relevant channel, if any."""
+
+    @property
+    def thread(self) -> Optional[Thread]:
+        """Return the relevant thread, if any."""
 
     @property
     def message(self) -> Optional[TextMessage]:
@@ -76,6 +75,10 @@ class AutomodEventBase:
 
     @property
     def channel(self) -> Optional[TextChannel | Thread]:
+        return None
+
+    @property
+    def thread(self) -> Optional[Thread]:
         return None
 
     @property
