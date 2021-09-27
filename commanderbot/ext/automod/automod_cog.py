@@ -232,8 +232,19 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
     @Cog.listener()
     async def on_thread_join(self, thread: Thread):
         # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_join
+        # NOTE Blame the official Discord API for this jank work-around.
+        # From the discord.py docs:
+        # > Note that from the API’s perspective there is no way to differentiate
+        # > between a thread being created or the bot joining a thread.
+        # So what we do is we check the `me` property of the thread to determine whether
+        # we're a member of it, and use that to determine how to proceed.
         if guild_state := self._guild_state_for_thread(thread):
-            await guild_state.on_thread_join(thread)
+            # If we're a member of the thread, we must've just joined it.
+            if thread.me:
+                await guild_state.on_thread_join(thread)
+            # Otherwise, it must be a newly-created thread.
+            else:
+                await guild_state.on_thread_create(thread)
 
     @Cog.listener()
     async def on_thread_remove(self, thread: Thread):

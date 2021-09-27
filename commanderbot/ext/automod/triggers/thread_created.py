@@ -9,9 +9,9 @@ ST = TypeVar("ST")
 
 
 @dataclass
-class ThreadJoined(AutomodTriggerBase):
+class ThreadCreated(AutomodTriggerBase):
     """
-    Fires when an `on_thread_join` event is received.
+    Fires when an `on_thread_join` event is received without already being a member.
 
     See: https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_join
 
@@ -21,7 +21,7 @@ class ThreadJoined(AutomodTriggerBase):
         The parent channels to match against. If empty, all channels will match.
     """
 
-    event_types = (events.ThreadJoined,)
+    event_types = (events.ThreadCreated,)
 
     parent_channels: Optional[ChannelsGuard] = None
 
@@ -33,7 +33,7 @@ class ThreadJoined(AutomodTriggerBase):
             parent_channels=parent_channels,
         )
 
-    def ignore(self, event: events.ThreadJoined) -> bool:
+    def ignore(self, event: events.ThreadCreated) -> bool:
         # If no parent channels are defined, don't ignore the thread.
         if self.parent_channels is None:
             return False
@@ -47,4 +47,4 @@ class ThreadJoined(AutomodTriggerBase):
 
 
 def create_trigger(data: JsonObject) -> AutomodTrigger:
-    return ThreadJoined.from_data(data)
+    return ThreadCreated.from_data(data)

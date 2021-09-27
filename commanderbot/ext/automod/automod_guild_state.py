@@ -397,6 +397,9 @@ class AutomodGuildState(CogGuildState):
             events.GuildChannelUpdated(self.bot, self.log, before, after)
         )
 
+    async def on_thread_create(self, thread: Thread):
+        await self._do_event(events.ThreadCreated(self.bot, self.log, thread))
+
     async def on_thread_join(self, thread: Thread):
         await self._do_event(events.ThreadJoined(self.bot, self.log, thread))
 
