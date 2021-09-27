@@ -23,7 +23,7 @@ from discord.ext.commands import Bot, Context
 
 from commanderbot.lib.types import RoleID
 
-CHARACTER_CAP = 100
+CHARACTER_CAP = 1900
 
 
 T = TypeVar("T")
