@@ -146,7 +146,7 @@ class MessageFrequency(BucketBase):
 
         # Dispatch an event.
         await event.state.dispatch_event(
-            events.MessageFrequencyChanged(event.state, event.bot, message)
+            events.MessageFrequencyChanged(event.state, event.bot, event.log, message)
         )
 
 

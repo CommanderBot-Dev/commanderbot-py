@@ -1,5 +1,4 @@
 import asyncio
-import io
 import json
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,7 +9,6 @@ import yaml
 from discord import (
     AllowedMentions,
     Color,
-    File,
     Member,
     RawMessageDeleteEvent,
     RawMessageUpdateEvent,
@@ -18,6 +16,7 @@ from discord import (
     Role,
     TextChannel,
     Thread,
+    ThreadMember,
     User,
 )
 from yaml import YAMLError
@@ -42,7 +41,7 @@ from commanderbot.lib.utils import (
     JsonPathOp,
     async_expand,
     query_json_path,
-    sanitize_stacktrace,
+    send_message_or_file,
 )
 
 
@@ -66,38 +65,6 @@ class AutomodGuildState(CogGuildState):
         # If it doesn't have any, return the guild-wide logging configuration. This may
         # also not exist, hence why it's optional.
         return await self.store.get_default_log_options(self.guild)
-
-    async def _handle_rule_error(self, rule: Rule, error: Exception):
-        error_message = f"Rule `{rule.name}` caused an error:"
-
-        # Re-raise the error so that it can be printed to the console.
-        try:
-            raise error
-        except:
-            self.log.exception(error_message)
-
-        # Attempt to print the error to the log channel, if any.
-        try:
-            if log_options := await self._get_log_options_for_rule(rule):
-                channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
-                lines = [error_message, "```"]
-                if log_options.stacktrace:
-                    lines.append(sanitize_stacktrace(error))
-                else:
-                    lines.append(str(error))
-                lines.append("```")
-                content = "\n".join(lines)
-                await channel.send(content)
-        except:
-            # If something went wrong here, print another exception to the console.
-            self.log.exception("Failed to log message to error channel")
-
-    async def _do_event_for_rule(self, event: AutomodEvent, rule: Rule):
-        try:
-            if await rule.run(event):
-                await self.store.increment_rule_hits(self.guild, rule.name)
-        except Exception as error:
-            await self._handle_rule_error(rule, error)
 
     def _parse_body(self, body: str) -> Any:
         content = body.strip("\n").strip("`")
@@ -274,21 +241,16 @@ class AutomodGuildState(CogGuildState):
             # Turn the data into a YAML string.
             output_yaml = yaml.safe_dump(output_data, sort_keys=False)
 
-            # If the output can fit into a code block, just send a response.
-            # IMPL Make the message size threshold configurable.
-            if len(output_yaml) < 1900:
-                content = f"```yaml\n{output_yaml}\n```"
-                await self.reply(ctx, content)
-
-            # Otherwise, stuff it into a file and send it as an attachment.
-            else:
-                filename = f"{node.name}.yaml"
-                fp = cast(Any, io.StringIO(output_yaml))
-                file = File(fp=fp, filename=filename)
-                await ctx.message.reply(
-                    file=file,
-                    allowed_mentions=AllowedMentions.none(),
-                )
+            # If the output can fit into a code block, just send a response. Otherwise,
+            # stuff it into a file and send it as an attachment.
+            content = f"```yaml\n{output_yaml}\n```"
+            file_callback = lambda: ("", output_yaml, f"{node.name}.yaml")
+            return await send_message_or_file(
+                ctx,
+                content,
+                file_callback=file_callback,
+                allowed_mentions=AllowedMentions.none(),
+            )
 
         else:
             await self.reply(ctx, f"No automod {node_kind} found matching `{query}`")
@@ -387,70 +349,163 @@ class AutomodGuildState(CogGuildState):
 
     # @@ EVENT HANDLERS
 
+    async def _handle_rule_error(self, rule: Rule, error: Exception):
+        error_message = f"Rule `{rule.name}` caused an error:"
+
+        # Re-raise the error so that it can be printed to the console.
+        try:
+            raise error
+        except:
+            self.log.exception(error_message)
+
+        # Attempt to print the error to the log channel, if any.
+        if log_options := await self._get_log_options_for_rule(rule):
+            try:
+                error_codeblock = log_options.format_error_codeblock(error)
+                await log_options.send(
+                    self.bot,
+                    f"{error_message}\n{error_codeblock}",
+                    file_callback=lambda: (error_message, error_codeblock, "error.txt"),
+                )
+            except:
+                # If something went wrong here, print another exception to the console.
+                self.log.exception("Failed to log message to error channel")
+
+    async def _run_rule(self, event: AutomodEvent, rule: Rule):
+        try:
+            if await rule.run(event):
+                await self.store.increment_rule_hits(self.guild, rule.name)
+        except Exception as error:
+            await self._handle_rule_error(rule, error)
+
     async def dispatch_event(self, event: AutomodEvent):
         # Run rules in parallel so that they don't need to wait for one another. They
         # run separately so that when a rule fails it doesn't stop the others.
         rules = await async_expand(self.store.rules_for_event(self.guild, event))
         if rules:
-            tasks = [self._do_event_for_rule(event, rule) for rule in rules]
+            tasks = [self._run_rule(event, rule) for rule in rules]
             await asyncio.gather(*tasks)
 
     async def on_typing(
         self, channel: TextChannel | Thread, member: Member, when: datetime
     ):
         await self.dispatch_event(
-            events.MemberTyping(self, self.bot, channel, member, when)
+            events.MemberTyping(self, self.bot, self.log, channel, member, when)
         )
 
     async def on_message(self, message: TextMessage):
-        await self.dispatch_event(events.MessageSent(self, self.bot, message))
+        await self.dispatch_event(events.MessageSent(self, self.bot, self.log, message))
 
     async def on_message_delete(self, message: TextMessage):
-        await self.dispatch_event(events.MessageDeleted(self, self.bot, message))
+        await self.dispatch_event(
+            events.MessageDeleted(self, self.bot, self.log, message)
+        )
 
     async def on_message_edit(self, before: TextMessage, after: TextMessage):
-        await self.dispatch_event(events.MessageEdited(self, self.bot, before, after))
+        await self.dispatch_event(
+            events.MessageEdited(self, self.bot, self.log, before, after)
+        )
 
     async def on_reaction_add(self, reaction: TextReaction, member: Member):
         await self.dispatch_event(
-            events.ReactionAdded(self, self.bot, reaction, member)
+            events.ReactionAdded(self, self.bot, self.log, reaction, member)
         )
 
     async def on_reaction_remove(self, reaction: TextReaction, member: Member):
         await self.dispatch_event(
-            events.ReactionRemoved(self, self.bot, reaction, member)
+            events.ReactionRemoved(self, self.bot, self.log, reaction, member)
+        )
+
+    async def on_channel_create(self, channel: TextChannel | Thread):
+        await self.dispatch_event(
+            events.GuildChannelCreated(self, self.bot, self.log, channel)
+        )
+
+    async def on_channel_delete(self, channel: TextChannel | Thread):
+        await self.dispatch_event(
+            events.GuildChannelDeleted(self, self.bot, self.log, channel)
+        )
+
+    async def on_channel_update(
+        self, before: TextChannel | Thread, after: TextChannel | Thread
+    ):
+        await self.dispatch_event(
+            events.GuildChannelUpdated(self, self.bot, self.log, before, after)
+        )
+
+    async def on_thread_create(self, thread: Thread):
+        await self.dispatch_event(
+            events.ThreadCreated(self, self.bot, self.log, thread)
+        )
+
+    async def on_thread_join(self, thread: Thread):
+        await self.dispatch_event(events.ThreadJoined(self, self.bot, self.log, thread))
+
+    async def on_thread_remove(self, thread: Thread):
+        await self.dispatch_event(
+            events.ThreadRemoved(self, self.bot, self.log, thread)
+        )
+
+    async def on_thread_delete(self, thread: Thread):
+        await self.dispatch_event(
+            events.ThreadDeleted(self, self.bot, self.log, thread)
+        )
+
+    async def on_thread_update(self, before: Thread, after: Thread):
+        await self.dispatch_event(
+            events.ThreadUpdated(self, self.bot, self.log, before, after)
+        )
+
+    async def on_thread_member_join(self, member: ThreadMember):
+        await self.dispatch_event(
+            events.ThreadMemberJoined(self, self.bot, self.log, member)
+        )
+
+    async def on_thread_member_leave(self, member: ThreadMember):
+        await self.dispatch_event(
+            events.ThreadMemberLeft(self, self.bot, self.log, member)
         )
 
     async def on_member_join(self, member: Member):
-        await self.dispatch_event(events.MemberJoined(self, self.bot, member))
+        await self.dispatch_event(events.MemberJoined(self, self.bot, self.log, member))
 
     async def on_member_remove(self, member: Member):
-        await self.dispatch_event(events.MemberLeft(self, self.bot, member))
+        await self.dispatch_event(events.MemberLeft(self, self.bot, self.log, member))
 
     async def on_member_update(self, before: Member, after: Member):
-        await self.dispatch_event(events.MemberUpdated(self, self.bot, before, after))
+        await self.dispatch_event(
+            events.MemberUpdated(self, self.bot, self.log, before, after)
+        )
 
     async def on_user_update(self, before: User, after: User, member: Member):
         await self.dispatch_event(
-            events.UserUpdated(self, self.bot, before, after, member)
+            events.UserUpdated(self, self.bot, self.log, before, after, member)
         )
 
     async def on_user_ban(self, user: User):
-        await self.dispatch_event(events.UserBanned(self, self.bot, user))
+        await self.dispatch_event(events.UserBanned(self, self.bot, self.log, user))
 
     async def on_user_unban(self, user: User):
-        await self.dispatch_event(events.UserUnbanned(self, self.bot, user))
+        await self.dispatch_event(events.UserUnbanned(self, self.bot, self.log, user))
 
     # @@ RAW EVENT HANDLERS
 
     async def on_raw_message_delete(self, payload: RawMessageDeleteEvent):
-        await self.dispatch_event(events.RawMessageDeleted(self, self.bot, payload))
+        await self.dispatch_event(
+            events.RawMessageDeleted(self, self.bot, self.log, payload)
+        )
 
     async def on_raw_message_edit(self, payload: RawMessageUpdateEvent):
-        await self.dispatch_event(events.RawMessageEdited(self, self.bot, payload))
+        await self.dispatch_event(
+            events.RawMessageEdited(self, self.bot, self.log, payload)
+        )
 
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
-        await self.dispatch_event(events.RawReactionAdded(self, self.bot, payload))
+        await self.dispatch_event(
+            events.RawReactionAdded(self, self.bot, self.log, payload)
+        )
 
     async def on_raw_reaction_remove(self, payload: RawReactionActionEvent):
-        await self.dispatch_event(events.RawReactionRemoved(self, self.bot, payload))
+        await self.dispatch_event(
+            events.RawReactionRemoved(self, self.bot, self.log, payload)
+        )

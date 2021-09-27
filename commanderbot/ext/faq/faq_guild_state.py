@@ -1,10 +1,9 @@
-import io
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional, Tuple, cast
+from typing import Optional, Tuple, cast
 
-from discord import File
+from discord import AllowedMentions
 from discord.abc import Messageable
 from discord.ext.commands import MessageConverter
 
@@ -12,8 +11,7 @@ from commanderbot.ext.faq.faq_options import FaqOptions
 from commanderbot.ext.faq.faq_store import FaqEntry, FaqStore
 from commanderbot.lib import CogGuildState, GuildContext, TextMessage
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
-
-CHARACTER_CAP = 1900
+from commanderbot.lib.utils import send_message_or_file
 
 LAZY: None = cast(None, object())
 
@@ -128,15 +126,18 @@ class FaqGuildState(CogGuildState):
             keys = " ".join(f"`{faq.key}`" for faq in sorted_faqs)
             count = len(sorted_faqs)
             header = f"There are {count} FAQs available:"
-            message_content = f"{header} {keys}"
-            if len(message_content) < CHARACTER_CAP:
-                await ctx.send(message_content)
-            else:
-                file_content = "\n".join(faq.key for faq in sorted_faqs)
-                filename = "faqs.txt"
-                fp = cast(Any, io.StringIO(file_content))
-                file = File(fp=fp, filename=filename)
-                await ctx.send(header, file=file)
+            content = f"{header} {keys}"
+            file_callback = lambda: (
+                header,
+                "\n".join(faq.key for faq in sorted_faqs),
+                "faqs.txt",
+            )
+            await send_message_or_file(
+                ctx,
+                content,
+                file_callback=file_callback,
+                allowed_mentions=AllowedMentions.none(),
+            )
         else:
             await ctx.send("No FAQs available")
 

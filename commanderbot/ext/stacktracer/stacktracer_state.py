@@ -12,7 +12,7 @@ from commanderbot.lib import (
     GuildPartitionedCogState,
     LogOptions,
 )
-from commanderbot.lib.utils import format_command_context
+from commanderbot.lib.utils import format_context_cause
 
 
 @dataclass
@@ -35,14 +35,19 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
         # Attempt to print the error to the log channel, if any.
         if log_options := await self.store.get_global_log_options():
             try:
+                header = "Encountered an unhandled event error:"
                 lines = [
-                    "Encountered an unhandled event error:",
-                    log_options.formate_error_codeblock(error),
+                    header,
+                    log_options.format_error_codeblock(error),
                     "Caused by the following event:",
                     event_data.format_codeblock(),
                 ]
                 content = "\n".join(lines)
-                await log_options.send(self.bot, content)
+                await log_options.send(
+                    self.bot,
+                    content,
+                    file_callback=lambda: (header, content, "error.txt"),
+                )
                 # Stop the error from being printed to console.
                 return True
             except:
@@ -68,13 +73,20 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
         # Attempt to print the error to the log channel, if any.
         if log_options:
             try:
+                cause = format_context_cause(ctx)
+                header = f"Encountered an unhandled command error, caused by {cause}:"
                 lines = [
-                    "Encountered an unhandled command error:",
-                    log_options.formate_error_codeblock(error),
-                    f"Caused by " + format_command_context(ctx),
+                    header,
+                    log_options.format_error_codeblock(error),
+                    f"Caused by the following command:",
+                    f"```{ctx.command}```",
                 ]
                 content = "\n".join(lines)
-                await log_options.send(self.bot, content)
+                await log_options.send(
+                    self.bot,
+                    content,
+                    file_callback=lambda: (header, content, "error.txt"),
+                )
                 # Stop the error from being printed to console.
                 return True
             except:

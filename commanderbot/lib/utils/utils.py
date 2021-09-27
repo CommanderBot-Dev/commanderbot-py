@@ -1,16 +1,30 @@
 import io
 import json
 import os
-import pprint
 import re
 import traceback
 from datetime import datetime, timezone
-from typing import Any, AsyncIterable, List, Mapping, Optional, Set, TypeVar, cast
+from typing import (
+    Any,
+    AsyncIterable,
+    Callable,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    cast,
+)
 
-from discord import File, Member, Message, TextChannel, Thread, User
+from discord import AllowedMentions, File, Member, Message, TextChannel, Thread, User
+from discord.abc import Messageable
 from discord.ext.commands import Bot, Context
 
 from commanderbot.lib.types import RoleID
+
+CHARACTER_CAP = 1900
+
 
 T = TypeVar("T")
 
@@ -68,7 +82,7 @@ def sanitize_stacktrace(error: Exception) -> str:
     return "".join(lines)
 
 
-def format_command_context(ctx: Context) -> str:
+def format_context_cause(ctx: Context) -> str:
     parts = []
 
     if author := ctx.author:
@@ -84,14 +98,7 @@ def format_command_context(ctx: Context) -> str:
     elif guild := ctx.guild:
         parts.append(f"in guild `{guild}` (ID `{guild.id}`)")
 
-    lines = [
-        " ".join(parts) + ":",
-        "```",
-        str(ctx.command),
-        "```",
-    ]
-
-    return "\n".join(lines)
+    return " ".join(parts)
 
 
 def utcnow_aware() -> datetime:
@@ -117,3 +124,42 @@ def message_to_file(message: Message, filename: Optional[str] = None) -> File:
     fp = cast(Any, io.StringIO(file_content))
     file = File(fp=fp, filename=filename)
     return file
+
+
+async def send_message_or_file(
+    destination: Messageable,
+    content: str,
+    *,
+    file_callback: Callable[[], Tuple[str, str, str]],
+    allowed_mentions: AllowedMentions,
+    character_cap: int = CHARACTER_CAP,
+    **kwargs,
+) -> Message:
+    """
+    Send `content` as a message if it fits, otherwise attach it as a file.
+
+    Arguments
+    ---------
+    destination
+        The destination (channel) to send the message (or upload the file) to.
+    content
+        The message content to send, if it fits.
+    callback
+        A callback to determine the alternate message content, file content, and file
+        name in case a file needs to be uploaded instead. Note that the alternate
+        message content should be guaranteed to fit withint he message cap.
+    cap
+        The message character cap to check against, if different than the default.
+    """
+    if len(content) < character_cap:
+        return await destination.send(content, allowed_mentions=allowed_mentions)
+    else:
+        alt_content, file_content, file_name = file_callback()
+        fp = cast(Any, io.StringIO(file_content))
+        file = File(fp=fp, filename=file_name)
+        return await destination.send(
+            alt_content,
+            file=file,
+            allowed_mentions=allowed_mentions,
+            **kwargs,
+        )

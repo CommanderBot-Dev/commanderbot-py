@@ -1,6 +1,7 @@
 from typing import Any, Optional, Type, TypeVar
 
 import discord
+from discord.mentions import default
 
 from commanderbot.lib.data import FromData, ToData
 
@@ -15,11 +16,11 @@ class AllowedMentions(discord.AllowedMentions, FromData, ToData):
 
     @classmethod
     def not_everyone(cls):
-        return cls(everyone=False, users=True, roles=True, replied_user=True)
+        return cls(everyone=False)
 
     @classmethod
     def only_replies(cls):
-        return cls(everyone=False, users=False, roles=False, replied_user=True)
+        return cls(everyone=False, users=False, roles=False)
 
     # @overrides FromData
     @classmethod
@@ -32,9 +33,9 @@ class AllowedMentions(discord.AllowedMentions, FromData, ToData):
 
     # @overrides ToData
     def to_data(self) -> Any:
-        return dict(
-            everyone=self.everyone,
-            users=self.users,
-            roles=self.roles,
-            replied_user=self.replied_user,
-        )
+        fields = ("everyone", "users", "roles", "replied_user")
+        data = {}
+        for field in fields:
+            if (value := getattr(self, field, default)) is not default:
+                data[field] = value
+        return data
