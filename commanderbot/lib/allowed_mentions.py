@@ -1,6 +1,7 @@
 from typing import Any
 
 import discord
+from discord.mentions import default
 
 from commanderbot.lib.from_data_mixin import FromDataMixin
 from commanderbot.lib.json_serializable import JsonSerializable
@@ -30,9 +31,9 @@ class AllowedMentions(JsonSerializable, discord.AllowedMentions, FromDataMixin):
 
     # @implements JsonSerializable
     def to_json(self) -> Any:
-        return dict(
-            everyone=self.everyone,
-            users=self.users,
-            roles=self.roles,
-            replied_user=self.replied_user,
-        )
+        fields = ("everyone", "users", "roles", "replied_user")
+        data = {}
+        for field in fields:
+            if (value := getattr(self, field, default)) is not default:
+                data[field] = value
+        return data
