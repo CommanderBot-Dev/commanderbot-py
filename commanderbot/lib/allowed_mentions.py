@@ -14,11 +14,11 @@ class AllowedMentions(JsonSerializable, discord.AllowedMentions, FromDataMixin):
 
     @classmethod
     def not_everyone(cls):
-        return cls(everyone=False, users=True, roles=True, replied_user=True)
+        return cls(everyone=False)
 
     @classmethod
     def only_replies(cls):
-        return cls(everyone=False, users=False, roles=False, replied_user=True)
+        return cls(everyone=False, users=False, roles=False)
 
     # @overrides FromDataMixin
     @classmethod
