@@ -1,5 +1,4 @@
 import asyncio
-import io
 import json
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,7 +9,6 @@ import yaml
 from discord import (
     AllowedMentions,
     Color,
-    File,
     Member,
     RawMessageDeleteEvent,
     RawMessageUpdateEvent,
@@ -44,6 +42,7 @@ from commanderbot.lib.utils import (
     async_expand,
     query_json_path,
     sanitize_stacktrace,
+    send_message_or_file,
 )
 
 
@@ -80,20 +79,17 @@ class AutomodGuildState(CogGuildState):
             self.log.exception(error_message)
 
         # Attempt to print the error to the log channel, if any.
-        try:
-            if log_options := await self._get_log_options_for_rule(rule):
-                channel = cast(TextChannel, self.bot.get_channel(log_options.channel))
-                lines = [error_message, "```"]
-                if log_options.stacktrace:
-                    lines.append(sanitize_stacktrace(error))
-                else:
-                    lines.append(str(error))
-                lines.append("```")
-                content = "\n".join(lines)
-                await channel.send(content)
-        except:
-            # If something went wrong here, print another exception to the console.
-            self.log.exception("Failed to log message to error channel")
+        if log_options := await self._get_log_options_for_rule(rule):
+            try:
+                error_codeblock = log_options.formate_error_codeblock(error)
+                await log_options.send(
+                    self.bot,
+                    f"{error_message}\n{error_codeblock}",
+                    file_callback=lambda: (error_message, error_codeblock, "error.txt"),
+                )
+            except:
+                # If something went wrong here, print another exception to the console.
+                self.log.exception("Failed to log message to error channel")
 
     async def _do_event_for_rule(self, event: AutomodEventBase, rule: AutomodRule):
         try:
@@ -290,21 +286,13 @@ class AutomodGuildState(CogGuildState):
             # Turn the data into a YAML string.
             output_yaml = yaml.safe_dump(output_data, sort_keys=False)
 
-            # If the output can fit into a code block, just send a response.
-            # IMPL Make the message size threshold configurable.
-            if len(output_yaml) < 1900:
-                content = f"```yaml\n{output_yaml}\n```"
-                await self.reply(ctx, content)
-
-            # Otherwise, stuff it into a file and send it as an attachment.
-            else:
-                filename = f"{rule.name}.yaml"
-                fp = cast(Any, io.StringIO(output_yaml))
-                file = File(fp=fp, filename=filename)
-                await ctx.message.reply(
-                    file=file,
-                    allowed_mentions=AllowedMentions.none(),
-                )
+            # If the output can fit into a code block, just send a response. Otherwise,
+            # stuff it into a file and send it as an attachment.
+            return await send_message_or_file(
+                ctx,
+                f"```yaml\n{output_yaml}\n```",
+                lambda: ("", output_yaml, f"{rule.name}.yaml"),
+            )
 
         else:
             await self.reply(ctx, f"No rule found matching `{query}`")

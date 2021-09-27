@@ -1,12 +1,16 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional, Tuple
 
 from discord import Client, Color, Message, TextChannel, Thread
 
 from commanderbot.lib.from_data_mixin import FromDataMixin
 from commanderbot.lib.responsive_exception import ResponsiveException
 from commanderbot.lib.types import ChannelID
-from commanderbot.lib.utils import color_from_field_optional, sanitize_stacktrace
+from commanderbot.lib.utils import (
+    color_from_field_optional,
+    sanitize_stacktrace,
+    send_message_or_file,
+)
 
 __all__ = ("LogOptions",)
 
@@ -47,13 +51,20 @@ class LogOptions(FromDataMixin):
                 color=color,
             )
 
-    async def send(self, client: Client, content: str) -> Message:
+    async def send(
+        self,
+        client: Client,
+        content: str,
+        /,
+        file_callback: Optional[Callable[[], Tuple[str, str, str]]] = None,
+    ) -> Message:
         log_channel = await self.require_channel(client)
         formatted_content = self.format_content(content)
 
         # Attempt to send the log message to the log channel.
         try:
-            return await log_channel.send(formatted_content)
+            callback = file_callback or (lambda: ("", formatted_content, "error.txt"))
+            return await send_message_or_file(log_channel, formatted_content, callback)
 
         # If it fails, attempt to send a second message saying why. Keep this one short
         # in case the first message failed due to length.
