@@ -3,6 +3,7 @@ from typing import Callable, Optional, Tuple
 
 from discord import Client, Color, Message, TextChannel, Thread
 
+from commanderbot.lib.allowed_mentions import AllowedMentions
 from commanderbot.lib.from_data_mixin import FromDataMixin
 from commanderbot.lib.responsive_exception import ResponsiveException
 from commanderbot.lib.types import ChannelID
@@ -30,6 +31,9 @@ class LogOptions(FromDataMixin):
         The emoji used to represent the type of message.
     color
         The color used to represent the type of message.
+    allowed_mentions
+        The types of mentions allowed in log messages. Unless otherwise specified, all
+        mentions will be suppressed.
     """
 
     channel: ChannelID
@@ -38,33 +42,50 @@ class LogOptions(FromDataMixin):
     emoji: Optional[str] = None
     color: Optional[Color] = None
 
+    allowed_mentions: Optional[AllowedMentions] = None
+
     @classmethod
     def try_from_data(cls, data):
         if isinstance(data, int):
             return cls(channel=data)
         elif isinstance(data, dict):
             color = color_from_field_optional(data, "color")
+            allowed_mentions = AllowedMentions.from_field_optional(
+                data, "allowed_mentions"
+            )
             return cls(
                 channel=data["channel"],
                 stacktrace=data.get("stacktrace"),
                 emoji=data.get("emoji"),
                 color=color,
+                allowed_mentions=allowed_mentions,
             )
 
     async def send(
         self,
         client: Client,
         content: str,
-        /,
+        *,
         file_callback: Optional[Callable[[], Tuple[str, str, str]]] = None,
+        allowed_mentions: Optional[AllowedMentions] = None,
     ) -> Message:
         log_channel = await self.require_channel(client)
         formatted_content = self.format_content(content)
 
         # Attempt to send the log message to the log channel.
         try:
-            callback = file_callback or (lambda: ("", formatted_content, "error.txt"))
-            return await send_message_or_file(log_channel, formatted_content, callback)
+            file_callback = file_callback or (
+                lambda: ("", formatted_content, "error.txt")
+            )
+            allowed_mentions = (
+                allowed_mentions or self.allowed_mentions or AllowedMentions.none()
+            )
+            return await send_message_or_file(
+                log_channel,
+                formatted_content,
+                file_callback=file_callback,
+                allowed_mentions=allowed_mentions,
+            )
 
         # If it fails, attempt to send a second message saying why. Keep this one short
         # in case the first message failed due to length.

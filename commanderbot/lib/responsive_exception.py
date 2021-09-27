@@ -17,12 +17,7 @@ class ResponsiveException(Exception):
 
     @classmethod
     def allowed_mentions_default_factory(cls) -> AllowedMentions:
-        return AllowedMentions(
-            everyone=False,
-            users=False,
-            roles=False,
-            replied_user=True,
-        )
+        return AllowedMentions.none()
 
     async def respond(
         self,

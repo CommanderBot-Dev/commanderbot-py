@@ -4,6 +4,8 @@ from enum import Enum
 from discord import Member, Message, Reaction
 from discord.ext.commands import Bot, Context
 
+from commanderbot.lib import AllowedMentions
+
 
 class ConfirmationResult(Enum):
     YES = "yes"
@@ -29,7 +31,10 @@ async def confirm_with_reaction(
     """
 
     # Build and send a confirmation message.
-    conf_message: Message = await ctx.reply(content)
+    conf_message: Message = await ctx.message.reply(
+        content,
+        allowed_mentions=AllowedMentions.only_replies(),
+    )
 
     # Have the bot pre-fill the possible choices for convenience.
     await conf_message.add_reaction(reaction_yes)

@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, Tuple, cast
 
+from discord import AllowedMentions
 from discord.abc import Messageable
 from discord.ext.commands import MessageConverter
 
@@ -126,10 +127,16 @@ class FaqGuildState(CogGuildState):
             count = len(sorted_faqs)
             header = f"There are {count} FAQs available:"
             content = f"{header} {keys}"
+            file_callback = lambda: (
+                header,
+                "\n".join(faq.key for faq in sorted_faqs),
+                "faqs.txt",
+            )
             await send_message_or_file(
                 ctx,
                 content,
-                lambda: (header, "\n".join(faq.key for faq in sorted_faqs), "faqs.txt"),
+                file_callback=file_callback,
+                allowed_mentions=AllowedMentions.none(),
             )
         else:
             await ctx.send("No FAQs available")

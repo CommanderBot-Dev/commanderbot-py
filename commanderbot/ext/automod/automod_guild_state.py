@@ -41,7 +41,6 @@ from commanderbot.lib.utils import (
     JsonPathOp,
     async_expand,
     query_json_path,
-    sanitize_stacktrace,
     send_message_or_file,
 )
 
@@ -288,10 +287,13 @@ class AutomodGuildState(CogGuildState):
 
             # If the output can fit into a code block, just send a response. Otherwise,
             # stuff it into a file and send it as an attachment.
+            content = f"```yaml\n{output_yaml}\n```"
+            file_callback = lambda: ("", output_yaml, f"{rule.name}.yaml")
             return await send_message_or_file(
                 ctx,
-                f"```yaml\n{output_yaml}\n```",
-                lambda: ("", output_yaml, f"{rule.name}.yaml"),
+                content,
+                file_callback=file_callback,
+                allowed_mentions=AllowedMentions.none(),
             )
 
         else:

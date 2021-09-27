@@ -17,7 +17,7 @@ from typing import (
     cast,
 )
 
-from discord import File, Member, Message, TextChannel, Thread, User
+from discord import AllowedMentions, File, Member, Message, TextChannel, Thread, User
 from discord.abc import Messageable
 from discord.ext.commands import Bot, Context
 
@@ -129,9 +129,11 @@ def message_to_file(message: Message, filename: Optional[str] = None) -> File:
 async def send_message_or_file(
     destination: Messageable,
     content: str,
+    *,
     file_callback: Callable[[], Tuple[str, str, str]],
-    /,
-    cap: int = CHARACTER_CAP,
+    allowed_mentions: AllowedMentions,
+    character_cap: int = CHARACTER_CAP,
+    **kwargs,
 ) -> Message:
     """
     Send `content` as a message if it fits, otherwise attach it as a file.
@@ -149,10 +151,15 @@ async def send_message_or_file(
     cap
         The message character cap to check against, if different than the default.
     """
-    if len(content) < cap:
-        return await destination.send(content)
+    if len(content) < character_cap:
+        return await destination.send(content, allowed_mentions=allowed_mentions)
     else:
         alt_content, file_content, file_name = file_callback()
         fp = cast(Any, io.StringIO(file_content))
         file = File(fp=fp, filename=file_name)
-        return await destination.send(alt_content, file=file)
+        return await destination.send(
+            alt_content,
+            file=file,
+            allowed_mentions=allowed_mentions,
+            **kwargs,
+        )
