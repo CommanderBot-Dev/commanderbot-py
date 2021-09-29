@@ -21,25 +21,23 @@ class InviteGuildState(CogGuildState):
 
     store: InviteStore
 
-    async def _show_invite_entry(self, ctx: GuildContext, invite_entry: InviteEntry):
-        await self.store.increment_invite_hits(invite_entry)
-        text = invite_entry.link
-        if invite_entry.description:
-            text = f"{invite_entry.description} - {invite_entry.link}"
-        await ctx.send(text)
-
     async def show_invite(self, ctx: GuildContext, invite_query: str):
         if invite_entries := await async_expand(
             self.store.query_invite_entries(self.guild, invite_query)
         ):
+            lines = []
             for invite_entry in invite_entries:
-                await self._show_invite_entry(ctx, invite_entry)
+                await self.store.increment_invite_hits(invite_entry)
+                lines.append(invite_entry.line)
+            content = "\n".join(lines)
+            await ctx.send(content)
         else:
             await ctx.send(f"No invites matching `{invite_query}`")
 
     async def show_guild_invite(self, ctx: GuildContext):
         if invite_entry := await self.store.get_guild_invite_entry(self.guild):
-            await self._show_invite_entry(ctx, invite_entry)
+            await self.store.increment_invite_hits(invite_entry)
+            await ctx.send(invite_entry.line)
         else:
             await self.list_invites(ctx)
 
