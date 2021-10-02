@@ -13,6 +13,16 @@ class ShallowFormatter(Formatter):
     Any field access will result in a `ValueError`.
     """
 
+    @property
+    def default(self) -> str:
+        return "`Unknown`"
+
+    def get_value(self, key, args, kwargs):
+        try:
+            super().get_value(key, args, kwargs)
+        except:
+            return self.default
+
     def get_field(self, field_name, args, kwargs):
         # Instead of doing any string parsing ourselves, we simply check whether the
         # final object returned by the default (superclass) implementation is the same
