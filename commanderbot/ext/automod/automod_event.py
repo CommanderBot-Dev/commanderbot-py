@@ -84,7 +84,8 @@ class AutomodEventBase:
 
     @property
     def thread(self) -> Optional[Thread]:
-        return None
+        if isinstance(self.channel, Thread):
+            return self.channel
 
     @property
     def message(self) -> Optional[TextMessage]:
