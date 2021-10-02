@@ -159,6 +159,12 @@ class AutomodEventBase:
             yield "channel_id", self.channel.id,
             yield "channel_name", self.channel.name,
             yield "channel_mention", self.channel.mention,
+        if self.thread is not None:
+            yield "thread_id", self.thread.id,
+            yield "thread_name", self.thread.name,
+            yield "thread_mention", self.thread.mention,
+            if (thread_owner := self.thread.owner) is not None:
+                yield from self._yield_safe_member_fields("thread_owner", thread_owner)
         if self.message is not None:
             yield "message_id", self.message.id
             yield "message_content", self.message.content
