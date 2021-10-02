@@ -19,7 +19,7 @@ class ShallowFormatter(Formatter):
 
     def get_value(self, key, args, kwargs):
         try:
-            super().get_value(key, args, kwargs)
+            return super().get_value(key, args, kwargs)
         except:
             return self.default
 
