@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import List, Optional, Type, TypeVar
+from typing import List, Optional, Type, TypeVar, cast
 
-from discord import Member, Message, Role, User
+from discord import Member, Message, Role, TextChannel, Thread, User
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
@@ -50,12 +50,15 @@ class MentionsRemovedFromMessage(AutomodTriggerBase):
         )
 
     def ignore(self, event: AutomodEvent) -> bool:
+        channel = cast(TextChannel | Thread, event.channel)
+        author = cast(Member, event.author)
+
         # Make sure we care about the channel.
-        if self.channels and self.channels.ignore(event.channel):
+        if self.channels and self.channels.ignore(channel):
             return True
 
         # Make sure we care about the author.
-        if self.author_roles and self.author_roles.ignore(event.author):
+        if self.author_roles and self.author_roles.ignore(author):
             return True
 
         # We want to preserve the order of mentions.
@@ -68,24 +71,32 @@ class MentionsRemovedFromMessage(AutomodTriggerBase):
             # Check for removed user mentions.
             after_user_mention_ids = set(user.id for user in event._after.mentions)
             for mentioned_user in event._before.mentions:
-                if mentioned_user.id not in after_user_mention_ids:
+                if (mentioned_user.id not in after_user_mention_ids) and (
+                    mentioned_user not in removed_user_mentions
+                ):
                     removed_user_mentions.append(mentioned_user)
 
             # Check for removed role mentions.
             after_role_mention_ids = set(role.id for role in event._after.role_mentions)
             for mentioned_role in event._before.role_mentions:
-                if mentioned_role.id not in after_role_mention_ids:
+                if (mentioned_role.id not in after_role_mention_ids) and (
+                    mentioned_role not in removed_role_mentions
+                ):
                     removed_role_mentions.append(mentioned_role)
 
         # If the message was deleted, check for any mentions at all.
         elif isinstance(event, events.MessageDeleted):
             # Check for removed user mentions.
             deleted_user_mentions = event.message.mentions
-            removed_user_mentions += deleted_user_mentions
+            for user in deleted_user_mentions:
+                if user not in removed_user_mentions:
+                    removed_user_mentions.append(user)
 
             # Check for removed role mentions.
             deleted_role_mentions = event.message.role_mentions
-            removed_role_mentions += deleted_role_mentions
+            for role in deleted_role_mentions:
+                if role not in removed_role_mentions:
+                    removed_role_mentions.append(role)
 
             # Check if the message was a reply.
             if reference := event.message.reference:
