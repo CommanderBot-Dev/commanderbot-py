@@ -121,11 +121,15 @@ class AutomodGuildData:
                 yield rule
 
     def query_rules(self, query: str) -> Iterable[AutomodRule]:
-        # Yield any rules whose name contains the case-insensitive query.
-        query_lower = query.lower()
-        for rule_name, rule in self.rules.items():
-            if query_lower in rule_name.lower():
-                yield rule
+        # If there's an exact match, yield just that.
+        if rule := self.rules.get(query):
+            yield rule
+        else:
+            # Otherwise, yield any rules that match the query.
+            query_lower = query.lower()
+            for rule_name, rule in self.rules.items():
+                if query_lower in rule_name.lower():
+                    yield rule
 
     def get_rule(self, name: str) -> Optional[AutomodRule]:
         return self.rules.get(name)
