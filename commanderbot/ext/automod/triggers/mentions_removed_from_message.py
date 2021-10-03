@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Type, TypeVar, cast
+from typing import List, Optional, Set, Type, TypeVar, cast
 
 from discord import Member, Message, Role, TextChannel, Thread, User
 
@@ -62,8 +62,8 @@ class MentionsRemovedFromMessage(AutomodTriggerBase):
             return True
 
         # We want to preserve the order of mentions.
-        removed_user_mentions: List[User | Member] = []
-        removed_role_mentions: List[Role] = []
+        removed_user_mentions: Set[User | Member] = set()
+        removed_role_mentions: Set[Role] = set()
 
         # If the message was edited, check for mentions that were present in the message
         # only prior to editing.
@@ -71,45 +71,43 @@ class MentionsRemovedFromMessage(AutomodTriggerBase):
             # Check for removed user mentions.
             after_user_mention_ids = set(user.id for user in event._after.mentions)
             for mentioned_user in event._before.mentions:
-                if (mentioned_user.id not in after_user_mention_ids) and (
-                    mentioned_user not in removed_user_mentions
-                ):
-                    removed_user_mentions.append(mentioned_user)
+                if mentioned_user.id not in after_user_mention_ids:
+                    removed_user_mentions.add(mentioned_user)
 
             # Check for removed role mentions.
             after_role_mention_ids = set(role.id for role in event._after.role_mentions)
             for mentioned_role in event._before.role_mentions:
-                if (mentioned_role.id not in after_role_mention_ids) and (
-                    mentioned_role not in removed_role_mentions
-                ):
-                    removed_role_mentions.append(mentioned_role)
+                if mentioned_role.id not in after_role_mention_ids:
+                    removed_role_mentions.add(mentioned_role)
 
         # If the message was deleted, check for any mentions at all.
         elif isinstance(event, events.MessageDeleted):
             # Check for removed user mentions.
             deleted_user_mentions = event.message.mentions
             for user in deleted_user_mentions:
-                if user not in removed_user_mentions:
-                    removed_user_mentions.append(user)
+                removed_user_mentions.add(user)
 
             # Check for removed role mentions.
             deleted_role_mentions = event.message.role_mentions
             for role in deleted_role_mentions:
-                if role not in removed_role_mentions:
-                    removed_role_mentions.append(role)
+                removed_role_mentions.add(role)
 
             # Check if the message was a reply.
             if reference := event.message.reference:
                 if isinstance(resolved := reference.resolved, Message):
-                    removed_user_mentions.append(resolved.author)
+                    removed_user_mentions.add(resolved.author)
 
         # Remove any excluded mentions.
         if self.victim_roles:
-            removed_user_mentions = self.victim_roles.filter_members(
-                removed_user_mentions
+            removed_user_mentions = set(
+                user
+                for user in removed_user_mentions
+                if self.victim_roles.member_matches(user)
             )
-            removed_role_mentions = self.victim_roles.filter_roles(
-                removed_role_mentions
+            removed_role_mentions = set(
+                role
+                for role in removed_role_mentions
+                if self.victim_roles.role_matches(role)
             )
 
         # Remove the author's own mention, if any.
