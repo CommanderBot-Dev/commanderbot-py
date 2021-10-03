@@ -112,6 +112,10 @@ class MentionsRemovedFromMessage(AutomodTriggerBase):
                 removed_role_mentions
             )
 
+        # Remove the author's own mention, if any.
+        if author in removed_user_mentions:
+            removed_user_mentions.remove(author)
+
         # Build removed user mention fields, if any.
         if removed_user_mentions:
             event.set_metadata(
