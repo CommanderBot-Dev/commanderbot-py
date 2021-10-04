@@ -51,6 +51,15 @@ class HelpChatGuildState(CogGuildState):
         else:
             await ctx.send(f"No help channels")
 
+    async def list_channels_by_creation_date(self, ctx: GuildContext):
+        if help_channels := await self.store.get_help_channels(self.guild):
+            channels = [hc.channel(ctx) for hc in help_channels]
+            sorted_channels = sorted(channels, key=lambda ch: ch.created_at)
+            content = "\n".join(f"{ch.mention} (`{ch.id}`)" for ch in sorted_channels)
+            await ctx.message.reply(content)
+        else:
+            await ctx.send(f"No help channels")
+
     async def add_channels(
         self,
         ctx: GuildContext,
