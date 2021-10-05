@@ -61,6 +61,13 @@ class InviteDataInviteEntry:
     def sorted_tags(self) -> List[str]:
         return sorted(self.tags)
 
+    # @implements InviteEntry
+    @property
+    def line(self) -> str:
+        if self.description:
+            return f"{self.link} - {self.description}"
+        return self.link
+
     def update_modified_on(self) -> datetime:
         self.modified_on = datetime.utcnow()
         return self.modified_on

@@ -12,8 +12,14 @@ from commanderbot.ext.automod.condition import Condition, ConditionCollection
 from commanderbot.ext.automod.node import Node, NodeCollection
 from commanderbot.ext.automod.rule import Rule, RuleCollection
 from commanderbot.ext.automod.trigger import Trigger, TriggerCollection
-from commanderbot.lib import FromData, GuildID, LogOptions, RoleSet, ToData
-from commanderbot.lib.responsive_exception import ResponsiveException
+from commanderbot.lib import (
+    FromData,
+    GuildID,
+    LogOptions,
+    ResponsiveException,
+    RoleSet,
+    ToData,
+)
 from commanderbot.lib.utils import JsonPath, JsonPathOp, dict_without_ellipsis
 
 ST = TypeVar("ST")

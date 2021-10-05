@@ -4,15 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.18.0] - 2021-10-04
 
 ### Added
 
 - `automod`: Added support for JSON paths for easier configuration of rules
+- `jira`: Reimplemented link support (#65)
+- `roles`: Added tips for providing roles
 
 ### Changed
 
-- `jira`: Overhauled the issue requesting logic and the embed colors now reflect the status of the bug
+- `automod`: An exhaustive list of adjustments and improvements that's too long and complicated for the changelog
+- `faq`:
+  - Turned the shortcut prefix into a pattern
+  - Consolidated FAQ update commands
+  - Reimplement the list of FAQs
+  - Various improvements (#72)
+    - Added options in root config to limit or disable certain features
+    - Reorganized and added new search commands
+    - Improved how tags are used in queries
+    - Allowed showing options instead of just setting them
+- `invite`: Multiple invites now go in one message instead of multiple
+- `jira`: Overhauled the issue requesting logic and the embed colors now reflect the status of the bug (#64)
+- `roles`: Refine role searching logic
+
+### Fixed
+
+- Fixed instances of timezone-unaware `utcnow()`
+- `jira`: Now checks that issues are in the `<project>-<id>` format and that requested issues have fields (#69)
 
 ## [0.17.0] - 2021-09-02
 
@@ -209,7 +228,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Implemented `status` and `faq` extensions as an exercise for developing `commanderbot-lib`
 
-[unreleased]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.17.0...HEAD
+[unreleased]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/CommanderBot-Dev/commanderbot-py/compare/v0.14.0...v0.15.0

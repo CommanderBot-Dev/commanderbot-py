@@ -93,6 +93,10 @@ class HelpChatCog(Cog, name="commanderbot.ext.help_chat"):
     async def cmd_helpchat_channels_list(self, ctx: GuildContext):
         await self.state[ctx.guild].list_channels(ctx)
 
+    @cmd_helpchat_channels.command(name="listc")
+    async def cmd_helpchat_channels_listc(self, ctx: GuildContext):
+        await self.state[ctx.guild].list_channels_by_creation_date(ctx)
+
     @cmd_helpchat_channels.command(name="add")
     async def cmd_helpchat_channels_add(
         self, ctx: GuildContext, *channels: Union[TextChannel, CategoryChannel]

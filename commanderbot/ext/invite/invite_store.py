@@ -35,6 +35,10 @@ class InviteEntry(Protocol):
     def sorted_tags(self) -> List[str]:
         ...
 
+    @property
+    def line(self) -> str:
+        ...
+
 
 class InviteStore(Protocol):
     """
