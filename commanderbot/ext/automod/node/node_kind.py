@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from enum import Enum
-from typing import Generic, Type, TypeVar
+from typing import Dict, Type
 
 from discord.ext.commands import Context
 
@@ -18,48 +17,41 @@ __all__ = (
 )
 
 
-NT = TypeVar("NT", bound=Node)
-
-
-class NodeKind(Enum):
-    @dataclass
-    class _Value(Generic[NT]):
-        plural: str
-        singular: str
-        node_type: Type[NT]
-
-    RULE = _Value("rule", "rules", Rule)
-    BUCKET = _Value("bucket", "buckets", Bucket)
-    TRIGGER = _Value("trigger", "triggers", Trigger)
-    CONDITION = _Value("condition", "conditions", Condition)
-    ACTION = _Value("action", "actions", Action)
+@dataclass
+class NodeKind:
+    node_type: Type[Node]
+    singular: str
+    plural: str
 
     def __str__(self) -> str:
-        return self.value.singular
+        return self.singular
 
-    @property
-    def plural(self) -> str:
-        return self.value.plural
 
-    @property
-    def singular(self) -> str:
-        return self.value.singular
+rule = NodeKind(Rule, "rule", "rules")
+bucket = NodeKind(Bucket, "bucket", "buckets")
+trigger = NodeKind(Trigger, "trigger", "triggers")
+condition = NodeKind(Condition, "condition", "conditions")
+action = NodeKind(Action, "action", "actions")
 
-    @property
-    def node_type(self) -> Type[NT]:
-        return self.value.node_type
+
+NODE_KINDS: Dict[str, NodeKind] = {
+    "rule": rule,
+    "bucket": bucket,
+    "trigger": trigger,
+    "condition": condition,
+    "action": action,
+}
 
 
 class NodeKindConverter:
     async def convert(self, ctx: Context, argument: str) -> NodeKind:
         try:
-            return NodeKind[argument]
+            return NODE_KINDS[argument]
         except:
             pass
 
-        try:
-            return NodeKind[argument.upper()]
-        except:
-            pass
-
-        raise ResponsiveException(f"No such `{NodeKind.__name__}`: `{argument}`")
+        node_kinds = [node_kind for node_kind in NODE_KINDS.values()]
+        node_kinds_str = " ".join(f"`{node_kind}`" for node_kind in node_kinds)
+        raise ResponsiveException(
+            f"No such node type `{argument}`" + f" (must be one of: {node_kinds_str})"
+        )
