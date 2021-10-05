@@ -77,7 +77,7 @@ class NodeCollection(FromData, ToData, Generic[NT]):
                 self.add(node)
 
     def __iter__(self) -> Iterator[NT]:
-        return iter(self._nodes)
+        return iter(node for node in self._nodes if not node.disabled)
 
     # @overrides ToData
     def to_data(self) -> Any:
