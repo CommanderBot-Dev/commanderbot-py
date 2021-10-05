@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from discord import Member
 
@@ -8,7 +8,6 @@ from commanderbot.ext.automod.condition import Condition
 from commanderbot.ext.automod.conditions.abc.target_account_age_base import (
     TargetAccountAgeBase,
 )
-from commanderbot.lib import JsonObject
 
 ST = TypeVar("ST")
 
@@ -30,5 +29,5 @@ class ActorAccountAge(TargetAccountAgeBase):
         return event.actor
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return ActorAccountAge.from_data(data)

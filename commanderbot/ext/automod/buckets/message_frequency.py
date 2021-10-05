@@ -10,7 +10,7 @@ from discord import Member, Message, User
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.bucket import Bucket, BucketBase
-from commanderbot.lib import ChannelID, JsonObject, UserID
+from commanderbot.lib import ChannelID, UserID
 from commanderbot.lib.utils import timedelta_from_field_optional
 
 ST = TypeVar("ST")
@@ -150,5 +150,5 @@ class MessageFrequency(BucketBase):
         )
 
 
-def create_bucket(data: JsonObject) -> Bucket:
+def create_bucket(data: Any) -> Bucket:
     return MessageFrequency.from_data(data)

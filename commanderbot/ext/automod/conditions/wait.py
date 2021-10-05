@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
-from commanderbot.lib import JsonObject
 from commanderbot.lib.utils import timedelta_from_field_optional
 
 
@@ -33,5 +32,5 @@ class Wait(ConditionBase):
         return True
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return Wait.from_data(data)

@@ -7,7 +7,6 @@ from commanderbot.ext.automod.condition import (
     ConditionBase,
     ConditionCollection,
 )
-from commanderbot.lib import JsonObject
 
 
 @dataclass
@@ -41,5 +40,5 @@ class AllOf(ConditionBase):
         return True
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return AllOf.from_data(data)

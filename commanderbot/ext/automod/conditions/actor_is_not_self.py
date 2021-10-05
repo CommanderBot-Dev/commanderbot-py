@@ -1,14 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from discord import Member
 
-from commanderbot.ext.automod.condition import Condition
 from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.condition import Condition
 from commanderbot.ext.automod.conditions.abc.target_is_not_self_base import (
     TargetIsNotSelfBase,
 )
-from commanderbot.lib import JsonObject
 
 ST = TypeVar("ST")
 
@@ -23,5 +22,5 @@ class ActorIsNotSelf(TargetIsNotSelfBase):
         return event.actor
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return ActorIsNotSelf.from_data(data)

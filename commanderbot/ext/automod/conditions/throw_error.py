@@ -1,8 +1,8 @@
 from dataclasses import dataclass
+from typing import Any
 
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
-from commanderbot.lib import JsonObject
 
 
 @dataclass
@@ -24,5 +24,5 @@ class ThrowError(ConditionBase):
         raise Exception(self.error)
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return ThrowError.from_data(data)

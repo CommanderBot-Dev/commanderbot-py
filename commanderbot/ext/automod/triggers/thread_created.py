@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.trigger import Trigger, TriggerBase
-from commanderbot.lib import ChannelsGuard, JsonObject
+from commanderbot.lib import ChannelsGuard
 
 
 @dataclass
@@ -44,5 +44,5 @@ class ThreadCreated(TriggerBase):
         return self.parent_channels.ignore(event.thread.parent)
 
 
-def create_trigger(data: JsonObject) -> Trigger:
+def create_trigger(data: Any) -> Trigger:
     return ThreadCreated.from_data(data)

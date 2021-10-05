@@ -7,7 +7,6 @@ from commanderbot.ext.automod.condition import (
     ConditionBase,
     ConditionCollection,
 )
-from commanderbot.lib import JsonObject
 
 
 @dataclass
@@ -38,5 +37,5 @@ class Not(ConditionBase):
         return False
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return Not.from_data(data)

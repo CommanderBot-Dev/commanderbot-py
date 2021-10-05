@@ -1,8 +1,8 @@
 from dataclasses import dataclass
+from typing import Any
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.trigger import Trigger, TriggerBase
-from commanderbot.lib import JsonObject
 
 
 @dataclass
@@ -16,5 +16,5 @@ class UserUnbanned(TriggerBase):
     event_types = (events.UserUnbanned,)
 
 
-def create_trigger(data: JsonObject) -> Trigger:
+def create_trigger(data: Any) -> Trigger:
     return UserUnbanned.from_data(data)

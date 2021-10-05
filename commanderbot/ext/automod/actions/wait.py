@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod.action import Action, ActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
 from commanderbot.lib.utils import timedelta_from_field_optional
 
 
@@ -32,5 +31,5 @@ class Wait(ActionBase):
         await asyncio.sleep(self.delay.total_seconds())
 
 
-def create_action(data: JsonObject) -> Action:
+def create_action(data: Any) -> Action:
     return Wait.from_data(data)

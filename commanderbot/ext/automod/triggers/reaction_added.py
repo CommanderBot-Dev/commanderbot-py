@@ -1,9 +1,9 @@
 from dataclasses import dataclass
+from typing import Any
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.trigger import Trigger
 from commanderbot.ext.automod.triggers.reaction import Reaction
-from commanderbot.lib import JsonObject
 
 
 @dataclass
@@ -28,5 +28,5 @@ class ReactionAdded(Reaction):
     event_types = (events.ReactionAdded,)
 
 
-def create_trigger(data: JsonObject) -> Trigger:
+def create_trigger(data: Any) -> Trigger:
     return ReactionAdded.from_data(data)

@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional, Tuple
 
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
-from commanderbot.lib import JsonObject
 
 DEFAULT_NORMALIZATION_FORM = "NFKD"
 
@@ -82,5 +81,5 @@ class MessageContentContains(ConditionBase):
         return False
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return MessageContentContains.from_data(data)

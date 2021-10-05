@@ -1,14 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from discord import Member
 
-from commanderbot.ext.automod.condition import Condition
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.conditions.abc.target_roles_base import (
-    TargetRolesBase,
-)
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.condition import Condition
+from commanderbot.ext.automod.conditions.abc.target_roles_base import TargetRolesBase
 
 ST = TypeVar("ST")
 
@@ -28,5 +25,5 @@ class ActorRoles(TargetRolesBase):
         return event.actor
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return ActorRoles.from_data(data)

@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Tuple
+from typing import Any, Tuple
 
 from discord import Thread
 
 from commanderbot.ext.automod.action import Action, ActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject, RoleID, UserID
+from commanderbot.lib import RoleID, UserID
 
 
 @dataclass
@@ -53,5 +53,5 @@ class AddUsersToThread(ActionBase):
                 await self.try_add_role(event, thread, role_id)
 
 
-def create_action(data: JsonObject) -> Action:
+def create_action(data: Any) -> Action:
     return AddUsersToThread.from_data(data)

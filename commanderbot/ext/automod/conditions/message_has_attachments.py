@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
-from commanderbot.lib import IntegerRange, JsonObject
+from commanderbot.lib import IntegerRange
 
 
 @dataclass
@@ -37,5 +37,5 @@ class MessageHasAttachments(ConditionBase):
         return count_attachments > 0
 
 
-def create_condition(data: JsonObject) -> Condition:
+def create_condition(data: Any) -> Condition:
     return MessageHasAttachments.from_data(data)
