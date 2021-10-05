@@ -24,7 +24,6 @@ You will need the following:
 4. If you have [poetry](https://python-poetry.org/), you can `poetry install` instead of using `pip`. (Just make sure that dev dependencies are also installed.) Otherwise, you need to install a few packages with `pip`:
    - Run `pip install commanderbot` to install the bot core package.
    - Run `pip install git+https://github.com/Rapptz/discord.py.git@848d752` to install the latest (and final) version of the discord.py 2.0 beta from GitHub.
-   - Run `pip install git+https://github.com/vberlier/nbtlib@main` to install the latest version of nbtlib from GitHub.
 
 The first thing you should do is check the CLI help menu:
 
