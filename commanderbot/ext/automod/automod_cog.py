@@ -497,7 +497,7 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
 
     @cmd_automod_nodes.command(
         name="add",
-        brief="Add a new automod rule.",
+        brief="Add a new automod node.",
     )
     async def cmd_automod_nodes_add(
         self,
@@ -511,7 +511,7 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
 
     @cmd_automod_nodes.command(
         name="remove",
-        brief="Remove an automod rule.",
+        brief="Remove an automod node.",
     )
     async def cmd_automod_nodes_remove(
         self,
@@ -524,7 +524,7 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
 
     @cmd_automod_nodes.command(
         name="modify",
-        brief="Modify an automod rule",
+        brief="Modify an automod node",
     )
     async def cmd_automod_nodes_modify(
         self,
@@ -545,7 +545,7 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
 
     @cmd_automod_nodes.command(
         name="enable",
-        brief="Enable an automod rule",
+        brief="Enable an automod node",
     )
     async def cmd_automod_nodes_enable(
         self,
@@ -558,7 +558,7 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
 
     @cmd_automod_nodes.command(
         name="disable",
-        brief="Disable an automod rule",
+        brief="Disable an automod node",
     )
     async def cmd_automod_nodes_disable(
         self,
