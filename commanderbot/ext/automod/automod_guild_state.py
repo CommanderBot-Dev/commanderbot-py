@@ -309,54 +309,6 @@ class AutomodGuildState(CogGuildState):
         )
         await self.reply(ctx, f"Modified automod {node_kind} `{node.name}`")
 
-    async def explain_node(self, ctx: GuildContext, node_kind: NodeKind, query: str):
-        nodes = await async_expand(
-            self.store.query_nodes(self.guild, node_kind.node_type, query)
-        )
-        if nodes:
-            # If multiple nodes were found, just use the first.
-            node = nodes[0]
-
-            # IMPL print node descriptions recursively
-            await self.reply(ctx, node.description or "(No description)")
-
-            # # If multiple nodes were found, just use the first.
-            # rule = rules[0]
-
-            # now = datetime.utcnow()
-            # added_on_timestamp = rule.added_on.isoformat()
-            # added_on_delta = now - rule.added_on
-            # added_on_str = f"{added_on_timestamp} ({added_on_delta})"
-            # modified_on_delta = now - rule.modified_on
-            # modified_on_timestamp = rule.modified_on.isoformat()
-            # modified_on_str = f"{modified_on_timestamp} ({modified_on_delta})"
-            # name_line = rule.build_title()
-            # lines = [
-            #     "```",
-            #     name_line,
-            #     f"  Hits:        {rule.hits}",
-            #     f"  Added on:    {added_on_str}",
-            #     f"  Modified on: {modified_on_str}",
-            #     "  Triggers:",
-            # ]
-            # for i, trigger in enumerate(rule.triggers):
-            #     description = trigger.description or "(No description)"
-            #     lines.append(f"    {i+1}. {description}")
-            # lines.append("  Conditions:")
-            # for i, condition in enumerate(rule.conditions):
-            #     description = condition.description or "(No description)"
-            #     lines.append(f"    {i+1}. {description}")
-            # lines.append("  Actions:")
-            # for i, action in enumerate(rule.actions):
-            #     description = action.description or "(No description)"
-            #     lines.append(f"    {i+1}. {description}")
-            # lines.append("```")
-            # content = "\n".join(lines)
-            # await self.reply(ctx, content)
-
-        else:
-            await self.reply(ctx, f"No automod {node_kind} found matching `{query}`")
-
     # @@ EVENT HANDLERS
 
     async def _handle_rule_error(self, rule: Rule, error: Exception):

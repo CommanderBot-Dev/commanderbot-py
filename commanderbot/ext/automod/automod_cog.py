@@ -568,16 +568,3 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
     ):
         node_kind = cast(NodeKind, node_type)
         await self.state[ctx.guild].disable_node(ctx, node_kind, name)
-
-    @cmd_automod_nodes.command(
-        name="explain",
-        brief="Explain an automod node.",
-    )
-    async def cmd_automod_nodes_explain(
-        self,
-        ctx: GuildContext,
-        node_type: NodeKindConverter,
-        query: str,
-    ):
-        node_kind = cast(NodeKind, node_type)
-        await self.state[ctx.guild].explain_node(ctx, node_kind, query)
