@@ -20,12 +20,16 @@ class TriggerBase(ComponentBase):
     event_types: ClassVar[Tuple[Type[AutomodEvent], ...]] = tuple()
 
     async def poll(self, event: AutomodEvent) -> bool:
-        # Verify that we care about this event type.
+        # Skip if we're disabled.
+        if self.disabled:
+            return False
+
+        # Skip unless we care about this event type.
         event_type = type(event)
         if event_type not in self.event_types:
             return False
 
-        # Check whether the event should be ignored.
+        # Skip if the event should be ignored.
         if await self.ignore(event):
             return False
 
