@@ -24,8 +24,6 @@ class Rule(NodeBase):
         The datetime the rule was created.
     modified_on
         The last datetime the rule was modified.
-    disabled
-        Whether the rule is currently disabled. Defaults to false.
     hits
         How many times the rule's conditions have passed and actions have run.
     log
@@ -40,7 +38,6 @@ class Rule(NodeBase):
 
     added_on: datetime
     modified_on: datetime
-    disabled: bool
     hits: int
 
     log: Optional[LogOptions]
@@ -70,11 +67,11 @@ class Rule(NodeBase):
         )
         return cls(
             name=data["name"],
+            description=data.get("description"),
+            disabled=data.get("disabled"),
             added_on=added_on,
             modified_on=modified_on,
-            disabled=data.get("disabled", False),
             hits=data.get("hits", 0),
-            description=data.get("description"),
             log=LogOptions.from_field_optional(data, "log"),
             triggers=triggers,
             conditions=conditions,

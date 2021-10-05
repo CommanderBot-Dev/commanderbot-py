@@ -63,6 +63,12 @@ class AutomodStore(Protocol):
     async def remove_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
         ...
 
+    async def enable_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        ...
+
+    async def disable_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        ...
+
     async def modify_node(
         self,
         guild: Guild,
@@ -77,12 +83,6 @@ class AutomodStore(Protocol):
     # @@ RULES
 
     def rules_for_event(self, guild: Guild, event: AutomodEvent) -> AsyncIterable[Rule]:
-        ...
-
-    async def enable_rule(self, guild: Guild, name: str) -> Rule:
-        ...
-
-    async def disable_rule(self, guild: Guild, name: str) -> Rule:
         ...
 
     async def increment_rule_hits(self, guild: Guild, name: str) -> Rule:

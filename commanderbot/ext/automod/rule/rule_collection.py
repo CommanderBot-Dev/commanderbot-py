@@ -71,16 +71,6 @@ class RuleCollection(NodeCollection[Rule]):
             if await rule.poll_triggers(event):
                 yield rule
 
-    def enable_by_name(self, name: str) -> Rule:
-        rule = self.require(name)
-        rule.disabled = False
-        return rule
-
-    def disable_by_name(self, name: str) -> Rule:
-        rule = self.require(name)
-        rule.disabled = True
-        return rule
-
     def increment_hits_by_name(self, name: str) -> Rule:
         rule = self.require(name)
         rule.hits += 1

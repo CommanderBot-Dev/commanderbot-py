@@ -27,11 +27,14 @@ class NodeBase(FromData, ToData):
         easier to type into chat.
     description
         A human-readable description of the node.
+    disabled
+        Whether the node is currently disabled.
     """
 
     # @implements Node
     name: str
     description: Optional[str]
+    disabled: Optional[bool]
 
     # @overrides FromData
     @classmethod
@@ -51,8 +54,8 @@ class NodeBase(FromData, ToData):
         """
         Auto-fill required dataclass fields that aren't necessarily required in data.
 
-        Currently this includes the `name` and `description` fields, which are required
-        dataclass fields not necessarily required in data.
+        Currently this includes the `name`, `description`, and `disabled` fields, which
+        are required dataclass fields not necessarily required in data.
         """
         name = data.get("name")
         if not name:
@@ -60,6 +63,7 @@ class NodeBase(FromData, ToData):
         base_data: Dict[str, Any] = {
             "name": name,
             "description": None,
+            "disabled": None,
         }
         base_data.update(data)
         return base_data

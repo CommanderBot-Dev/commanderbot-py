@@ -104,6 +104,20 @@ class AutomodJsonStore(CogStore):
         return removed_node
 
     # @implements AutomodStore
+    async def enable_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        cache = await self.db.get_cache()
+        modified_node = await cache.enable_node(guild, node_type, name)
+        await self.db.dirty()
+        return modified_node
+
+    # @implements AutomodStore
+    async def disable_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        cache = await self.db.get_cache()
+        modified_node = await cache.disable_node(guild, node_type, name)
+        await self.db.dirty()
+        return modified_node
+
+    # @implements AutomodStore
     async def modify_node(
         self,
         guild: Guild,
@@ -127,20 +141,6 @@ class AutomodJsonStore(CogStore):
         cache = await self.db.get_cache()
         async for rule in cache.rules_for_event(guild, event):
             yield rule
-
-    # @implements AutomodStore
-    async def enable_rule(self, guild: Guild, name: str) -> Rule:
-        cache = await self.db.get_cache()
-        modified_rule = await cache.enable_rule(guild, name)
-        await self.db.dirty()
-        return modified_rule
-
-    # @implements AutomodStore
-    async def disable_rule(self, guild: Guild, name: str) -> Rule:
-        cache = await self.db.get_cache()
-        modified_rule = await cache.disable_rule(guild, name)
-        await self.db.dirty()
-        return modified_rule
 
     # @implements AutomodStore
     async def increment_rule_hits(self, guild: Guild, name: str) -> Rule:

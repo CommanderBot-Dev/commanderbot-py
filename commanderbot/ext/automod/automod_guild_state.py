@@ -197,6 +197,7 @@ class AutomodGuildState(CogGuildState):
             nodes = await async_expand(
                 self.store.all_nodes(self.guild, node_kind.node_type)
             )
+
         if nodes:
             # Build each node's title.
             titles = [node.build_title() for node in nodes]
@@ -213,8 +214,11 @@ class AutomodGuildState(CogGuildState):
             content = "\n".join(lines)
             await self.reply(ctx, content)
 
-        else:
+        elif query:
             await self.reply(ctx, f"No automod {node_kind} found matching `{query}`")
+
+        else:
+            await self.reply(ctx, f"No automod {node_kind} found")
 
     async def print_node(
         self,
@@ -282,6 +286,14 @@ class AutomodGuildState(CogGuildState):
         elif conf == ConfirmationResult.NO:
             await self.reply(ctx, f"Did not remove automod {node_kind} `{node.name}`")
 
+    async def enable_node(self, ctx: GuildContext, node_kind: NodeKind, name: str):
+        node = await self.store.enable_node(self.guild, node_kind.node_type, name)
+        await self.reply(ctx, f"Enabled automod {node_kind} `{node.name}`")
+
+    async def disable_node(self, ctx: GuildContext, node_kind: NodeKind, name: str):
+        node = await self.store.disable_node(self.guild, node_kind.node_type, name)
+        await self.reply(ctx, f"Disabled automod {node_kind} `{node.name}`")
+
     async def modify_node(
         self,
         ctx: GuildContext,
@@ -297,55 +309,53 @@ class AutomodGuildState(CogGuildState):
         )
         await self.reply(ctx, f"Modified automod {node_kind} `{node.name}`")
 
-    # @@ RULES
-
-    async def explain_rule(self, ctx: GuildContext, query: str):
-        rules = await async_expand(self.store.query_nodes(self.guild, Rule, query))
-        if rules:
+    async def explain_node(self, ctx: GuildContext, node_kind: NodeKind, query: str):
+        nodes = await async_expand(
+            self.store.query_nodes(self.guild, node_kind.node_type, query)
+        )
+        if nodes:
             # If multiple nodes were found, just use the first.
-            rule = rules[0]
+            node = nodes[0]
 
-            now = datetime.utcnow()
-            added_on_timestamp = rule.added_on.isoformat()
-            added_on_delta = now - rule.added_on
-            added_on_str = f"{added_on_timestamp} ({added_on_delta})"
-            modified_on_delta = now - rule.modified_on
-            modified_on_timestamp = rule.modified_on.isoformat()
-            modified_on_str = f"{modified_on_timestamp} ({modified_on_delta})"
-            name_line = rule.build_title()
-            lines = [
-                "```",
-                name_line,
-                f"  Hits:        {rule.hits}",
-                f"  Added on:    {added_on_str}",
-                f"  Modified on: {modified_on_str}",
-                "  Triggers:",
-            ]
-            for i, trigger in enumerate(rule.triggers):
-                description = trigger.description or "(No description)"
-                lines.append(f"    {i+1}. {description}")
-            lines.append("  Conditions:")
-            for i, condition in enumerate(rule.conditions):
-                description = condition.description or "(No description)"
-                lines.append(f"    {i+1}. {description}")
-            lines.append("  Actions:")
-            for i, action in enumerate(rule.actions):
-                description = action.description or "(No description)"
-                lines.append(f"    {i+1}. {description}")
-            lines.append("```")
-            content = "\n".join(lines)
-            await self.reply(ctx, content)
+            # IMPL print node descriptions recursively
+            await self.reply(ctx, node.description or "(No description)")
+
+            # # If multiple nodes were found, just use the first.
+            # rule = rules[0]
+
+            # now = datetime.utcnow()
+            # added_on_timestamp = rule.added_on.isoformat()
+            # added_on_delta = now - rule.added_on
+            # added_on_str = f"{added_on_timestamp} ({added_on_delta})"
+            # modified_on_delta = now - rule.modified_on
+            # modified_on_timestamp = rule.modified_on.isoformat()
+            # modified_on_str = f"{modified_on_timestamp} ({modified_on_delta})"
+            # name_line = rule.build_title()
+            # lines = [
+            #     "```",
+            #     name_line,
+            #     f"  Hits:        {rule.hits}",
+            #     f"  Added on:    {added_on_str}",
+            #     f"  Modified on: {modified_on_str}",
+            #     "  Triggers:",
+            # ]
+            # for i, trigger in enumerate(rule.triggers):
+            #     description = trigger.description or "(No description)"
+            #     lines.append(f"    {i+1}. {description}")
+            # lines.append("  Conditions:")
+            # for i, condition in enumerate(rule.conditions):
+            #     description = condition.description or "(No description)"
+            #     lines.append(f"    {i+1}. {description}")
+            # lines.append("  Actions:")
+            # for i, action in enumerate(rule.actions):
+            #     description = action.description or "(No description)"
+            #     lines.append(f"    {i+1}. {description}")
+            # lines.append("```")
+            # content = "\n".join(lines)
+            # await self.reply(ctx, content)
 
         else:
-            await self.reply(ctx, f"No automod rules matching `{query}`")
-
-    async def enable_rule(self, ctx: GuildContext, name: str):
-        rule = await self.store.enable_rule(self.guild, name)
-        await self.reply(ctx, f"Enabled automod rule `{rule.name}`")
-
-    async def disable_rule(self, ctx: GuildContext, name: str):
-        rule = await self.store.disable_rule(self.guild, name)
-        await self.reply(ctx, f"Disabled automod rule `{rule.name}`")
+            await self.reply(ctx, f"No automod {node_kind} found matching `{query}`")
 
     # @@ EVENT HANDLERS
 

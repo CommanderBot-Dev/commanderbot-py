@@ -16,6 +16,7 @@ class Node(Protocol):
 
     name: str
     description: Optional[str]
+    disabled: Optional[bool]
 
     @classmethod
     def from_data(cls: Type[ST], data: Any) -> ST:

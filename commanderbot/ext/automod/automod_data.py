@@ -231,6 +231,16 @@ class AutomodData(FromData, ToData):
         return collection.remove_by_name(name)
 
     # @implements AutomodStore
+    async def enable_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.enable_by_name(name)
+
+    # @implements AutomodStore
+    async def disable_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.disable_by_name(name)
+
+    # @implements AutomodStore
     async def modify_node(
         self,
         guild: Guild,
@@ -251,14 +261,6 @@ class AutomodData(FromData, ToData):
     ) -> AsyncIterable[Rule]:
         async for rule in self.guilds[guild.id].rules.for_event(event):
             yield rule
-
-    # @implements AutomodStore
-    async def enable_rule(self, guild: Guild, name: str) -> Rule:
-        return self.guilds[guild.id].rules.enable_by_name(name)
-
-    # @implements AutomodStore
-    async def disable_rule(self, guild: Guild, name: str) -> Rule:
-        return self.guilds[guild.id].rules.disable_by_name(name)
 
     # @implements AutomodStore
     async def increment_rule_hits(self, guild: Guild, name: str) -> Rule:

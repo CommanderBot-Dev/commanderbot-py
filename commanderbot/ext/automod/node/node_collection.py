@@ -133,6 +133,16 @@ class NodeCollection(FromData, ToData, Generic[NT]):
         self.remove(node)
         return node
 
+    def enable_by_name(self, name: str) -> NT:
+        node = self.require(name)
+        node.disabled = None
+        return node
+
+    def disable_by_name(self, name: str) -> NT:
+        node = self.require(name)
+        node.disabled = True
+        return node
+
     def get_index(self, node: NT) -> int:
         for i, n in enumerate(self._nodes):
             if n is node:
