@@ -1,38 +1,59 @@
 from typing import Optional
 
+import aiohttp
 from discord import Embed
+from discord.ext import tasks
 from discord.ext.commands import Bot, Cog, Context, command
 
 from commanderbot.ext.manifest.manifest import (
     Manifest,
     ModuleType,
     PackType,
+    Version,
     add_dependency,
+)
+
+DEFAULT_MIN_ENGINE_VERSION = Version(1, 17, 0)
+VERSION_URL = (
+    "https://raw.githubusercontent.com/Ersatz77/bedrock-data/master/VERSION.txt"
 )
 
 
 class ManifestCog(Cog, name="commanderbot.ext.manifest"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
-        self.default_manifest_version = [1, 17, 0]
+        self.default_min_engine_version: Version = DEFAULT_MIN_ENGINE_VERSION
 
-    def get_version(self, version_str: Optional[str]) -> list[int]:
-        """
-        Parses 'version_str' and either returns it as a list of 3 ints or
-        returns the default min engine version
-        """
-        version: list[int] = self.default_manifest_version
-        if version_str:
-            found_version_numbers: list[int] = []
-            for i in version_str.split("."):
-                if not i.isnumeric():
-                    break
-                found_version_numbers.append(int(i))
+        # Start task loop
+        self.update_min_engine_version.start()
 
-            if len(found_version_numbers) == 3:
-                version = found_version_numbers
+    def cog_unload(self):
+        # Stop task loop
+        self.update_min_engine_version.cancel()
 
-        return version
+    @tasks.loop(seconds=5.0)
+    async def update_min_engine_version(self):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(VERSION_URL, raise_for_status=True) as response:
+                    if version := self._parse_version(await response.text()):
+                        self.default_min_engine_version = version
+
+        except Exception:
+            pass
+
+        print(self.default_min_engine_version.as_list())
+
+    def _parse_version(self, version_str: str) -> Optional[Version]:
+        valid_values: list[int] = []
+        for i in version_str.strip().split(".")[:3]:
+            if i.isnumeric():
+                valid_values.append(int(i))
+
+        if len(valid_values) == 3:
+            return Version.from_list(valid_values)
+        else:
+            return None
 
     @command(name="manifest", brief="Generate a Bedrock manifest")
     async def cmd_manifest(
@@ -64,9 +85,11 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
             return
 
         # Parse optional arguments
-        pack_name = name if name else "pack.name"
-        pack_description = description if description else "pack.description"
-        engine_version = self.get_version(min_engine_version)
+        pack_name: str = name if name else "pack.name"
+        pack_description: str = description if description else "pack.description"
+        engine_version: Version = self.default_min_engine_version
+        if version := self._parse_version(str(min_engine_version)):
+            engine_version = version
 
         # Create a list of manifests from modules
         manifests: list[Manifest] = []

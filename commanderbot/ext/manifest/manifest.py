@@ -1,5 +1,6 @@
 import json
 import uuid
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
@@ -22,6 +23,23 @@ class ModuleType(Enum):
     SKIN = "skin_pack"
 
 
+@dataclass
+class Version:
+    major: int
+    minor: int
+    patch: int
+
+    @classmethod
+    def from_list(cls, values: list[int]):
+        if len(values) == 3:
+            return cls(*values)
+        else:
+            return cls(0, 0, 0)
+
+    def as_list(self) -> list[int]:
+        return [self.major, self.minor, self.patch]
+
+
 class Manifest:
     """
     A complete manifest
@@ -32,12 +50,12 @@ class Manifest:
         module_type: ModuleType,
         name: str,
         description: str,
-        min_engine_version: list[int],
+        min_engine_version: Version,
     ):
         self.module_type: ModuleType = module_type
         self.name: str = name
         self.description: str = description
-        self.min_engine_version: list[int] = min_engine_version
+        self.min_engine_version: Version = min_engine_version
 
         self.pack_uuid: str = str(uuid.uuid4())
         self.module_uuid: str = str(uuid.uuid4())
@@ -54,7 +72,7 @@ class Manifest:
                 "description": self.description,
                 "uuid": self.pack_uuid,
                 "version": [1, 0, 0],
-                "min_engine_version": self.min_engine_version,
+                "min_engine_version": self.min_engine_version.as_list(),
             },
             "modules": [
                 {
