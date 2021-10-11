@@ -38,10 +38,10 @@ class IntegerRange(FromData, ToData):
                 max=data.get("max"),
             )
 
-    def includes(self, count: int) -> bool:
-        if (self.min is not None) and (count < self.min):
+    def includes(self, value: int) -> bool:
+        if (self.min is not None) and (value < self.min):
             return False
-        if (self.max is not None) and (count > self.max):
+        if (self.max is not None) and (value > self.max):
             return False
         return True
 
