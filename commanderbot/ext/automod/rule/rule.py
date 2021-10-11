@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod.action import ActionCollection
 from commanderbot.ext.automod.condition import ConditionCollection
@@ -9,8 +9,6 @@ from commanderbot.ext.automod.node.node_base import NodeBase
 from commanderbot.ext.automod.trigger import TriggerCollection
 from commanderbot.lib import LogOptions
 from commanderbot.lib.utils import datetime_from_field_optional
-
-ST = TypeVar("ST", bound="Rule")
 
 
 @dataclass
@@ -46,11 +44,9 @@ class Rule(NodeBase):
     conditions: ConditionCollection
     actions: ActionCollection
 
-    # @overrides FromData
+    # @overrides NodeBase
     @classmethod
-    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
-        if not isinstance(data, dict):
-            return
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         now = datetime.utcnow()
         added_on = datetime_from_field_optional(data, "added_on") or now
         modified_on = datetime_from_field_optional(data, "modified_on") or now
@@ -65,10 +61,7 @@ class Rule(NodeBase):
         actions = (
             ActionCollection.from_field_optional(data, "actions") or ActionCollection()
         )
-        return cls(
-            name=data["name"],
-            description=data.get("description"),
-            disabled=data.get("disabled"),
+        return dict(
             added_on=added_on,
             modified_on=modified_on,
             hits=data.get("hits", 0),
