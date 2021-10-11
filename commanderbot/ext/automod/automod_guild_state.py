@@ -215,10 +215,10 @@ class AutomodGuildState(CogGuildState):
             await self.reply(ctx, content)
 
         elif query:
-            await self.reply(ctx, f"No automod {node_kind} found matching `{query}`")
+            await self.reply(ctx, f"No {node_kind} matching `{query}`")
 
         else:
-            await self.reply(ctx, f"No automod {node_kind} found")
+            await self.reply(ctx, f"No {node_kind.plural} currently registered")
 
     async def print_node(
         self,
@@ -257,12 +257,12 @@ class AutomodGuildState(CogGuildState):
             )
 
         else:
-            await self.reply(ctx, f"No automod {node_kind} found matching `{query}`")
+            await self.reply(ctx, f"No {node_kind} matching `{query}`")
 
     async def add_node(self, ctx: GuildContext, node_kind: NodeKind, body: str):
         data = self._parse_body(body)
         node = await self.store.add_node(self.guild, node_kind.node_type, data)
-        await self.reply(ctx, f"Added automod {node_kind} `{node.name}`")
+        await self.reply(ctx, f"Added {node_kind} `{node.name}`")
 
     async def remove_node(self, ctx: GuildContext, node_kind: NodeKind, name: str):
         # Get the corresponding node.
@@ -272,7 +272,7 @@ class AutomodGuildState(CogGuildState):
         conf = await confirm_with_reaction(
             self.bot,
             ctx,
-            f"Are you sure you want to remove automod {node_kind} `{node.name}`?",
+            f"Are you sure you want to remove {node_kind} `{node.name}`?",
         )
 
         # If the answer was yes, attempt to remove the node and send a response.
@@ -280,19 +280,19 @@ class AutomodGuildState(CogGuildState):
             removed_node = await self.store.remove_node(
                 self.guild, node_kind.node_type, node.name
             )
-            await self.reply(ctx, f"Removed automod {node_kind} `{removed_node.name}`")
+            await self.reply(ctx, f"Removed {node_kind} `{removed_node.name}`")
 
         # If the answer was no, send a response.
         elif conf == ConfirmationResult.NO:
-            await self.reply(ctx, f"Did not remove automod {node_kind} `{node.name}`")
+            await self.reply(ctx, f"Did not remove {node_kind} `{node.name}`")
 
     async def enable_node(self, ctx: GuildContext, node_kind: NodeKind, name: str):
         node = await self.store.enable_node(self.guild, node_kind.node_type, name)
-        await self.reply(ctx, f"Enabled automod {node_kind} `{node.name}`")
+        await self.reply(ctx, f"Enabled {node_kind} `{node.name}`")
 
     async def disable_node(self, ctx: GuildContext, node_kind: NodeKind, name: str):
         node = await self.store.disable_node(self.guild, node_kind.node_type, name)
-        await self.reply(ctx, f"Disabled automod {node_kind} `{node.name}`")
+        await self.reply(ctx, f"Disabled {node_kind} `{node.name}`")
 
     async def modify_node(
         self,
@@ -307,7 +307,7 @@ class AutomodGuildState(CogGuildState):
         node = await self.store.modify_node(
             self.guild, node_kind.node_type, name, path, op, data
         )
-        await self.reply(ctx, f"Modified automod {node_kind} `{node.name}`")
+        await self.reply(ctx, f"Modified {node_kind} `{node.name}`")
 
     # @@ EVENT HANDLERS
 
