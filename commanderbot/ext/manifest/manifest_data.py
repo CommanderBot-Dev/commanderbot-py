@@ -13,6 +13,13 @@ class PackType(Enum):
     SKIN = "skin"
 
     @classmethod
+    def from_str(cls, pack_type_str: str) -> Optional["PackType"]:
+        try:
+            return cls(pack_type_str.strip().lower())
+        except ValueError:
+            return None
+
+    @classmethod
     def values(cls) -> list[str]:
         return [i.value for i in cls]
 
