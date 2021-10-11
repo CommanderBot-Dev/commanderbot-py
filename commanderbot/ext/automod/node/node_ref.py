@@ -1,4 +1,5 @@
 import typing
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Generic, Optional, Type, TypeVar, cast
 
@@ -13,11 +14,18 @@ ST = TypeVar("ST")
 NT = TypeVar("NT", bound=Node)
 
 
+# @abstract
 @dataclass
 class NodeRef(FromData, ToData, Generic[NT]):
     """A reference to a node, by name."""
 
     name: str
+
+    @classmethod
+    @property
+    @abstractmethod
+    def node_type(cls) -> Type[NT]:
+        """Return the concrete node type used to construct instances."""
 
     # @overrides FromData
     @classmethod
@@ -28,16 +36,6 @@ class NodeRef(FromData, ToData, Generic[NT]):
     # @overrides ToData
     def to_data(self) -> Any:
         return self.name
-
-    @property
-    def node_type(self) -> Type[NT]:
-        # IMPL
-        t_args = typing.get_args(self)
-        t_origin = typing.get_origin(self)
-        t_hints = typing.get_type_hints(self)
-        node_type = t_args[0]
-        assert issubclass(node_type, Node)
-        return cast(Type[NT], node_type)
 
     async def resolve(self, event: AutomodEvent) -> NT:
         node = await event.state.store.require_node_with_type(

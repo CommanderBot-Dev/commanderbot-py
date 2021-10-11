@@ -56,7 +56,7 @@ class NodeCollection(FromData, ToData, Generic[NT]):
     @property
     @abstractmethod
     def node_type(cls) -> Type[NT]:
-        ...
+        """Return the concrete node type used to construct instances."""
 
     @classmethod
     def build_node_from_data(cls: Type[ST], data: Any) -> NT:
