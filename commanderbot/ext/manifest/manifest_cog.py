@@ -1,3 +1,4 @@
+from logging import Logger, getLogger
 from typing import Optional
 
 import aiohttp
@@ -13,10 +14,6 @@ from commanderbot.ext.manifest.manifest_data import (
     add_dependency,
 )
 
-VERSION_URL = (
-    "https://raw.githubusercontent.com/Ersatz77/bedrock-data/master/VERSION.txt"
-)
-
 DEFAULT_NAME = "pack.name"
 DEFAULT_DESCRIPTION = "pack.description"
 DEFAULT_MIN_ENGINE_VERSION = Version(1, 17, 0)
@@ -30,9 +27,15 @@ HELP = "\n".join((
 
 
 class ManifestCog(Cog, name="commanderbot.ext.manifest"):
-    def __init__(self, bot: Bot):
+    def __init__(self, bot: Bot, **options):
         self.bot: Bot = bot
+        self.log: Logger = getLogger(self.qualified_name)
+        
         self.default_min_engine_version: Version = DEFAULT_MIN_ENGINE_VERSION
+        self.version_url: str = options.get("version_url", "")
+        if not self.version_url:
+            self.log.warn("No version URL was given in the bot config")
+            self.log.warn(f"Using {DEFAULT_MIN_ENGINE_VERSION.as_list()} for 'min_engine_version' instead")
 
         # Start task loop
         self.update_default_min_engine_version.start()
@@ -49,7 +52,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         """
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(VERSION_URL, raise_for_status=True) as response:
+                async with session.get(self.version_url, raise_for_status=True) as response:
                     if version := self._parse_version(await response.text()):
                         self.default_min_engine_version = version
 
