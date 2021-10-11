@@ -163,6 +163,10 @@ class AutomodEventBase:
             yield "thread_id", self.thread.id,
             yield "thread_name", self.thread.name,
             yield "thread_mention", self.thread.mention,
+            yield "thread_archived", self.thread.archived,
+            yield "thread_locked", self.thread.locked,
+            yield "thread_slowmode_delay", self.thread.slowmode_delay,
+            yield "thread_auto_archive_duration", self.thread.auto_archive_duration,
             if (thread_owner := self.thread.owner) is not None:
                 yield from self._yield_safe_member_fields("thread_owner", thread_owner)
         if self.message is not None:
