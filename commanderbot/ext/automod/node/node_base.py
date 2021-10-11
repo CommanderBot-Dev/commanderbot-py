@@ -49,8 +49,8 @@ class NodeBase(FromData, ToData):
             return obj
 
     @classmethod
-    def new_rule_name(cls) -> str:
-        """Create a new, unique rule name."""
+    def new_node_name(cls) -> str:
+        """Create a new, unique node name."""
         return str(uuid.uuid4())
 
     @classmethod
@@ -63,7 +63,7 @@ class NodeBase(FromData, ToData):
         """
         name = data.get("name")
         if not name:
-            name = cls.new_rule_name()
+            name = cls.new_node_name()
         base_data: Dict[str, Any] = {
             "name": name,
             "description": None,
