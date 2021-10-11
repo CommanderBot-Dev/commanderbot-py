@@ -12,7 +12,7 @@ from typing import (
     Type,
 )
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node import NodeCollection
 from commanderbot.ext.automod.rule.rule import Rule
 from commanderbot.lib.utils import JsonPath, JsonPathOp
@@ -31,7 +31,7 @@ class RuleCollection(NodeCollection[Rule]):
     node_type: ClassVar[Type[Rule]] = RuleBase
 
     # Index rules by event type for faster look-up during event dispatch.
-    _rules_by_event_type: DefaultDict[Type[AutomodEvent], Set[Rule]]
+    _rules_by_event_type: DefaultDict[Type[Event], Set[Rule]]
 
     # @overrides NodeCollection
     def __init__(self, nodes: Optional[Iterable[Rule]] = None):
@@ -63,7 +63,7 @@ class RuleCollection(NodeCollection[Rule]):
         rule.modified_on = datetime.utcnow()
         return rule
 
-    async def for_event(self, event: AutomodEvent) -> AsyncIterable[Rule]:
+    async def for_event(self, event: Event) -> AsyncIterable[Rule]:
         event_type = type(event)
         # Start with the initial set of possible rules, based on the event type.
         for rule in self._rules_by_event_type[event_type]:

@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Any, Optional, Type, TypeVar
 
 from commanderbot.ext.automod.action import ActionCollection
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import ConditionCollection
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node.node_base import NodeBase
 from commanderbot.ext.automod.trigger import TriggerCollection
 from commanderbot.lib import LogOptions
@@ -89,26 +89,26 @@ class Rule(NodeBase):
         parts.append(super().build_title())
         return " ".join(parts)
 
-    async def poll_triggers(self, event: AutomodEvent) -> bool:
+    async def poll_triggers(self, event: Event) -> bool:
         """Check whether the event activates any triggers."""
         for trigger in self.triggers:
             if await trigger.poll(event):
                 return True
         return False
 
-    async def check_conditions(self, event: AutomodEvent) -> bool:
+    async def check_conditions(self, event: Event) -> bool:
         """Check whether all conditions pass."""
         for condition in self.conditions:
             if not await condition.check(event):
                 return False
         return True
 
-    async def apply_actions(self, event: AutomodEvent):
+    async def apply_actions(self, event: Event):
         """Apply all actions."""
         for action in self.actions:
             await action.apply(event)
 
-    async def run(self, event: AutomodEvent) -> bool:
+    async def run(self, event: Event) -> bool:
         """Apply actions if conditions pass."""
         if (not self.disabled) and await self.check_conditions(event):
             await self.apply_actions(event)

@@ -1,7 +1,7 @@
 from typing import Protocol
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.component import Component
+from commanderbot.ext.automod.event import Event
 
 __all__ = ("Action",)
 
@@ -9,5 +9,5 @@ __all__ = ("Action",)
 class Action(Component, Protocol):
     """An action defines a task to perform when conditions pass."""
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         """Apply the action."""

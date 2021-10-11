@@ -2,14 +2,14 @@ from dataclasses import dataclass
 
 from discord import Member, TextChannel, Thread
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 from commanderbot.lib.types import TextMessage
 
 __all__ = ("MessageEdited",)
 
 
 @dataclass
-class MessageEdited(AutomodEventBase):
+class MessageEdited(EventBase):
     _before: TextMessage
     _after: TextMessage
 

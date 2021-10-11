@@ -3,9 +3,9 @@ from datetime import timedelta
 from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.bucket import BucketRef
 from commanderbot.ext.automod.buckets.message_frequency import MessageFrequency
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.trigger import Trigger, TriggerBase
 from commanderbot.lib.utils import timedelta_from_field
 
@@ -46,7 +46,7 @@ class MessageFrequencyChanged(TriggerBase):
             timeframe=timeframe,
         )
 
-    async def ignore(self, event: AutomodEvent) -> bool:
+    async def ignore(self, event: Event) -> bool:
         # Ignore events without a message.
         message = event.message
         if not message:

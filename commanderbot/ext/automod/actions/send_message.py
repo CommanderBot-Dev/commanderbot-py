@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from discord.abc import Messageable
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib import AllowedMentions, ChannelID
 from commanderbot.lib.utils import timedelta_from_field_optional
 
@@ -43,14 +43,14 @@ class SendMessage(ActionBase):
             delete_after=delete_after,
         )
 
-    async def resolve_channel(self, event: AutomodEvent) -> Optional[Messageable]:
+    async def resolve_channel(self, event: Event) -> Optional[Messageable]:
         if self.channel is not None:
             channel = event.bot.get_channel(self.channel)
             assert isinstance(channel, Messageable)
             return channel
         return event.channel
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if channel := await self.resolve_channel(event):
             content = event.format_content(self.content)
             allowed_mentions = self.allowed_mentions or AllowedMentions.not_everyone()

@@ -4,7 +4,7 @@ from typing import Any, Tuple
 from discord import User
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -20,7 +20,7 @@ class RemoveOwnReactions(ActionBase):
 
     reactions: Tuple[str]
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if message := event.message:
             bot_user = event.bot.user
             assert isinstance(bot_user, User)

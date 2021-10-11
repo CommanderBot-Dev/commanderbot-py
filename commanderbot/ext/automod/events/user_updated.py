@@ -2,13 +2,13 @@ from dataclasses import dataclass
 
 from discord import Member, User
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 
 __all__ = ("UserUpdated",)
 
 
 @dataclass
-class UserUpdated(AutomodEventBase):
+class UserUpdated(EventBase):
     _before: User
     _after: User
     _member: Member

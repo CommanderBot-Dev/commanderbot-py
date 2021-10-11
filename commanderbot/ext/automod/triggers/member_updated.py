@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.trigger import Trigger, TriggerBase
 from commanderbot.lib import RolesGuard
 
@@ -39,12 +39,12 @@ class MemberUpdated(TriggerBase):
             roles=roles,
         )
 
-    def ignore_by_role(self, event: AutomodEvent) -> bool:
+    def ignore_by_role(self, event: Event) -> bool:
         if self.roles is None:
             return False
         return self.roles.ignore(event.member)
 
-    async def ignore(self, event: AutomodEvent) -> bool:
+    async def ignore(self, event: Event) -> bool:
         return self.ignore_by_role(event)
 
 

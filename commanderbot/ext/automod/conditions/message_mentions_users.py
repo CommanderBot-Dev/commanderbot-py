@@ -1,15 +1,15 @@
 from dataclasses import dataclass
 from typing import Any
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
 class MessageMentionsUsers(ConditionBase):
     """Check if the message contains user mentions."""
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         message = event.message
         # Short-circuit if there's no message or the message is empty.
         if not (message and message.content):

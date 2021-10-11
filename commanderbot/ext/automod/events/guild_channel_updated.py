@@ -2,13 +2,13 @@ from dataclasses import dataclass
 
 from discord import TextChannel, Thread
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 
 __all__ = ("GuildChannelUpdated",)
 
 
 @dataclass
-class GuildChannelUpdated(AutomodEventBase):
+class GuildChannelUpdated(EventBase):
     _before: TextChannel | Thread
     _after: TextChannel | Thread
 

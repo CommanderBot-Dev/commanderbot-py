@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.trigger import Trigger, TriggerBase
 from commanderbot.lib import ChannelsGuard, RolesGuard
 
@@ -48,22 +48,22 @@ class Message(TriggerBase):
             author_roles=author_roles,
         )
 
-    def ignore_by_content(self, event: AutomodEvent) -> bool:
+    def ignore_by_content(self, event: Event) -> bool:
         if (self.content is None) or (event.message is None):
             return False
         return event.message.content not in self.content
 
-    def ignore_by_channel(self, event: AutomodEvent) -> bool:
+    def ignore_by_channel(self, event: Event) -> bool:
         if self.channels is None:
             return False
         return self.channels.ignore(event.channel)
 
-    def ignore_by_author_role(self, event: AutomodEvent) -> bool:
+    def ignore_by_author_role(self, event: Event) -> bool:
         if self.author_roles is None:
             return False
         return self.author_roles.ignore(event.author)
 
-    async def ignore(self, event: AutomodEvent) -> bool:
+    async def ignore(self, event: Event) -> bool:
         return (
             self.ignore_by_content(event)
             or self.ignore_by_channel(event)

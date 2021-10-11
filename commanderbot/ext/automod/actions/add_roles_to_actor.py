@@ -7,7 +7,7 @@ from commanderbot.ext.automod.action import Action
 from commanderbot.ext.automod.actions.abc.add_roles_to_target_base import (
     AddRolesToTargetBase,
 )
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -23,7 +23,7 @@ class AddRolesToActor(AddRolesToTargetBase):
         The reason why roles were added, if any.
     """
 
-    def get_target(self, event: AutomodEvent) -> Optional[Member]:
+    def get_target(self, event: Event) -> Optional[Member]:
         return event.actor
 
 

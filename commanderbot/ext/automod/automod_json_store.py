@@ -4,8 +4,8 @@ from typing import Any, AsyncIterable, Optional, Type, TypeVar
 from discord import Guild
 
 from commanderbot.ext.automod.automod_data import AutomodData
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.bucket import Bucket
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node import Node
 from commanderbot.ext.automod.rule import Rule
 from commanderbot.lib import CogStore, JsonFileDatabaseAdapter, LogOptions, RoleSet
@@ -135,9 +135,7 @@ class AutomodJsonStore(CogStore):
     # @@ RULES
 
     # @implements AutomodStore
-    async def rules_for_event(
-        self, guild: Guild, event: AutomodEvent
-    ) -> AsyncIterable[Rule]:
+    async def rules_for_event(self, guild: Guild, event: Event) -> AsyncIterable[Rule]:
         cache = await self.db.get_cache()
         async for rule in cache.rules_for_event(guild, event):
             yield rule

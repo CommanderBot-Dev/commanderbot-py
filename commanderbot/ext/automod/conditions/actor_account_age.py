@@ -3,11 +3,11 @@ from typing import Any, Optional, TypeVar
 
 from discord import Member
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition
 from commanderbot.ext.automod.conditions.abc.target_account_age_base import (
     TargetAccountAgeBase,
 )
+from commanderbot.ext.automod.event import Event
 
 ST = TypeVar("ST")
 
@@ -25,7 +25,7 @@ class ActorAccountAge(TargetAccountAgeBase):
         The upper bound to check against, if any.
     """
 
-    def get_target(self, event: AutomodEvent) -> Optional[Member]:
+    def get_target(self, event: Event) -> Optional[Member]:
         return event.actor
 
 

@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.utils import timedelta_from_field_optional
 
 
@@ -27,7 +27,7 @@ class Wait(ConditionBase):
         delay = timedelta_from_field_optional(data, "delay")
         return dict(delay=delay)
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         await asyncio.sleep(self.delay.total_seconds())
         return True
 

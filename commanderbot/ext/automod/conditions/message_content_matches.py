@@ -2,8 +2,8 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib import PatternWrapper
 
 DEFAULT_NORMALIZATION_FORM = "NFKD"
@@ -58,7 +58,7 @@ class MessageContentMatches(ConditionBase):
         match = pattern.match(content)
         return bool(match)
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         message = event.message
         # Short-circuit if there's no message or the message is empty.
         if not (message and message.content):

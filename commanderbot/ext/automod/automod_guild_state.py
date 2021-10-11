@@ -22,8 +22,8 @@ from discord import (
 from yaml import YAMLError
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.automod_store import AutomodStore
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node.node_kind import NodeKind
 from commanderbot.ext.automod.rule import Rule
 from commanderbot.lib import (
@@ -333,14 +333,14 @@ class AutomodGuildState(CogGuildState):
                 # If something went wrong here, print another exception to the console.
                 self.log.exception("Failed to log message to error channel")
 
-    async def _run_rule(self, event: AutomodEvent, rule: Rule):
+    async def _run_rule(self, event: Event, rule: Rule):
         try:
             if await rule.run(event):
                 await self.store.increment_rule_hits(self.guild, rule.name)
         except Exception as error:
             await self._handle_rule_error(rule, error)
 
-    async def dispatch_event(self, event: AutomodEvent):
+    async def dispatch_event(self, event: Event):
         # Run rules in parallel so that they don't need to wait for one another. They
         # run separately so that when a rule fails it doesn't stop the others.
         rules = await async_expand(self.store.rules_for_event(self.guild, event))

@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.bucket import BucketRef
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -27,7 +27,7 @@ class AddToBucket(ActionBase):
             bucket=bucket,
         )
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         # Resolve the bucket and add the event to it.
         bucket = await self.bucket.resolve(event)
         await bucket.add(event)

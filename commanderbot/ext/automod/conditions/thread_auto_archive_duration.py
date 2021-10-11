@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.integer_range import IntegerRange
 
 
@@ -27,7 +27,7 @@ class ThreadAutoArchiveDuration(ConditionBase):
             auto_archive_duration=auto_archive_duration,
         )
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         if thread := event.thread:
             return self.auto_archive_duration.includes(thread.auto_archive_duration)
         return False

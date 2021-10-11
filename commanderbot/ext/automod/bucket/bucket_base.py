@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from commanderbot.ext.automod import buckets
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.component import ComponentBase
+from commanderbot.ext.automod.event import Event
 
 __all__ = ("BucketBase",)
 
@@ -19,5 +19,5 @@ class BucketBase(ComponentBase):
     module_function_name: ClassVar[str] = "create_bucket"
 
     # @implements Bucket
-    async def add(self, event: AutomodEvent):
+    async def add(self, event: Event):
         """Override this to modify the bucket according to the event."""

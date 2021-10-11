@@ -2,14 +2,14 @@ from dataclasses import dataclass
 
 from discord import Member, TextChannel, Thread
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 from commanderbot.lib.types import TextMessage, TextReaction
 
 __all__ = ("ReactionAdded",)
 
 
 @dataclass
-class ReactionAdded(AutomodEventBase):
+class ReactionAdded(EventBase):
     _reaction: TextReaction
     _member: Member
 

@@ -2,14 +2,14 @@ from dataclasses import dataclass
 
 from discord import Member, TextChannel, Thread
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 from commanderbot.lib.types import TextMessage
 
 __all__ = ("MessageFrequencyChanged",)
 
 
 @dataclass
-class MessageFrequencyChanged(AutomodEventBase):
+class MessageFrequencyChanged(EventBase):
     _message: TextMessage
 
     @property

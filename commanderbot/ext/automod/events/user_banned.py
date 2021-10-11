@@ -2,13 +2,13 @@ from dataclasses import dataclass
 
 from discord import User
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 
 __all__ = ("UserBanned",)
 
 
 @dataclass
-class UserBanned(AutomodEventBase):
+class UserBanned(EventBase):
     _user: User
 
     @property

@@ -3,12 +3,12 @@ from typing import Any, Dict, Optional, Protocol
 
 from discord import Thread
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.trigger import TriggerBase
 from commanderbot.lib import ChannelsGuard
 
 
-class EventWithThread(AutomodEvent, Protocol):
+class EventWithThread(Event, Protocol):
     thread: Thread
 
 

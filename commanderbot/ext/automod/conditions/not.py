@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import (
     Condition,
     ConditionBase,
     ConditionCollection,
 )
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -30,7 +30,7 @@ class Not(ConditionBase):
             conditions=conditions,
         )
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         for condition in self.conditions:
             if not await condition.check(event):
                 return True

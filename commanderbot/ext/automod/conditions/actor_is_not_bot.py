@@ -3,11 +3,11 @@ from typing import Any, Optional, TypeVar
 
 from discord import Member
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition
 from commanderbot.ext.automod.conditions.abc.target_is_not_bot_base import (
     TargetIsNotBotBase,
 )
+from commanderbot.ext.automod.event import Event
 
 ST = TypeVar("ST")
 
@@ -18,7 +18,7 @@ class ActorIsNotBot(TargetIsNotBotBase):
     Check if the actor in context is not a bot.
     """
 
-    def get_target(self, event: AutomodEvent) -> Optional[Member]:
+    def get_target(self, event: Event) -> Optional[Member]:
         return event.actor
 
 

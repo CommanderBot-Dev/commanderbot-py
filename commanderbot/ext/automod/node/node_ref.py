@@ -1,9 +1,8 @@
-import typing
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Generic, Optional, Type, TypeVar, cast
+from typing import Any, Generic, Optional, Type, TypeVar
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node.node import Node
 from commanderbot.lib import FromData, ToData
 
@@ -37,7 +36,7 @@ class NodeRef(FromData, ToData, Generic[NT]):
     def to_data(self) -> Any:
         return self.name
 
-    async def resolve(self, event: AutomodEvent) -> NT:
+    async def resolve(self, event: Event) -> NT:
         node = await event.state.store.require_node_with_type(
             event.state.guild, self.node_type, self.name
         )

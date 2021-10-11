@@ -1,69 +1,22 @@
 from dataclasses import dataclass, field
-from logging import Logger, getLogger
-from typing import Any, ClassVar, Dict, Iterable, Optional, Protocol, Tuple, Type, cast
+from logging import Logger
+from typing import Any, ClassVar, Dict, Iterable, Optional, Tuple, Type, cast
 
 from discord import Member, TextChannel, Thread, User
 from discord.ext.commands import Bot
 
-from commanderbot.ext.automod.automod_event_state import AutomodEventState
+from commanderbot.ext.automod.event.event_state import EventState
 from commanderbot.lib import ShallowFormatter, TextMessage, TextReaction, ValueFormatter
 from commanderbot.lib.utils import yield_member_date_fields
 
-
-class AutomodEvent(Protocol):
-    state: AutomodEventState
-    bot: Bot
-    log: Logger
-
-    @property
-    def channel(self) -> Optional[TextChannel | Thread]:
-        """Return the relevant channel, if any."""
-
-    @property
-    def thread(self) -> Optional[Thread]:
-        """Return the relevant thread, if any."""
-
-    @property
-    def message(self) -> Optional[TextMessage]:
-        """Return the relevant message, if any."""
-
-    @property
-    def reaction(self) -> Optional[TextReaction]:
-        """Return the relevant reaction, if any."""
-
-    @property
-    def author(self) -> Optional[Member]:
-        """Return the relevant author, if any."""
-
-    @property
-    def actor(self) -> Optional[Member]:
-        """Return the acting user, if any."""
-
-    @property
-    def member(self) -> Optional[Member]:
-        """Return the member-in-question, if any."""
-
-    @property
-    def user(self) -> Optional[User]:
-        """Return the user-in-question, if any."""
-
-    def set_metadata(self, key: str, value: Any):
-        """Attach metadata to the event."""
-
-    def remove_metadata(self, key: str):
-        """Remove metadata from the event."""
-
-    def get_fields(self, unsafe: bool = False) -> Dict[str, Any]:
-        """Get the full event data."""
-
-    def format_content(self, content: str, *, unsafe: bool = False) -> str:
-        """Format a string with event data."""
+__all__ = ("EventBase",)
 
 
-# @implements AutomodEvent
+# @implements Event
 @dataclass
-class AutomodEventBase:
-    state: AutomodEventState
+class EventBase:
+    # @implements Event
+    state: EventState
     bot: Bot
     log: Logger
 
@@ -81,50 +34,62 @@ class AutomodEventBase:
         self.log = log
         self._metadata = {}
 
+    # @implements Event
     @property
     def channel(self) -> Optional[TextChannel | Thread]:
         return None
 
+    # @implements Event
     @property
     def thread(self) -> Optional[Thread]:
         if isinstance(self.channel, Thread):
             return self.channel
 
+    # @implements Event
     @property
     def message(self) -> Optional[TextMessage]:
         return None
 
+    # @implements Event
     @property
     def reaction(self) -> Optional[TextReaction]:
         return None
 
+    # @implements Event
     @property
     def author(self) -> Optional[Member]:
         return None
 
+    # @implements Event
     @property
     def actor(self) -> Optional[Member]:
         return None
 
+    # @implements Event
     @property
     def member(self) -> Optional[Member]:
         return None
 
+    # @implements Event
     @property
     def user(self) -> Optional[User]:
         return cast(User, self.member)
 
+    # @implements Event
     def set_metadata(self, key: str, value: Any):
         self._metadata[key] = value
 
+    # @implements Event
     def remove_metadata(self, key: str):
         del self._metadata[key]
 
+    # @implements Event
     def get_fields(self, unsafe: bool = False) -> Dict[str, Any]:
         if unsafe:
             return self._get_fields_unsafe()
         return self._get_fields_safe()
 
+    # @implements Event
     def format_content(self, content: str, *, unsafe: bool = False) -> str:
         # NOTE Beware of untrusted format strings!
         # Instead of providing a handful of library objects with arbitrary (and

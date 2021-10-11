@@ -6,9 +6,9 @@ from typing import Any, AsyncIterable, DefaultDict, Dict, Optional, Type, TypeVa
 from discord import Guild
 
 from commanderbot.ext.automod.action import Action, ActionCollection
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.bucket import Bucket, BucketCollection
 from commanderbot.ext.automod.condition import Condition, ConditionCollection
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node import Node, NodeCollection
 from commanderbot.ext.automod.rule import Rule, RuleCollection
 from commanderbot.ext.automod.trigger import Trigger, TriggerCollection
@@ -256,9 +256,7 @@ class AutomodData(FromData, ToData):
     # @@ RULES
 
     # @implements AutomodStore
-    async def rules_for_event(
-        self, guild: Guild, event: AutomodEvent
-    ) -> AsyncIterable[Rule]:
+    async def rules_for_event(self, guild: Guild, event: Event) -> AsyncIterable[Rule]:
         async for rule in self.guilds[guild.id].rules.for_event(event):
             yield rule
 

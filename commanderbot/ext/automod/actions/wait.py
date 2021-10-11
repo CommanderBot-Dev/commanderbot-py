@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.utils import timedelta_from_field_optional
 
 
@@ -27,7 +27,7 @@ class Wait(ActionBase):
         delay = timedelta_from_field_optional(data, "delay")
         return dict(delay=delay)
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         await asyncio.sleep(self.delay.total_seconds())
 
 

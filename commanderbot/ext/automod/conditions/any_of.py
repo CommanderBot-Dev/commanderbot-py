@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import (
     Condition,
     ConditionBase,
     ConditionCollection,
 )
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -34,7 +34,7 @@ class AnyOf(ConditionBase):
             conditions=conditions,
         )
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         remainder = self.count or 1
         for condition in self.conditions:
             if await condition.check(event):

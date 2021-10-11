@@ -8,8 +8,8 @@ from typing import Any, Iterable, Optional, Type, TypeAlias, TypeVar
 from discord import Member, Message, User
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.bucket import Bucket, BucketBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib import ChannelID, UserID
 from commanderbot.lib.utils import timedelta_from_field_optional
 
@@ -125,7 +125,7 @@ class MessageFrequency(BucketBase):
         # IMPL clean buckets to free memory
         ...
 
-    async def add(self, event: AutomodEvent):
+    async def add(self, event: Event):
         # Short-circuit if the event does not contain a message.
         message = event.message
         if not message:

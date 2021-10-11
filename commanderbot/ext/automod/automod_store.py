@@ -2,7 +2,7 @@ from typing import Any, AsyncIterable, Optional, Protocol, Type, TypeVar
 
 from discord import Guild
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node import Node
 from commanderbot.ext.automod.rule import Rule
 from commanderbot.lib import LogOptions, RoleSet
@@ -82,7 +82,7 @@ class AutomodStore(Protocol):
 
     # @@ RULES
 
-    def rules_for_event(self, guild: Guild, event: AutomodEvent) -> AsyncIterable[Rule]:
+    def rules_for_event(self, guild: Guild, event: Event) -> AsyncIterable[Rule]:
         ...
 
     async def increment_rule_hits(self, guild: Guild, name: str) -> Rule:

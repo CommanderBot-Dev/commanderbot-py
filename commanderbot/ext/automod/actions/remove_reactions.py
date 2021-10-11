@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Tuple
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -18,7 +18,7 @@ class RemoveReactions(ActionBase):
 
     reactions: Tuple[str]
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if message := event.message:
             for reaction in self.reactions:
                 await message.clear_reaction(reaction)

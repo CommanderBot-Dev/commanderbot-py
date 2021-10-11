@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from commanderbot.ext.automod import actions
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.component import ComponentBase
+from commanderbot.ext.automod.event import Event
 
 __all__ = ("ActionBase",)
 
@@ -19,5 +19,5 @@ class ActionBase(ComponentBase):
     module_function_name: ClassVar[str] = "create_action"
 
     # @implements Action
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         """Override this to apply the action."""

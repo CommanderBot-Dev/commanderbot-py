@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Set, cast
 from discord import Member, Message, Role, TextChannel, Thread, User
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.trigger import Trigger, TriggerBase
 from commanderbot.lib import ChannelsGuard, RolesGuard
 
@@ -47,7 +47,7 @@ class MentionsRemovedFromMessage(TriggerBase):
             victim_roles=victim_roles,
         )
 
-    async def ignore(self, event: AutomodEvent) -> bool:
+    async def ignore(self, event: Event) -> bool:
         channel = cast(TextChannel | Thread, event.channel)
         author = cast(Member, event.author)
 

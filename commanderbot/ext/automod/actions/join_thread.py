@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -15,7 +15,7 @@ class JoinThread(ActionBase):
     first message may be duplicated if the bot is not listed as a member of it.
     """
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if thread := event.thread:
             await thread.join()
 

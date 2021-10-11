@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional
 
 from discord import Member
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import ConditionBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.utils import timedelta_from_field_optional, utcnow_aware
 
 
@@ -24,10 +24,10 @@ class TargetAccountAgeBase(ConditionBase):
             less_than=less_than,
         )
 
-    def get_target(self, event: AutomodEvent) -> Optional[Member]:
+    def get_target(self, event: Event) -> Optional[Member]:
         raise NotImplementedError()
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         member = self.get_target(event)
         if member is None:
             return False

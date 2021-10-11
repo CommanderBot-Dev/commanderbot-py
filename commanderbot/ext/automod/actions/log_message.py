@@ -5,7 +5,7 @@ from discord import Color
 from discord.abc import Messageable
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib import AllowedMentions, ChannelID, ValueFormatter
 from commanderbot.lib.utils import color_from_field_optional, message_to_file
 
@@ -53,14 +53,14 @@ class LogMessage(ActionBase):
             allowed_mentions=allowed_mentions,
         )
 
-    async def resolve_channel(self, event: AutomodEvent) -> Optional[Messageable]:
+    async def resolve_channel(self, event: Event) -> Optional[Messageable]:
         if self.channel is not None:
             channel = event.bot.get_channel(self.channel)
             assert isinstance(channel, Messageable)
             return channel
         return event.channel
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if channel := await self.resolve_channel(event):
             parts = []
             if self.emoji:

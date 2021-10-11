@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib import AllowedMentions
 
 
@@ -31,7 +31,7 @@ class ReplyToMessage(ActionBase):
             allowed_mentions=allowed_mentions,
         )
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if message := event.message:
             content = event.format_content(self.content)
             allowed_mentions = self.allowed_mentions or AllowedMentions.not_everyone()

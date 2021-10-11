@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -20,7 +20,7 @@ class ThrowError(ActionBase):
 
     error: str
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         raise Exception(self.error)
 
 

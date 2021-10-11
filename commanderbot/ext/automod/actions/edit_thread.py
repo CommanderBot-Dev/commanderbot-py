@@ -4,7 +4,7 @@ from typing import Any, Optional
 from discord import Thread
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.utils import dict_without_nones
 
 
@@ -35,7 +35,7 @@ class EditThread(ActionBase):
     slowmode_delay: Optional[int] = None
     auto_archive_duration: Optional[int] = None
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         thread = event.channel
         if not isinstance(thread, Thread):
             return

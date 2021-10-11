@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
 from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
@@ -20,7 +20,7 @@ class ThrowError(ConditionBase):
 
     error: str
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         raise Exception(self.error)
 
 
