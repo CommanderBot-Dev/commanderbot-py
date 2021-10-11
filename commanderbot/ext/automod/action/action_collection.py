@@ -8,6 +8,7 @@ from commanderbot.ext.automod.component import ComponentCollection
 __all__ = ("ActionCollection",)
 
 
+# @implements ComponentCollection
 @dataclass(init=False)
 class ActionCollection(ComponentCollection[Action]):
     """A collection of actions."""

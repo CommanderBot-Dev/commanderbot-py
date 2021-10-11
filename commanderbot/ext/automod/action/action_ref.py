@@ -10,6 +10,7 @@ __all__ = ("ActionRef",)
 NT = TypeVar("NT", bound=Action)
 
 
+# @implements NodeRef
 class ActionRef(NodeRef[Action], Generic[NT]):
     """A reference to an action, by name."""
 

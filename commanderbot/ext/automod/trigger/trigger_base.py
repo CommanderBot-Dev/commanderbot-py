@@ -8,6 +8,7 @@ from commanderbot.ext.automod.component import ComponentBase
 __all__ = ("TriggerBase",)
 
 
+# @implements ComponentBase
 # @implements Trigger
 @dataclass
 class TriggerBase(ComponentBase):
@@ -17,8 +18,10 @@ class TriggerBase(ComponentBase):
     # @implements ComponentBase
     module_function_name: ClassVar[str] = "create_trigger"
 
+    # @implements Trigger
     event_types: ClassVar[Tuple[Type[AutomodEvent], ...]] = tuple()
 
+    # @implements Trigger
     async def poll(self, event: AutomodEvent) -> bool:
         # Skip if we're disabled.
         if self.disabled:

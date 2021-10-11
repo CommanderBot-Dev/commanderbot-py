@@ -33,7 +33,11 @@ class NodeBase(FromData, ToData):
 
     # @implements Node
     name: str
+
+    # @implements Node
     description: Optional[str]
+
+    # @implements Node
     disabled: Optional[bool]
 
     # @overrides FromData

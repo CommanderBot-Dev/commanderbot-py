@@ -8,6 +8,7 @@ from commanderbot.ext.automod.trigger.trigger_base import TriggerBase
 __all__ = ("TriggerCollection",)
 
 
+# @implements ComponentCollection
 @dataclass(init=False)
 class TriggerCollection(ComponentCollection[Trigger]):
     """A collection of triggers."""

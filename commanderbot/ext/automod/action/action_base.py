@@ -8,6 +8,7 @@ from commanderbot.ext.automod.component import ComponentBase
 __all__ = ("ActionBase",)
 
 
+# @implements ComponentBase
 # @implements Action
 @dataclass
 class ActionBase(ComponentBase):
@@ -17,5 +18,6 @@ class ActionBase(ComponentBase):
     # @implements ComponentBase
     module_function_name: ClassVar[str] = "create_action"
 
+    # @implements Action
     async def apply(self, event: AutomodEvent):
         """Override this to apply the action."""

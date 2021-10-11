@@ -8,6 +8,7 @@ from commanderbot.ext.automod.component import ComponentCollection
 __all__ = ("BucketCollection",)
 
 
+# @implements ComponentCollection
 @dataclass(init=False)
 class BucketCollection(ComponentCollection[Bucket]):
     """A collection of buckets."""

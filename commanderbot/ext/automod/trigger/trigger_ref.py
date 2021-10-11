@@ -10,6 +10,7 @@ __all__ = ("TriggerRef",)
 NT = TypeVar("NT", bound=Trigger)
 
 
+# @implements NodeRef
 class TriggerRef(NodeRef[Trigger], Generic[NT]):
     """A reference to a trigger, by name."""
 

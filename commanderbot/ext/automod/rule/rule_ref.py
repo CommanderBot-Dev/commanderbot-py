@@ -6,6 +6,7 @@ from commanderbot.ext.automod.rule.rule import Rule
 __all__ = ("RuleRef",)
 
 
+# @implements NodeRef
 class RuleRef(NodeRef[Rule]):
     """A reference to a rule, by name."""
 

@@ -8,6 +8,7 @@ from commanderbot.ext.automod.condition.condition_base import ConditionBase
 __all__ = ("ConditionCollection",)
 
 
+# @implements ComponentCollection
 @dataclass(init=False)
 class ConditionCollection(ComponentCollection[Condition]):
     """A collection of conditions."""

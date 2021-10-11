@@ -10,6 +10,7 @@ __all__ = ("ComponentBase",)
 ST = TypeVar("ST", bound="ComponentBase")
 
 
+# @abstract
 # @implements Component
 @dataclass
 class ComponentBase(NodeBase):
@@ -22,12 +23,14 @@ class ComponentBase(NodeBase):
     of its functions to deserialize the given data and create a new object.
     """
 
+    # @implements Component
     @classmethod
     @property
     @abstractmethod
     def default_module_prefix(cls) -> str:
         ...
 
+    # @implements Component
     @classmethod
     @property
     @abstractmethod

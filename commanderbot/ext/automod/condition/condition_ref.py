@@ -10,6 +10,7 @@ __all__ = ("ConditionRef",)
 NT = TypeVar("NT", bound=Condition)
 
 
+# @implements NodeRef
 class ConditionRef(NodeRef[Condition], Generic[NT]):
     """A reference to a condition, by name."""
 

@@ -10,6 +10,7 @@ __all__ = ("BucketRef",)
 NT = TypeVar("NT", bound=Bucket)
 
 
+# @implements NodeRef
 class BucketRef(NodeRef[NT], Generic[NT]):
     """A reference to a bucket, by name."""
 
