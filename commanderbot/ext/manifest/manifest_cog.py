@@ -13,10 +13,20 @@ from commanderbot.ext.manifest.manifest import (
     add_dependency,
 )
 
-DEFAULT_MIN_ENGINE_VERSION = Version(1, 17, 0)
 VERSION_URL = (
     "https://raw.githubusercontent.com/Ersatz77/bedrock-data/master/VERSION.txt"
 )
+
+DEFAULT_NAME = "pack.name"
+DEFAULT_DESCRIPTION = "pack.description"
+DEFAULT_MIN_ENGINE_VERSION = Version(1, 17, 0)
+
+HELP = "\n".join((
+    f"<pack_type>: [{'|'.join(PackType.values())}]",
+    f"[name]: The name of your pack",
+    f"[description]: A short description for your pack",
+    f"[min_engine_version]: The minimum version of Minecraft that this pack was made for",
+))
 
 
 class ManifestCog(Cog, name="commanderbot.ext.manifest"):
@@ -25,14 +35,18 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         self.default_min_engine_version: Version = DEFAULT_MIN_ENGINE_VERSION
 
         # Start task loop
-        self.update_min_engine_version.start()
+        self.update_default_min_engine_version.start()
 
     def cog_unload(self):
         # Stop task loop
-        self.update_min_engine_version.cancel()
+        self.update_default_min_engine_version.cancel()
 
-    @tasks.loop(seconds=5.0)
-    async def update_min_engine_version(self):
+    @tasks.loop(hours=1)
+    async def update_default_min_engine_version(self):
+        """
+        A task that updates 'self.default_min_engine_version'. If there was an issue
+        parsing the version, the attribute isn't modified.
+        """
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(VERSION_URL, raise_for_status=True) as response:
@@ -42,20 +56,21 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         except Exception:
             pass
 
-        print(self.default_min_engine_version.as_list())
-
     def _parse_version(self, version_str: str) -> Optional[Version]:
-        valid_values: list[int] = []
+        """
+        Parses 'version_str' and tries to create a Version out of the first 3 numbers.
+        """
+        version_numbers: list[int] = []
         for i in version_str.strip().split(".")[:3]:
             if i.isnumeric():
-                valid_values.append(int(i))
+                version_numbers.append(int(i))
 
-        if len(valid_values) == 3:
-            return Version.from_list(valid_values)
+        if len(version_numbers) == 3:
+            return Version(*version_numbers)
         else:
             return None
 
-    @command(name="manifest", brief="Generate a Bedrock manifest")
+    @command(name="manifest", brief="Generate a Bedrock manifest", help=HELP)
     async def cmd_manifest(
         self,
         ctx: Context,
@@ -66,27 +81,29 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
     ):
         # Parse required pack type argument and create a list of modules from it
         modules: list[ModuleType] = []
-        pack_type = pack_type.strip().lower()
-        if pack_type == PackType.ADDON.value:
-            modules.append(ModuleType.DATA)
-            modules.append(ModuleType.RESOURCE)
-        elif pack_type == PackType.BEHAVIOR.value or pack_type == PackType.DATA.value:
-            modules.append(ModuleType.DATA)
-        elif pack_type == PackType.RESOURCE.value:
-            modules.append(ModuleType.RESOURCE)
-        elif pack_type == PackType.SKIN.value:
-            modules.append(ModuleType.SKIN)
-        else:
+        try:
+            match PackType(pack_type.strip().lower()):
+                case PackType.ADDON:
+                    modules.append(ModuleType.DATA)
+                    modules.append(ModuleType.RESOURCE)
+                case (PackType.BEHAVIOR | PackType.DATA):
+                    modules.append(ModuleType.DATA)
+                case PackType.RESOURCE:
+                    modules.append(ModuleType.RESOURCE)
+                case PackType.SKIN:
+                    modules.append(ModuleType.SKIN)
+
+        except ValueError:
             available_pack_types = [f"`{i}`" for i in PackType.values()]
             await ctx.message.reply(
                 f"**{pack_type}** is not a valid pack type\n"
-                f"Available pack types: {' '.join(available_pack_types)}"
+                f"Available pack types: {', '.join(available_pack_types)}"
             )
             return
 
         # Parse optional arguments
-        pack_name: str = name if name else "pack.name"
-        pack_description: str = description if description else "pack.description"
+        pack_name: str = name if name else DEFAULT_NAME
+        pack_description: str = description if description else DEFAULT_DESCRIPTION
         engine_version: Version = self.default_min_engine_version
         if version := self._parse_version(str(min_engine_version)):
             engine_version = version
@@ -109,13 +126,14 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         for manifest in manifests:
             # Get the common name for a manifest using each kind of module
             common_name: str = ""
-            if manifest.module_type == ModuleType.DATA:
-                common_name = "Behavior pack"
-            elif manifest.module_type == ModuleType.RESOURCE:
-                common_name = "Resource pack"
-            elif manifest.module_type == ModuleType.SKIN:
-                common_name = "Skin pack"
-
+            match manifest.module_type:
+                case  ModuleType.DATA:
+                    common_name = "Behavior pack"
+                case  ModuleType.RESOURCE:
+                    common_name = "Resource pack"
+                case ModuleType.SKIN:
+                    common_name = "Skin pack"
+            
             formatted_manifest_json: str = f"```json\n{manifest.as_json()}\n```"
             description_text += f"**{common_name}**\n{formatted_manifest_json}\n"
 
