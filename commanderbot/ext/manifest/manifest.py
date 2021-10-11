@@ -29,13 +29,6 @@ class Version:
     minor: int
     patch: int
 
-    @classmethod
-    def from_list(cls, values: list[int]):
-        if len(values) == 3:
-            return cls(*values)
-        else:
-            return cls(0, 0, 0)
-
     def as_list(self) -> list[int]:
         return [self.major, self.minor, self.patch]
 
