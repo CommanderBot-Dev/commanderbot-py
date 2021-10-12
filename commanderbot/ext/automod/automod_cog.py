@@ -26,7 +26,7 @@ from commanderbot.ext.automod.automod_json_store import AutomodJsonStore
 from commanderbot.ext.automod.automod_options import AutomodOptions
 from commanderbot.ext.automod.automod_state import AutomodState
 from commanderbot.ext.automod.automod_store import AutomodStore
-from commanderbot.ext.automod.node.node_kind import NodeKind, NodeKindConverter
+from commanderbot.ext.automod.node_kind import NodeKind, NodeKindConverter
 from commanderbot.lib import (
     CogGuildStateManager,
     GuildContext,

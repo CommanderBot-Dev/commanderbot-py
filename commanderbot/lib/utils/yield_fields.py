@@ -3,7 +3,7 @@ from typing import Any, Iterable, Tuple
 
 from discord import Member
 
-from commanderbot.lib.utils import utcnow_aware
+from commanderbot.lib.utils.utils import utcnow_aware
 from commanderbot.lib.value_formatter import ValueFormatter
 
 

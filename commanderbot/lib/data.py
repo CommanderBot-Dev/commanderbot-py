@@ -1,22 +1,34 @@
 import dataclasses
+from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Collection,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+)
 
 from discord import Color
 
+from commanderbot.lib.errors import MalformedData
+from commanderbot.lib.utils.dataclasses import is_field_optional
+
 __all__ = (
-    "MalformedData",
     "FromData",
     "ToData",
 )
 
 
 MISSING = object()
-
-
-class MalformedData(Exception):
-    def __init__(self, cls: Type, data: Any):
-        super().__init__(f"Cannot create {cls.__name__} from {type(data).__name__}")
 
 
 ST = TypeVar("ST", bound="FromData")
@@ -81,14 +93,69 @@ class FromData:
 class ToData:
     """An object that can be serialized into raw data."""
 
-    @classmethod
-    def attributes_to_data(cls, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert object attributes to data."""
-        return {k: cls.attribute_to_data(v) for k, v in attrs.items()}
+    class Flags:
+        ExcludeFromData: ClassVar[str] = "exclude_from_data"
 
     @classmethod
-    def set_to_data(cls, value: set) -> List[Any]:
-        return list(value)
+    def attributes_to_dict(cls, value: object) -> Dict[str, Any]:
+        if dataclasses.is_dataclass(value):
+            return cls.dataclass_to_dict(value)
+        return dict(value.__dict__)
+
+    @classmethod
+    def dataclass_to_dict(cls, value: object) -> Dict[str, Any]:
+        d: Dict[str, Any] = {}
+        for field in dataclasses.fields(value):
+            # Check for field flags.
+            flags = field.metadata.get(cls.Flags)
+            if isinstance(flags, tuple | list | set):
+                # Skip excluded fields.
+                if cls.Flags.ExcludeFromData in flags:
+                    continue
+
+            # Get the field value.
+            field_value = getattr(value, field.name)
+
+            # Skip optional fields with a null value.
+            if (field_value is None) and is_field_optional(field):
+                continue
+
+            # If we get here, include the final field value.
+            d[field.name] = field_value
+
+        return d
+
+    @classmethod
+    def value_to_data(cls, value: Any) -> Any:
+        """Convert a value to data, if possible."""
+        if isinstance(value, ToData):
+            return value.to_data()
+        if dataclasses.is_dataclass(value):
+            return cls.dataclass_to_data(value)
+        if isinstance(value, dict | defaultdict):
+            return cls.mapping_to_data(value)
+        if isinstance(value, tuple | list | set):
+            return cls.collection_to_data(value)
+        if isinstance(value, datetime):
+            return cls.datetime_to_data(value)
+        if isinstance(value, timedelta):
+            return cls.timedelta_to_data(value)
+        if isinstance(value, Color):
+            return cls.color_to_data(value)
+        return value
+
+    @classmethod
+    def dataclass_to_data(cls, value: object) -> Dict[str, Any]:
+        attrs = cls.attributes_to_dict(value)
+        return cls.mapping_to_data(attrs)
+
+    @classmethod
+    def mapping_to_data(cls, value: Mapping[Any, Any]) -> Dict[Any, Any]:
+        return {k: cls.value_to_data(v) for k, v in value.items()}
+
+    @classmethod
+    def collection_to_data(cls, value: Collection[Any]) -> List[Any]:
+        return [cls.value_to_data(v) for v in value]
 
     @classmethod
     def datetime_to_data(cls, value: datetime) -> str:
@@ -106,23 +173,6 @@ class ToData:
     def color_to_data(cls, value: Color) -> str:
         return str(value)
 
-    @classmethod
-    def attribute_to_data(cls, value: Any) -> Any:
-        """Convert an attribute to data, if possible."""
-        if isinstance(value, ToData):
-            return value.to_data()
-        if dataclasses.is_dataclass(value):
-            return cls.attributes_to_data(value.__dict__)
-        if isinstance(value, set):
-            return cls.set_to_data(value)
-        if isinstance(value, datetime):
-            return cls.datetime_to_data(value)
-        if isinstance(value, timedelta):
-            return cls.timedelta_to_data(value)
-        if isinstance(value, Color):
-            return cls.color_to_data(value)
-        return value
-
     def to_data(self) -> Any:
         """Turn the object into raw data."""
         # Start with a new, empty copy of data.
@@ -132,9 +182,12 @@ class ToData:
         if base_fields := self.base_fields_to_data():
             data.update(base_fields)
 
-        # Update with converted fields from `__dict__`.
-        converted_attributes = self.attributes_to_data(self.__dict__)
-        data.update(converted_attributes)
+        # Get base instance attributes as a dict.
+        instance_attrs = self.attributes_to_dict(self)
+
+        # Update with converted attributes.
+        converted_attrs = self.mapping_to_data(instance_attrs)
+        data.update(converted_attrs)
 
         # Update with additional complex fields, if any.
         if complex_fields := self.complex_fields_to_data():
@@ -149,6 +202,14 @@ class ToData:
 
         Override this if the inheriting class has base fields that are not present on
         instances of the class, but should be included in data.
+        """
+
+    def exclude_fields_to_data(self) -> Optional[Tuple[str, ...]]:
+        """
+        Exclude certain fields from data, if any.
+
+        Override this if the inheriting class has certain attributes that should not be
+        included in data.
         """
 
     def complex_fields_to_data(self) -> Optional[Dict[str, Any]]:

@@ -2,61 +2,126 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Any, Iterable, Optional, Type, TypeAlias, TypeVar
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Iterable, List, Optional, TypeAlias
 
-from discord import Member, Message, User
+from discord import Member, Message, TextChannel, Thread, User
 
-from commanderbot.ext.automod import events
 from commanderbot.ext.automod.bucket import Bucket, BucketBase
-from commanderbot.ext.automod.event import Event
-from commanderbot.lib import ChannelID, UserID
-from commanderbot.lib.utils import timedelta_from_field_optional
-
-ST = TypeVar("ST")
-
-
-class UserTicket:
-    def __init__(self):
-        self.message_count: int = 0
-        self.unique_channels: set[ChannelID] = set()
-
-    @property
-    def channel_count(self) -> int:
-        return len(self.unique_channels)
-
-    def increment(self, message: Message):
-        """Increment this ticket with the given message."""
-        self.message_count += 1
-        self.unique_channels.add(message.channel.id)
-
-    def add(self, other: UserTicket):
-        """Add another ticket to this one."""
-        self.message_count += other.message_count
-        self.unique_channels.update(other.unique_channels)
-
-
-UserBuckets: TypeAlias = defaultdict[UserID, UserTicket]
-IntervalBuckets: TypeAlias = defaultdict[int, UserBuckets]
-
-
-def user_buckets_factory() -> UserBuckets:
-    return defaultdict(default_factory=lambda: UserTicket())
-
-
-def interval_buckets_factory() -> IntervalBuckets:
-    return defaultdict(default_factory=user_buckets_factory)
+from commanderbot.ext.automod.event import Event, EventBase
+from commanderbot.ext.automod.event.event_base import EventBase
+from commanderbot.lib import ChannelID, MessageID, TextMessage, ToData, UserID
+from commanderbot.lib.utils import timedelta_from_field, utcnow_aware
 
 
 @dataclass
-class MessageFrequencyState:
-    interval_buckets: IntervalBuckets = field(
-        init=False, default_factory=interval_buckets_factory
+class _MessageRecord:
+    channel_id: ChannelID
+    message_id: MessageID
+    time: datetime
+
+
+@dataclass
+class _ChannelRecord:
+    channel_id: ChannelID
+
+    _messages: Dict[MessageID, _MessageRecord] = field(default_factory=lambda: {})
+
+    @property
+    def messages(self) -> List[_MessageRecord]:
+        return list(self._messages.values())
+
+
+@dataclass
+class _UserTicket:
+    _channels: Dict[ChannelID, _ChannelRecord] = field(default_factory=lambda: {})
+
+    @property
+    def channels(self) -> List[_ChannelRecord]:
+        return list(self._channels.values())
+
+    @property
+    def messages(self) -> List[_MessageRecord]:
+        messages = []
+        for channel in self.channels:
+            messages += channel.messages
+        return messages
+
+    def add_message_record(self, message_record: _MessageRecord):
+        """Add a message record to this ticket."""
+        channel_id = message_record.channel_id
+        channel_record = self._channels.get(channel_id)
+        if channel_record is None:
+            channel_record = _ChannelRecord(channel_id=channel_id)
+            self._channels[channel_id] = channel_record
+        message_id = message_record.message_id
+        channel_record._messages[message_id] = message_record
+
+    def add_message(self, message: Message):
+        """Add a message to this ticket."""
+        message_time = message.edited_at or message.created_at
+        message_record = _MessageRecord(
+            channel_id=message.channel.id,
+            message_id=message.id,
+            time=message_time,
+        )
+        self.add_message_record(message_record)
+
+    def add_from(self, other: _UserTicket, since: datetime):
+        """Add the message records of another ticket to this ticket."""
+        for message_record in other.messages:
+            if message_record.time >= since:
+                self.add_message_record(message_record)
+
+
+_UserBuckets: TypeAlias = defaultdict[UserID, _UserTicket]
+_IntervalBuckets: TypeAlias = defaultdict[datetime, _UserBuckets]
+
+
+def _user_buckets_factory() -> _UserBuckets:
+    return defaultdict(lambda: _UserTicket())
+
+
+def _interval_buckets_factory() -> _IntervalBuckets:
+    return defaultdict(_user_buckets_factory)
+
+
+@dataclass
+class _MessageFrequencyState:
+    interval_buckets: _IntervalBuckets = field(
+        default_factory=_interval_buckets_factory
     )
 
 
 @dataclass
-class MessageFrequency(BucketBase):
+class MessageFrequencyEvent(EventBase):
+    bucket: MessageFrequencyBucket
+
+    _message: TextMessage
+
+    @property
+    def channel(self) -> TextChannel | Thread:
+        return self._message.channel
+
+    @property
+    def message(self) -> TextMessage:
+        return self._message
+
+    @property
+    def author(self) -> Member:
+        return self._message.author
+
+    @property
+    def actor(self) -> Member:
+        return self._message.author
+
+    @property
+    def member(self) -> Member:
+        return self._message.author
+
+
+@dataclass
+class MessageFrequencyBucket(BucketBase):
     """
     Track user activity across channels for potential spam.
 
@@ -74,13 +139,21 @@ class MessageFrequency(BucketBase):
     bucket_lifetime: timedelta
     bucket_interval: timedelta
 
-    _state: MessageFrequencyState
+    _state: _MessageFrequencyState = field(
+        init=False,
+        default_factory=lambda: _MessageFrequencyState(),
+        metadata={ToData.Flags: [ToData.Flags.ExcludeFromData]},
+    )
 
+    # @overrides NodeBase
     @classmethod
-    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
-        if isinstance(data, dict):
-            bucket_interval = timedelta_from_field_optional(data, "bucket_interval")
-            return cls(bucket_interval=bucket_interval)
+    def build_complex_fields(cls, data: dict[str, Any]) -> Optional[dict[str, Any]]:
+        bucket_lifetime = timedelta_from_field(data, "bucket_lifetime")
+        bucket_interval = timedelta_from_field(data, "bucket_interval")
+        return dict(
+            bucket_lifetime=bucket_lifetime,
+            bucket_interval=bucket_interval,
+        )
 
     @property
     def bucket_lifetime_in_seconds(self) -> int:
@@ -90,14 +163,16 @@ class MessageFrequency(BucketBase):
     def bucket_interval_in_seconds(self) -> int:
         return int(self.bucket_interval.total_seconds())
 
-    def _message_to_interval(self, message: Message) -> int:
-        message_seconds = int(message.created_at.timestamp())
-        interval = message_seconds // self.bucket_interval_in_seconds
+    def _to_interval(self, dt: datetime) -> datetime:
+        message_seconds = int(dt.timestamp())
+        accuracy = self.bucket_interval_in_seconds
+        interval_ts = (message_seconds // accuracy) * accuracy
+        interval = datetime.fromtimestamp(interval_ts, tz=timezone.utc)
         return interval
 
-    def get_user_buckets_since(self, since: datetime) -> Iterable[UserBuckets]:
-        # Calculate the interval in which the since-time lies.
-        since_interval = int(since.timestamp())
+    def get_user_buckets_since(
+        self, since_interval: datetime
+    ) -> Iterable[_UserBuckets]:
         # Iterate over each interval...
         for interval, user_buckets in self._state.interval_buckets.items():
             # If it's happened since, yield it.
@@ -105,25 +180,29 @@ class MessageFrequency(BucketBase):
                 yield user_buckets
 
     def get_user_tickets_since(
-        self, user: User | Member, since: datetime
-    ) -> Iterable[UserTicket]:
+        self, user: User | Member, since_interval: datetime
+    ) -> Iterable[_UserTicket]:
         # Iterate over each interval bucket within the given timeframe...
-        for user_buckets in self.get_user_buckets_since(since):
+        for user_buckets in self.get_user_buckets_since(since_interval):
             # If the user has a ticket in this bucket, yield it.
             if user_ticket := user_buckets.get(user.id):
                 yield user_ticket
 
     def build_user_record_since(
         self, user: User | Member, since: datetime
-    ) -> UserTicket:
-        record = UserTicket()
-        for ticket in self.get_user_tickets_since(user, since):
-            record.add(ticket)
+    ) -> _UserTicket:
+        since_interval = self._to_interval(since)
+        record = _UserTicket()
+        for ticket in self.get_user_tickets_since(user, since_interval):
+            record.add_from(ticket, since)
         return record
 
     def clean_buckets(self):
-        # IMPL clean buckets to free memory
-        ...
+        # Clean expired buckets to free memory.
+        cutoff = utcnow_aware() - self.bucket_lifetime
+        for interval in self._state.interval_buckets.copy():
+            if interval < cutoff:
+                del self._state.interval_buckets[interval]
 
     async def add(self, event: Event):
         # Short-circuit if the event does not contain a message.
@@ -136,19 +215,20 @@ class MessageFrequency(BucketBase):
 
         # Calculate the interval based on the most recent message timestamp, and use it
         # to get/create the corresponding interval bucket.
-        interval = self._message_to_interval(message)
-        interval_bucket = self._state.interval_buckets[interval]
+        message_time = message.edited_at or message.created_at
+        message_interval = self._to_interval(message_time)
+        interval_bucket = self._state.interval_buckets[message_interval]
 
         # Within this interval, get/create and increment the user's ticket.
         author = message.author
         user_ticket = interval_bucket[author.id]
-        user_ticket.increment(message)
+        user_ticket.add_message(message)
 
         # Dispatch an event.
         await event.state.dispatch_event(
-            events.MessageFrequencyChanged(event.state, event.bot, event.log, message)
+            MessageFrequencyEvent(event.state, event.bot, event.log, self, message)
         )
 
 
 def create_bucket(data: Any) -> Bucket:
-    return MessageFrequency.from_data(data)
+    return MessageFrequencyBucket.from_data(data)

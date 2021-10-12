@@ -4,15 +4,14 @@ from typing import Any, AsyncIterable, Optional, Type, TypeVar
 from discord import Guild
 
 from commanderbot.ext.automod.automod_data import AutomodData
-from commanderbot.ext.automod.bucket import Bucket
 from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node import Node
 from commanderbot.ext.automod.rule import Rule
 from commanderbot.lib import CogStore, JsonFileDatabaseAdapter, LogOptions, RoleSet
 from commanderbot.lib.utils import JsonPath, JsonPathOp
 
-BT = TypeVar("BT", bound=Bucket)
 NT = TypeVar("NT", bound=Node)
+NST = TypeVar("NST", bound=Node)
 
 
 # @implements AutomodStore
@@ -83,11 +82,13 @@ class AutomodJsonStore(CogStore):
         return await cache.require_node(guild, node_type, name)
 
     # @implements AutomodStore
-    async def require_node_with_type(
-        self, guild: Guild, node_type: Type[NT], name: str
-    ) -> NT:
+    async def require_node_with_subtype(
+        self, guild: Guild, node_type: Type[NT], name: str, node_subtype: Type[NST]
+    ) -> NST:
         cache = await self.db.get_cache()
-        return await cache.require_node_with_type(guild, node_type, name)
+        return await cache.require_node_with_subtype(
+            guild, node_type, name, node_subtype
+        )
 
     # @implements AutomodStore
     async def add_node(self, guild: Guild, node_type: Type[NT], data: Any) -> NT:

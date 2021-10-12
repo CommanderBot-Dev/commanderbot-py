@@ -24,7 +24,7 @@ from yaml import YAMLError
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_store import AutomodStore
 from commanderbot.ext.automod.event import Event
-from commanderbot.ext.automod.node.node_kind import NodeKind
+from commanderbot.ext.automod.node_kind import NodeKind
 from commanderbot.ext.automod.rule import Rule
 from commanderbot.lib import (
     CogGuildState,

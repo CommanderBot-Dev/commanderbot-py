@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from commanderbot.ext.automod.action import Action, ActionBase
-from commanderbot.ext.automod.bucket import BucketRef
+from commanderbot.ext.automod.bucket import Bucket, BucketRef
 from commanderbot.ext.automod.event import Event
 
 
@@ -17,7 +17,7 @@ class AddToBucket(ActionBase):
         The bucket to add to.
     """
 
-    bucket: BucketRef
+    bucket: BucketRef[Bucket]
 
     # @overrides NodeBase
     @classmethod

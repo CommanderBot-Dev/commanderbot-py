@@ -1,4 +1,3 @@
-from asyncio.locks import Condition
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, AsyncIterable, DefaultDict, Dict, Optional, Type, TypeVar, cast
@@ -24,6 +23,7 @@ from commanderbot.lib.utils import JsonPath, JsonPathOp, dict_without_ellipsis
 
 ST = TypeVar("ST")
 NT = TypeVar("NT", bound=Node)
+NST = TypeVar("NST", bound=Node)
 
 
 @dataclass
@@ -102,7 +102,7 @@ class AutomodGuildData(FromData, ToData):
             return cast(Any, self.conditions)
         if node_type is Action:
             return cast(Any, self.actions)
-        raise ResponsiveException(f"Invalid node type: {node_type}")
+        raise ResponsiveException(f"Unknown node type: `{node_type.__name__}`")
 
     def set_default_log_options(
         self, log_options: Optional[LogOptions]
@@ -214,11 +214,11 @@ class AutomodData(FromData, ToData):
         return collection.require(name)
 
     # @implements AutomodStore
-    async def require_node_with_type(
-        self, guild: Guild, node_type: Type[NT], name: str
-    ) -> NT:
+    async def require_node_with_subtype(
+        self, guild: Guild, node_type: Type[NT], name: str, node_subtype: Type[NST]
+    ) -> NST:
         collection = self.guilds[guild.id].get_collection(node_type)
-        return collection.require_with_type(name, node_type)
+        return collection.require_with_type(name, node_subtype)
 
     # @implements AutomodStore
     async def add_node(self, guild: Guild, node_type: Type[NT], data: Any) -> NT:

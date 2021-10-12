@@ -9,6 +9,7 @@ from commanderbot.lib import LogOptions, RoleSet
 from commanderbot.lib.utils import JsonPath, JsonPathOp
 
 NT = TypeVar("NT", bound=Node)
+NST = TypeVar("NST", bound=Node)
 
 
 class AutomodStore(Protocol):
@@ -52,9 +53,9 @@ class AutomodStore(Protocol):
     async def require_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
         ...
 
-    async def require_node_with_type(
-        self, guild: Guild, node_type: Type[NT], name: str
-    ) -> NT:
+    async def require_node_with_subtype(
+        self, guild: Guild, node_type: Type[NT], name: str, node_subtype: Type[NST]
+    ) -> NST:
         ...
 
     async def add_node(self, guild: Guild, node_type: Type[NT], data: Any) -> NT:

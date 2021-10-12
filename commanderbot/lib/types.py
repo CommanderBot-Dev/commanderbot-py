@@ -18,6 +18,7 @@ __all__ = (
     "IDType",
     "GuildID",
     "ChannelID",
+    "MessageID",
     "RoleID",
     "UserID",
     "RawOptions",
@@ -36,6 +37,7 @@ IDType = int
 
 GuildID = IDType
 ChannelID = IDType
+MessageID = IDType
 RoleID = IDType
 UserID = IDType
 
@@ -61,6 +63,7 @@ class TextMessage(Message):
 
     channel: TextChannel | Thread
     guild: Guild
+    author: Member
 
     @classmethod
     async def convert(cls, ctx: Context, argument: Any):

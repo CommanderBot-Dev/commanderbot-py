@@ -3,7 +3,7 @@ from typing import Any, Optional
 from discord import Color
 from discord.ext.commands import ColourConverter
 
-from commanderbot.lib.data import MalformedData
+from commanderbot.lib.errors import MalformedData
 from commanderbot.lib.types import JsonObject
 
 __all__ = (

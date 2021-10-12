@@ -1,6 +1,7 @@
+import typing
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Generic, Optional, Type, TypeVar
+from typing import Any, Generic, Optional, Type, TypeVar, cast
 
 from commanderbot.ext.automod.event import Event
 from commanderbot.ext.automod.node.node import Node
@@ -11,6 +12,7 @@ __all__ = ("NodeRef",)
 
 ST = TypeVar("ST")
 NT = TypeVar("NT", bound=Node)
+NST = TypeVar("NST", bound=Node)
 
 
 # @abstract
@@ -24,7 +26,7 @@ class NodeRef(FromData, ToData, Generic[NT]):
     @property
     @abstractmethod
     def node_type(cls) -> Type[NT]:
-        """Return the concrete node type used to construct instances."""
+        """Return the abstract node type used to identify a node collection."""
 
     # @overrides FromData
     @classmethod
@@ -36,8 +38,15 @@ class NodeRef(FromData, ToData, Generic[NT]):
     def to_data(self) -> Any:
         return self.name
 
-    async def resolve(self, event: Event) -> NT:
-        node = await event.state.store.require_node_with_type(
-            event.state.guild, self.node_type, self.name
-        )
-        return node
+    async def resolve(
+        self, event: Event, node_subtype: Optional[Type[NST]] = None
+    ) -> NT:
+        if node_subtype is not None:
+            node = await event.state.store.require_node_with_subtype(
+                event.state.guild, self.node_type, self.name, node_subtype
+            )
+        else:
+            node = await event.state.store.require_node(
+                event.state.guild, self.node_type, self.name
+            )
+        return cast(NT, node)
