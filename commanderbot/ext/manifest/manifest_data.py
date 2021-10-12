@@ -39,6 +39,18 @@ class Version:
     def as_list(self) -> list[int]:
         return [self.major, self.minor, self.patch]
 
+    @classmethod
+    def from_str(cls, version_str: str) -> Optional["Version"]:
+        version_numbers: list[int] = []
+        for i in version_str.strip().split(".")[:3]:
+            if i.isnumeric():
+                version_numbers.append(int(i))
+
+        if len(version_numbers) == 3:
+            return cls(*version_numbers)
+        else:
+            return None
+
 
 class Manifest:
     """
