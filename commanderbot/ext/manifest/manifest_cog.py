@@ -1,4 +1,5 @@
-from datetime import date, datetime, timezone
+import json
+from datetime import datetime
 from logging import Logger, getLogger
 from typing import Optional
 
@@ -15,6 +16,8 @@ from commanderbot.ext.manifest.manifest_data import (
     add_dependency,
 )
 from commanderbot.lib import checks
+from commanderbot.lib.utils.datetimes import datetime_to_int
+from commanderbot.lib.utils.utils import str_to_file, utcnow_aware
 
 DEFAULT_NAME = "pack.name"
 DEFAULT_DESCRIPTION = "pack.description"
@@ -44,32 +47,32 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
                 f"Using {DEFAULT_ENGINE_VERSION.as_list()} for 'min_engine_version'."
             )
 
-        # Start task loop
         self.update_default_engine_version.start()
 
     def cog_unload(self):
-        # Stop task loop
         self.update_default_engine_version.cancel()
 
     @tasks.loop(minutes=30)
     async def update_default_engine_version(self):
         """
-        A task that updates 'self.default_engine_version'. If there was an issue
-        parsing the version, the attribute isn't modified.
+        A task that updates 'self.default_engine_version'. The patch version will always
+        be set to 0. If there was an issue parsing the version, the attribute
+        isn't modified.
         """
         # Return early if no URL was given
         if not self.version_url:
             return
 
         # Request version
-        self.requested_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                     self.version_url, raise_for_status=True
                 ) as response:
                     if version := Version.from_str(await response.text()):
+                        version.patch = 0
                         self.default_engine_version = version
+                        self.requested_at = utcnow_aware()
 
         except Exception:
             pass
@@ -111,36 +114,24 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
             engine_version = version
 
         # Create a list of manifests from modules
-        manifests: list[Manifest] = []
-        for module in modules:
-            manifests.append(
-                Manifest(module, pack_name, pack_description, engine_version)
-            )
+        manifests: list[Manifest] = [
+            Manifest(module, pack_name, pack_description, engine_version)
+            for module in modules
+        ]
 
         # If we're generating a complete addon, make the behavior pack dependent
         # on the resource pack
         if len(manifests) == 2:
             add_dependency(manifests[0], manifests[1])
 
-        # Send embed
-        manifest_embed = Embed(title="Generated manifest", color=0x00ACED)
-        description_text = ""
+        # Reply to the member with uploaded files
         for manifest in manifests:
-            # Get the common name for a manifest using each kind of module
-            common_name: str = ""
-            match manifest.module_type:
-                case  ModuleType.DATA:
-                    common_name = "Behavior pack"
-                case  ModuleType.RESOURCE:
-                    common_name = "Resource pack"
-                case ModuleType.SKIN:
-                    common_name = "Skin pack"
-
-            formatted_manifest_json: str = f"```json\n{manifest.as_json()}\n```"
-            description_text += f"**{common_name}**\n{formatted_manifest_json}\n"
-
-        manifest_embed.description = description_text
-        await ctx.send(embed=manifest_embed)
+            manifest_json: str = json.dumps(manifest.as_dict(), indent=4)
+            await ctx.message.reply(
+                content=f"**{manifest.common_name()}**",
+                file=str_to_file(manifest_json, "manifest.json"),
+                mention_author=False,
+            )
 
     @commands.group(name="manifests", brief="Manage manifests")
     @checks.is_administrator()
@@ -154,7 +145,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         url = self.version_url if self.version_url else "None set"
         request_ts: str = "No requests have been made"
         if dt := self.requested_at:
-            request_ts = f"<t:{int(dt.timestamp())}:R>"
+            request_ts = f"<t:{datetime_to_int(dt)}:R>"
 
         # Create embed
         status_embed: Embed = Embed(title=self.qualified_name, color=0x00ACED)

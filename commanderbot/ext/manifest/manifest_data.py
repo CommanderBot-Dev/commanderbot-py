@@ -1,8 +1,7 @@
-import json
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Optional, TypeVar
 
 
 class PackType(Enum):
@@ -73,9 +72,23 @@ class Manifest:
         self.module_uuid: str = str(uuid.uuid4())
         self.dependency_uuid: Optional[str] = None
 
-    def as_json(self) -> str:
+    def common_name(self) -> str:
         """
-        Serializes this manifest as a Json string
+        Common name for a pack that has a manifest with the stored module type
+        """
+        match self.module_type:
+            case ModuleType.DATA:
+                return "Behavior Pack"
+            case ModuleType.RESOURCE:
+                return "Resource Pack"
+            case ModuleType.SKIN:
+                return "Skin Pack"
+            case _:
+                return "Unknown Pack"
+
+    def as_dict(self) -> dict:
+        """
+        Turns manifest contents into a dict
         """
         manifest = {
             "format_version": 2,
@@ -105,7 +118,7 @@ class Manifest:
             ]
 
         # Serialize object as a json string
-        return json.dumps(manifest, indent=4)
+        return manifest
 
 
 def add_dependency(manifest: Manifest, dependent_manifest: Manifest):
