@@ -7,6 +7,7 @@ from commanderbot.lib.types import JsonObject
 __all__ = (
     "datetime_from_str",
     "datetime_to_str",
+    "datetime_to_int",
     "try_datetime_from_data",
     "datetime_from_data",
     "datetime_from_field",
@@ -20,6 +21,10 @@ def datetime_from_str(s: str) -> datetime:
 
 def datetime_to_str(dt: datetime) -> str:
     return dt.isoformat()
+
+
+def datetime_to_int(dt: datetime) -> int:
+    return int(dt.timestamp())
 
 
 def try_datetime_from_data(data: Any) -> Optional[datetime]:
