@@ -102,7 +102,8 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
                 available_pack_types = [f"`{i}`" for i in PackType.values()]
                 await ctx.message.reply(
                     f"**{pack_type}** is not a valid pack type\n"
-                    f"Available pack types: {', '.join(available_pack_types)}"
+                    f"Available pack types: {', '.join(available_pack_types)}",
+                    mention_author=False,
                 )
                 return
 
