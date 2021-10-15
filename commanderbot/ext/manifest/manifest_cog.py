@@ -5,8 +5,8 @@ from typing import Optional
 
 import aiohttp
 from discord import Embed
-from discord.ext import commands, tasks
-from discord.ext.commands import Bot, Cog, Context
+from discord.ext.commands import Bot, Cog, Context, command, group
+from discord.ext.tasks import loop
 
 from commanderbot.ext.manifest.manifest_data import (
     Manifest,
@@ -15,6 +15,7 @@ from commanderbot.ext.manifest.manifest_data import (
     Version,
     add_dependency,
 )
+from commanderbot.ext.manifest.manifest_errors import InvalidPackType
 from commanderbot.lib import checks
 from commanderbot.lib.utils.datetimes import datetime_to_int
 from commanderbot.lib.utils.utils import str_to_file, utcnow_aware
@@ -52,12 +53,12 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
     def cog_unload(self):
         self.update_default_engine_version.cancel()
 
-    @tasks.loop(minutes=30)
+    @loop(minutes=30)
     async def update_default_engine_version(self):
         """
-        A task that updates 'self.default_engine_version'. The patch version will always
-        be set to 0. If there was an issue parsing the version, the attribute
-        isn't modified.
+        A task that updates 'self.default_engine_version'. If there was an issue parsing
+        the version, the attribute isn't modified. The patch version will always be set 
+        to 0.
         """
         # Return early if no URL was given
         if not self.version_url:
@@ -77,7 +78,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         except Exception:
             pass
 
-    @commands.command(name="manifest", brief="Generate a Bedrock manifest", help=HELP)
+    @command(name="manifest", brief="Generate a Bedrock manifest", help=HELP)
     async def cmd_manifest(
         self,
         ctx: Context,
@@ -99,13 +100,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
             case PackType.SKIN:
                 modules.append(ModuleType.SKIN)
             case _:
-                available_pack_types = [f"`{i}`" for i in PackType.values()]
-                await ctx.message.reply(
-                    f"**{pack_type}** is not a valid pack type\n"
-                    f"Available pack types: {', '.join(available_pack_types)}",
-                    mention_author=False,
-                )
-                return
+                raise InvalidPackType(pack_type)
 
         # Parse optional arguments
         pack_name: str = name if name else DEFAULT_NAME
@@ -134,7 +129,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
                 mention_author=False,
             )
 
-    @commands.group(name="manifests", brief="Manage manifests")
+    @group(name="manifests", brief="Manage manifests")
     @checks.is_administrator()
     async def cmd_manifests(self, ctx: Context):
         if not ctx.invoked_subcommand:
