@@ -13,6 +13,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Implemented new `thread_updated` trigger
   - Implemented new `thread_auto_archive_duration` condition
 
+- `manifest`:
+  - Added a task that requests the latest `min_engine_version`
+  - Now accepts a `version_url` option in the bot config
+  - Added `manifests` command with `status` and `update` subcommands
+    - `status` shows the status of version requests
+    - `update` manually requests the version
+
+### Changed
+
+- `manifest`:
+  - Generated manifests were changed into file attachments
+
 ## [0.18.0] - 2021-10-04
 
 ### Added
