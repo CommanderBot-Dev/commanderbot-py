@@ -15,7 +15,7 @@ from commanderbot.ext.manifest.manifest_data import (
     Version,
     add_dependency,
 )
-from commanderbot.ext.manifest.manifest_errors import InvalidPackType
+from commanderbot.ext.manifest.manifest_exceptions import InvalidPackType
 from commanderbot.lib import checks
 from commanderbot.lib.utils.datetimes import datetime_to_int
 from commanderbot.lib.utils.utils import str_to_file, utcnow_aware
@@ -40,7 +40,9 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         self.log: Logger = getLogger(self.qualified_name)
 
         self.default_engine_version: Version = DEFAULT_ENGINE_VERSION
-        self.requested_at: Optional[datetime] = None
+        self.previous_request_date: Optional[datetime] = None
+        self.previous_status_code: Optional[int] = None
+
         self.version_url: Optional[str] = options.get("version_url")
         if not self.version_url:
             self.log.warn(
@@ -53,7 +55,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
     def cog_unload(self):
         self.update_default_engine_version.cancel()
 
-    @loop(minutes=30)
+    @loop(hours=1)
     async def update_default_engine_version(self):
         """
         A task that updates 'self.default_engine_version'. If there was an issue parsing
@@ -65,18 +67,14 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
             return
 
         # Request version
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    self.version_url, raise_for_status=True
-                ) as response:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.version_url) as response:
+                self.previous_request_date = utcnow_aware()
+                self.previous_status_code = response.status
+                if response.status == 200:
                     if version := Version.from_str(await response.text()):
                         version.patch = 0
                         self.default_engine_version = version
-                        self.requested_at = utcnow_aware()
-
-        except Exception:
-            pass
 
     @command(name="manifest", brief="Generate a Bedrock manifest", help=HELP)
     async def cmd_manifest(
@@ -135,21 +133,46 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_manifests)
 
-    @cmd_manifests.command(name="status", brief="Shows the status of this extension")
+    @cmd_manifests.command(
+        name="status", 
+        brief="Show the status of version requests"
+    )
     async def cmd_manifests_status(self, ctx: Context):
         # Format optional attributes
-        url = self.version_url if self.version_url else "None set"
-        request_ts: str = "No requests have been made"
-        if dt := self.requested_at:
-            request_ts = f"<t:{datetime_to_int(dt)}:R>"
+        url: str = "None set"
+        previous_request_ts: str = "?"
+        next_request_ts: str = "?"
+        previous_status_code: str = "?"
+        self.update_default_engine_version
+        if version_url := self.version_url:
+            url = version_url
+            if dt := self.previous_request_date:
+                previous_request_ts = f"<t:{datetime_to_int(dt)}:R>" 
+
+            if dt := self.update_default_engine_version.next_iteration:
+                next_request_ts = f"<t:{datetime_to_int(dt)}:R>"
+
+            if status := self.previous_status_code:
+                previous_status_code = f"`{status}`"
 
         # Create embed
         status_embed: Embed = Embed(title=self.qualified_name, color=0x00ACED)
         status_embed.add_field(name="Version URL", value=url, inline=False)
-        status_embed.add_field(name="Last requested", value=request_ts)
+        status_embed.add_field(name="Previous request", value=previous_request_ts)
+        status_embed.add_field(name="Next request", value=next_request_ts)
+        status_embed.add_field(name="Previous status code", value=previous_status_code)
         status_embed.add_field(
             name="Min engine version",
             value=f"`{self.default_engine_version.as_list()}`",
         )
 
         await ctx.send(embed=status_embed)
+
+    @cmd_manifests.command(name="update", brief="Manually request the version")
+    async def cmd_manifests_update(self, ctx: Context):
+        if self.version_url:
+            self.update_default_engine_version.restart()
+            await ctx.message.add_reaction("✅")
+        else:
+            await ctx.message.add_reaction("❌")
+            
