@@ -53,43 +53,47 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
             + f" in {channel.mention} from {quote_ts}:"
         )
         lines.append(message.jump_url)
+        content = "\n".join(lines)
 
         content_to_quote: Optional[str] = message.content
 
-        # Account for any attachments to the original message.
-        if message.attachments:
-            attachment_urls = [att.url for att in message.attachments]
-            lines += attachment_urls
-
-        # Account for any media embeds on the original message.
-        if message.embeds:
-            embed_urls = [
-                embed.url for embed in message.embeds if isinstance(embed.url, str)
-            ]
-            lines += embed_urls
-
-            # Special-case: message is just a media link, which creates a single embed.
-            # In this case, remove the quote embed so the media embed appears.
-            if len(embed_urls) == 1 and AUTO_EMBED_PATTERN.match(content_to_quote):
-                content_to_quote = None
+        # Special-case: message is just a media link, which creates a single embed.
+        # In this case, omit the quote embed.
+        just_media_link = len(message.embeds) == 1 and AUTO_EMBED_PATTERN.match(
+            content_to_quote
+        )
+        if just_media_link:
+            content_to_quote = None
 
         # Build the embed containing the actual quote content, if any.
-        embed: Optional[Embed] = None
+        quote_embed: Optional[Embed] = None
         if content_to_quote:
-            embed = Embed(
+            quote_embed = Embed(
                 description=content_to_quote,
             )
-            embed.set_author(
+            quote_embed.set_author(
                 name=str(message.author),
                 icon_url=message.author.display_avatar.url,
             )
 
-        # Send the message with the embed attached, if any.
-        content = "\n".join(lines)
-        if embed:
-            await ctx.send(content, embed=embed, allowed_mentions=allowed_mentions)
+        # Send the message with the quote embed attached, if any.
+        if quote_embed:
+            await ctx.send(
+                content, embed=quote_embed, allowed_mentions=allowed_mentions
+            )
         else:
             await ctx.send(content, allowed_mentions=allowed_mentions)
+
+        # Account for any attachments/embeds on the original message. We have to send
+        # these separately from the quote embed, because the quote embed takes
+        # precedence and will stop other attachments/embeds from appearing.
+        attachment_urls = [att.url for att in message.attachments]
+        embed_urls = [
+            embed.url for embed in message.embeds if isinstance(embed.url, str)
+        ]
+        urls_to_quote: List[str] = attachment_urls + embed_urls
+        for url in urls_to_quote:
+            await ctx.send(url)
 
     @command(name="quote")
     async def cmd_quote(self, ctx: Context, message: Message):
