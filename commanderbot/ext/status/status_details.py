@@ -1,12 +1,13 @@
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from importlib.metadata import version
 from typing import Dict, Optional
 
 from discord.ext.commands import Bot
 
 from commanderbot.core.utils import check_commander_bot
+from commanderbot.lib.utils.datetimes import datetime_to_int
 
 
 class StatusDetails:
@@ -32,12 +33,6 @@ class StatusDetails:
             self.last_reconnect = cb.connected_since
             self.uptime = cb.uptime
 
-    def _get_epoch(self, dt: Optional[datetime]) -> Optional[int]:
-        if dt:
-            return int(dt.replace(tzinfo=timezone.utc).timestamp())
-        else:
-            return None
-
     def _format_timedelta(self, td: Optional[timedelta]) -> Optional[str]:
         if not td:
             return None
@@ -49,14 +44,20 @@ class StatusDetails:
             return f"0d {times[0]}h {times[1]}m {times[2]}s"
 
     @property
-    def rows(self) -> Dict[str, str]:
-        all_rows = {
+    def fields(self) -> Dict[str, str]:
+        all_fields = {
             "Python version": f"`{self.python_version}`",
             "Discord.py version": f"`{self.discord_py_version}`",
             "CommanderBot version": f"`{self.commanderbot_version}`",
-            "Started": f"<t:{self._get_epoch(self.started_at)}:R>",
-            "Last reconnect": f"<t:{self._get_epoch(self.last_reconnect)}:R>",
-            "Uptime": f"`{self._format_timedelta(self.uptime)}`",
         }
-        non_empty_rows = {k: v for k, v in all_rows.items() if v}
-        return non_empty_rows
+
+        if dt := self.started_at:
+            all_fields["Started"] = f"<t:{datetime_to_int(dt)}:R>"
+
+        if dt := self.last_reconnect:
+            all_fields["Last reconnect"] = f"<t:{datetime_to_int(dt)}:R>"
+
+        if td := self.uptime:
+            all_fields["Uptime"] = f"`{self._format_timedelta(td)}`"
+
+        return all_fields

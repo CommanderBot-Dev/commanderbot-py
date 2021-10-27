@@ -13,7 +13,7 @@ class StatusCog(Cog, name="commanderbot.ext.status"):
         status_details = StatusDetails(self.bot)
 
         status_embed: Embed = Embed(color=0x00ACED)
-        for k, v in status_details.rows.items():
-            status_embed.add_field(name=f"{k}", value=f"{v}")
+        for k, v in status_details.fields.items():
+            status_embed.add_field(name=k, value=v)
 
         await ctx.send(embed=status_embed)
