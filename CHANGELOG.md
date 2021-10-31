@@ -20,6 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - `status` shows the status of version requests
     - `update` manually requests the version
 
+- `allay`:
+  - New command, turns a plaintext markdown-like format into a text component with optional indentation levels
+
 ### Changed
 
 - `manifest`:
