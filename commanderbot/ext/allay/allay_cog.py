@@ -84,6 +84,13 @@ class AllayCog(Cog, name="commanderbot.ext.allay"):
 
         code_block = code_block[start:end]
 
-        # Parse the output and print it in a code block (None is fine to pass)
-        parsed_contents = self.parser.parse(code_block, indent)
-        await ctx.send("```json\n" + parsed_contents + "\n```")
+        if code_block:
+            # Parse the output and print it in a code block (None is fine to pass)
+            parsed_contents = self.parser.parse(code_block, indent)
+            await ctx.send("```json\n" + parsed_contents + "\n```")
+        else:
+            await ctx.reply(
+                "No text specified (did you forget to add a newline?)",
+                mention_author=False,
+            )
+            return
