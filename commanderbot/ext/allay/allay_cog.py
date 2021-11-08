@@ -2,7 +2,6 @@ from textwrap import dedent
 
 import allay
 from discord.ext.commands import Bot, Cog, Context, command
-from tokenstream.error import InvalidSyntax
 
 from commanderbot.lib.responsive_exception import ResponsiveException
 
