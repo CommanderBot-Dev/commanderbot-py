@@ -32,8 +32,8 @@ jsonpath-ng = "^1.5.3"
 # NOTE See: https://github.com/python-poetry/poetry/issues/4402
 # This was fixed in stable, but doesn't seem to be fixed in the beta branch.
 SQLAlchemy = ">=1.4,<1.4.23"
-allay = "^1.0.1"
 tokenstream = "^1.2.3"
+allay = "^1.0.3"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"

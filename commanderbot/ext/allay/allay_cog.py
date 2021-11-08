@@ -3,6 +3,8 @@ from textwrap import dedent
 import allay
 from discord.ext.commands import Bot, Cog, Context, command
 
+from commanderbot.lib.responsive_exception import ResponsiveException
+
 CMD_HELP = """
     Convert plaintext into a text-component via Allay
     Usage: https://github.com/DoubleF3lix/Allay
@@ -86,7 +88,12 @@ class AllayCog(Cog, name="commanderbot.ext.allay"):
 
         if code_block:
             # Parse the output and print it in a code block (None is fine to pass)
-            parsed_contents = self.parser.parse(code_block, indent)
+            try:
+                parsed_contents = self.parser.parse(code_block, indent)
+            except Exception as error:
+                raise ResponsiveException(
+                    f"```\n{error}\n```\nUsage: <https://github.com/DoubleF3lix/Allay#format>"
+                ) from error
             await ctx.send("```json\n" + parsed_contents + "\n```")
         else:
             await ctx.reply(
