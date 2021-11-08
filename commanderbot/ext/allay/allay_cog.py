@@ -20,6 +20,20 @@ CMD_HELP = """
     Both plain-text, inline code blocks, and normal code blocks are all supported. There should always be a newline in between the command (and optional indent, if supplied), and the text.
 """
 
+CMD_HELP = """
+    Convert plaintext into a text-component via Allay
+    Usage: https://github.com/DoubleF3lix/Allay
+
+    Example usage:
+
+        .allay [indent]
+        `​`​`
+        text
+        `​`​`
+    
+    Both plain-text, inline code blocks, and normal code blocks are all supported. There should always be a newline in between the command (and optional indent, if supplied), and the text.
+"""
+
 
 class AllayCog(Cog, name="commanderbot.ext.allay"):
     def __init__(self, bot: Bot):
