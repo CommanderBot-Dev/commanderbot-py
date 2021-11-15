@@ -30,7 +30,7 @@ typing_extensions = ">=3.7.2"
 
 [[package]]
 name = "allay"
-version = "1.0.3"
+version = "1.1.0"
 description = "A parser to convert a descriptive text format into minecraft text components"
 category = "main"
 optional = false
@@ -513,7 +513,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "7cbc991480e007fd59c5c67cc24a762530adf429e291fd9f0618251f1194832e"
+content-hash = "f8f532d9ab44ca9a8359fbd0e5cce8787884564752a30222227b7d8909d4cd9e"
 
 [metadata.files]
 aiohttp = [
@@ -560,8 +560,8 @@ aiosqlite = [
     {file = "aiosqlite-0.17.0.tar.gz", hash = "sha256:f0e6acc24bc4864149267ac82fb46dfb3be4455f99fe21df82609cc6e6baee51"},
 ]
 allay = [
-    {file = "allay-1.0.3-py3-none-any.whl", hash = "sha256:7f2be2ed4f4dc2fcd1b2cfdc80280bdd7e0aa32f6abd2f4d4af03c7b42682517"},
-    {file = "allay-1.0.3.tar.gz", hash = "sha256:d04e2e5b175bd60fa5adf29fd3014fb8e855344c37cd244e771d868e8fbb9252"},
+    {file = "allay-1.1.0-py3-none-any.whl", hash = "sha256:e25db569380c1ec3dad519ab1cc49fa081c0d9ad7ca9e1e39f6f9c3394b672a9"},
+    {file = "allay-1.1.0.tar.gz", hash = "sha256:cde24637062c41cc568bbaead9ca790b622a4dad291db4f1dcd2380ab4733183"},
 ]
 async-timeout = [
     {file = "async-timeout-3.0.1.tar.gz", hash = "sha256:0c3c816a028d47f659d6ff5c745cb2acf1f966da1fe5c19c77a70282b25f4c5f"},
