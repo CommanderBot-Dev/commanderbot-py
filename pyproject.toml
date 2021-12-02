@@ -15,6 +15,10 @@ python = "^3.10"
 # This is the last announced version of the discord.py 2.0 beta. RIP.
 # "discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "848d752" }
 
+# NOTE See: https://github.com/python-poetry/poetry/issues/4402
+# This was fixed in stable, but doesn't seem to be fixed in the beta branch.
+SQLAlchemy = ">=1.4,<1.4.23"
+
 # These are used for logging.
 colorama = "^0.4.3"
 colorlog = "^4.2.1"
@@ -23,23 +27,20 @@ colorlog = "^4.2.1"
 aiosqlite = "^0.17.0"
 nbtlib = "^1.12.1"
 tokenstream = "^1.2.3"
-lectern = ">=0.15.0"
-mecha = ">=0.12.1"
-beet = ">=0.44.8"
-allay = "^1.1.0"
+lectern = ">=0.18.0"
+mecha = ">=0.15.0"
+beet = ">=0.45.3"
+allay = "^1.2.0"
 aiohttp = "^3.7.4"
 PyYAML = "^5.4.1"
 emoji = "^1.4.2"
 jsonpath-ng = "^1.5.3"
+black = "^21.11-beta.1"
 
-# NOTE See: https://github.com/python-poetry/poetry/issues/4402
-# This was fixed in stable, but doesn't seem to be fixed in the beta branch.
-SQLAlchemy = ">=1.4,<1.4.23"
-
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 black = "^21.9b0"
-isort = "^5.9.3"
-rope = "^0.20.0"
+isort = "^5.10.1"
+rope = "^0.22.0"
 
 # TODO Update to pycord or another discord.py alternative when it's ready.
 # FIXME Comment this out before attempting to publish the package to PyPI.

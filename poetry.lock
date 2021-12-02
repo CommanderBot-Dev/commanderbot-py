@@ -30,11 +30,11 @@ typing_extensions = ">=3.7.2"
 
 [[package]]
 name = "allay"
-version = "1.1.0"
+version = "1.2.0"
 description = "A parser to convert a descriptive text format into minecraft text components"
 category = "main"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 
 [[package]]
 name = "async-timeout"
@@ -71,7 +71,7 @@ tests = ["mypy", "PyHamcrest (>=2.0.2)", "pytest (>=4.6)", "pytest-benchmark", "
 
 [[package]]
 name = "beet"
-version = "0.44.8"
+version = "0.45.3"
 description = "The Minecraft pack development kit"
 category = "main"
 optional = false
@@ -82,7 +82,6 @@ base58 = ">=2.1.0,<3.0.0"
 click = ">=8.0.1,<9.0.0"
 click-help-colors = ">=0.9.1,<0.10.0"
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
-fnvhash = ">=0.1.0,<0.2.0"
 Jinja2 = ">=3.0.1,<4.0.0"
 nbtlib = ">=1.12.1,<2.0.0"
 pathspec = ">=0.9.0,<0.10.0"
@@ -97,7 +96,7 @@ image = ["pillow"]
 name = "black"
 version = "21.11b1"
 description = "The uncompromising code formatter."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6.2"
 
@@ -215,14 +214,6 @@ python-versions = "*"
 dev = ["pytest", "coverage", "coveralls"]
 
 [[package]]
-name = "fnvhash"
-version = "0.1.0"
-description = "Pure Python FNV hash implementation"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "greenlet"
 version = "1.1.2"
 description = "Lightweight in-process concurrent programming"
@@ -324,15 +315,15 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "mecha"
-version = "0.12.1"
+version = "0.15.0"
 description = "A powerful Minecraft command library"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 
 [package.dependencies]
-beet = ">=0.44.5"
-tokenstream = ">=1.2.3,<2.0.0"
+beet = ">=0.45.1"
+tokenstream = ">=1.2.6,<2.0.0"
 
 [[package]]
 name = "multidict"
@@ -346,7 +337,7 @@ python-versions = ">=3.6"
 name = "mypy-extensions"
 version = "0.4.3"
 description = "Experimental type system extensions for programs checked with the mypy typechecker."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -381,7 +372,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 name = "platformdirs"
 version = "2.4.0"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -424,20 +415,20 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 name = "regex"
 version = "2021.11.10"
 description = "Alternative regular expression module, to replace re."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
 [[package]]
 name = "rope"
-version = "0.20.1"
+version = "0.22.0"
 description = "a python refactoring library..."
 category = "dev"
 optional = false
 python-versions = "*"
 
 [package.extras]
-dev = ["pytest", "pytest-timeout"]
+dev = ["build", "pytest", "pytest-timeout"]
 
 [[package]]
 name = "six"
@@ -480,7 +471,7 @@ sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
 name = "tokenstream"
-version = "1.2.3"
+version = "1.2.6"
 description = "A versatile token stream for handwritten parsers"
 category = "main"
 optional = false
@@ -498,7 +489,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 name = "tomli"
 version = "1.2.2"
 description = "A lil' TOML parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -525,7 +516,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "423a8873ed5d8cb92935db84b115e2f5ddc90c484dc6f514cd0a5617ac499d2c"
+content-hash = "310c2f4ca0c7c4c827e64c1bfa543667179ec92b02644c5791e84bd7c7b6d900"
 
 [metadata.files]
 aiohttp = [
@@ -572,8 +563,8 @@ aiosqlite = [
     {file = "aiosqlite-0.17.0.tar.gz", hash = "sha256:f0e6acc24bc4864149267ac82fb46dfb3be4455f99fe21df82609cc6e6baee51"},
 ]
 allay = [
-    {file = "allay-1.1.0-py3-none-any.whl", hash = "sha256:e25db569380c1ec3dad519ab1cc49fa081c0d9ad7ca9e1e39f6f9c3394b672a9"},
-    {file = "allay-1.1.0.tar.gz", hash = "sha256:cde24637062c41cc568bbaead9ca790b622a4dad291db4f1dcd2380ab4733183"},
+    {file = "allay-1.2.0-py3-none-any.whl", hash = "sha256:1db6b6e2524ae8f065e24ae846e0cddc98714bc52456c9a1bcefc129a1c761dc"},
+    {file = "allay-1.2.0.tar.gz", hash = "sha256:c21feda1631608a16ce345fdf684c4b2dbe2acdd45dee4a76b582063f1b46a27"},
 ]
 async-timeout = [
     {file = "async-timeout-3.0.1.tar.gz", hash = "sha256:0c3c816a028d47f659d6ff5c745cb2acf1f966da1fe5c19c77a70282b25f4c5f"},
@@ -588,8 +579,8 @@ base58 = [
     {file = "base58-2.1.1.tar.gz", hash = "sha256:c5d0cb3f5b6e81e8e35da5754388ddcc6d0d14b6c6a132cb93d69ed580a7278c"},
 ]
 beet = [
-    {file = "beet-0.44.8-py3-none-any.whl", hash = "sha256:6daf3a37d4670c8361a5245613526cb5786498f8d69e0ef52d0f3797ee69fc2d"},
-    {file = "beet-0.44.8.tar.gz", hash = "sha256:8f971685a155d74d0461fbf9fe6432e7792c3283cc201235bdd8d0bd53d3c54e"},
+    {file = "beet-0.45.3-py3-none-any.whl", hash = "sha256:e1a53d93789c3b5bc499ff47bad808af4d9604d9c4022d35e8ee48aa880d1bf2"},
+    {file = "beet-0.45.3.tar.gz", hash = "sha256:86c35ce84c4bcf351430e06037d825c1179b1a5873755ce909ac7ac181ac0b6b"},
 ]
 black = [
     {file = "black-21.11b1-py3-none-any.whl", hash = "sha256:802c6c30b637b28645b7fde282ed2569c0cd777dbe493a41b6a03c1d903f99ac"},
@@ -622,9 +613,6 @@ decorator = [
 "discord.py" = []
 emoji = [
     {file = "emoji-1.6.1.tar.gz", hash = "sha256:53d61a8e4c025f6c295ab99c842302c66d47952199c4fde66dd060dee3ad4324"},
-]
-fnvhash = [
-    {file = "fnvhash-0.1.0.tar.gz", hash = "sha256:3e82d505054f9f3987b2b5b649f7e7b6f48349f6af8a1b8e4d66779699c85a8e"},
 ]
 greenlet = [
     {file = "greenlet-1.1.2-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:58df5c2a0e293bf665a51f8a100d3e9956febfbf1d9aaf8c0677cf70218910c6"},
@@ -760,8 +748,8 @@ markupsafe = [
     {file = "MarkupSafe-2.0.1.tar.gz", hash = "sha256:594c67807fb16238b30c44bdf74f36c02cdf22d1c8cda91ef8a0ed8dabf5620a"},
 ]
 mecha = [
-    {file = "mecha-0.12.1-py3-none-any.whl", hash = "sha256:632e10072e40bba0df178cf4dd8d1953830f602d5e52dfba3f2f1da9bde4fd9d"},
-    {file = "mecha-0.12.1.tar.gz", hash = "sha256:bc939c0653ec530d0d1ea7c918e5f6a245b17ca761990151ebd6933bfce1fccf"},
+    {file = "mecha-0.15.0-py3-none-any.whl", hash = "sha256:b6e9f13313e49bf55ea6165098e92891c0e2a9c3f0d6f8f9268c36e987abf11d"},
+    {file = "mecha-0.15.0.tar.gz", hash = "sha256:2cf8eb21c5cd30625fa403ebcd9151011c0a9cd91a03068d367ee7e1276bfd16"},
 ]
 multidict = [
     {file = "multidict-5.2.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:3822c5894c72e3b35aae9909bef66ec83e44522faf767c0ad39e0e2de11d3b55"},
@@ -994,7 +982,8 @@ regex = [
     {file = "regex-2021.11.10.tar.gz", hash = "sha256:f341ee2df0999bfdf7a95e448075effe0db212a59387de1a70690e4acb03d4c6"},
 ]
 rope = [
-    {file = "rope-0.20.1.tar.gz", hash = "sha256:505a2f6b4ac7b18e0429be179f4d8712243a194da5c866b0731f9d91ce7590bb"},
+    {file = "rope-0.22.0-py3-none-any.whl", hash = "sha256:2847220bf72ead09b5abe72b1edc9cacff90ab93663ece06913fc97324167870"},
+    {file = "rope-0.22.0.tar.gz", hash = "sha256:b00fbc064a26fc62d7220578a27fd639b2fad57213663cc396c137e92d73f10f"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
@@ -1033,8 +1022,8 @@ sqlalchemy = [
     {file = "SQLAlchemy-1.4.22.tar.gz", hash = "sha256:ec1be26cdccd60d180359a527d5980d959a26269a2c7b1b327a1eea0cab37ed8"},
 ]
 tokenstream = [
-    {file = "tokenstream-1.2.3-py3-none-any.whl", hash = "sha256:9e8f31608cc376b64256cb3bd533420f0fc9016dde91efdfb42c6a304b7c1f45"},
-    {file = "tokenstream-1.2.3.tar.gz", hash = "sha256:4a7331632822a5ad13f8fc7d5f3de12571f2589e17b5f66e2089bcc65c5d0355"},
+    {file = "tokenstream-1.2.6-py3-none-any.whl", hash = "sha256:a103cfa6434f856a45d24ab205867ba587304bc201b73cace996bcbde2002e98"},
+    {file = "tokenstream-1.2.6.tar.gz", hash = "sha256:24dbed519a8bdeb66f800d6b88101a15a6d2cd64c354e0308caf6f2ff5e2e258"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
