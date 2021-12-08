@@ -9,7 +9,6 @@ from commanderbot.lib.types import GuildContext
 __all__ = (
     "CannotDisambiguateRole",
     "LenientRoleConverter",
-    "LenientRole",
 )
 
 
@@ -73,7 +72,3 @@ class LenientRoleConverter(RoleConverter):
     ) -> bool:
         match = pattern.search(role.name)
         return match is not None
-
-
-class LenientRole(LenientRoleConverter, Role):
-    pass
