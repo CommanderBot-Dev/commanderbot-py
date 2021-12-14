@@ -1,19 +1,13 @@
 from dataclasses import dataclass
-from typing import Type, TypeVar
+from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-)
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.integer_range import IntegerRange
-
-ST = TypeVar("ST")
 
 
 @dataclass
-class ThreadAutoArchiveDuration(AutomodConditionBase):
+class ThreadAutoArchiveDuration(ConditionBase):
     """
     Passes if the thread's auto archive duration is within the given range.
 
@@ -25,19 +19,19 @@ class ThreadAutoArchiveDuration(AutomodConditionBase):
 
     auto_archive_duration: IntegerRange
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         auto_archive_duration = IntegerRange.from_field(data, "auto_archive_duration")
-        return cls(
-            description=data.get("description"),
+        return dict(
             auto_archive_duration=auto_archive_duration,
         )
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         if thread := event.thread:
             return self.auto_archive_duration.includes(thread.auto_archive_duration)
         return False
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: Any) -> Condition:
     return ThreadAutoArchiveDuration.from_data(data)

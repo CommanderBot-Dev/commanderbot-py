@@ -2,11 +2,11 @@ from dataclasses import dataclass
 
 from discord import RawMessageUpdateEvent
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 
 __all__ = ("RawMessageEdited",)
 
 
 @dataclass
-class RawMessageEdited(AutomodEventBase):
+class RawMessageEdited(EventBase):
     payload: RawMessageUpdateEvent

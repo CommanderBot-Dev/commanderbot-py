@@ -1,17 +1,19 @@
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Iterator, Optional, Set, Tuple, Union
+from typing import Any, Iterable, Iterator, Optional, Set, Tuple, Type, TypeVar, Union
 
 from discord import Guild, Member, Role
 
-from commanderbot.lib.from_data_mixin import FromDataMixin
-from commanderbot.lib.json_serializable import JsonSerializable
+from commanderbot.lib.data import FromData, ToData
 from commanderbot.lib.types import RoleID
 
 __all__ = ("RoleSet",)
 
 
+ST = TypeVar("ST")
+
+
 @dataclass(frozen=True)
-class RoleSet(JsonSerializable, FromDataMixin):
+class RoleSet(FromData, ToData):
     """
     Wrapper around a set of role IDs, useful for common set-based operations.
 
@@ -23,8 +25,9 @@ class RoleSet(JsonSerializable, FromDataMixin):
 
     _values: Set[RoleID] = field(default_factory=set)
 
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, dict):
             return cls(
                 _values=set(data.get("values", [])),
@@ -38,8 +41,8 @@ class RoleSet(JsonSerializable, FromDataMixin):
     def __len__(self) -> int:
         return len(self._values)
 
-    # @implements JsonSerializable
-    def to_json(self) -> Any:
+    # @overrides ToData
+    def to_data(self) -> Any:
         return list(self._values)
 
     def _get_role_id(self, role: Union[Role, RoleID]) -> RoleID:

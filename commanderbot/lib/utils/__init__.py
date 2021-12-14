@@ -1,4 +1,5 @@
 from .colors import *
+from .dataclasses import *
 from .datetimes import *
 from .json_path import *
 from .timedeltas import *

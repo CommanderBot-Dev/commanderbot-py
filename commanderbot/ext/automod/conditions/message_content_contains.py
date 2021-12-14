@@ -1,22 +1,15 @@
 import unicodedata
 from dataclasses import dataclass
-from typing import Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Optional, Tuple
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-)
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
-
-ST = TypeVar("ST")
-
+from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
 
 DEFAULT_NORMALIZATION_FORM = "NFKD"
 
 
 @dataclass
-class MessageContentContains(AutomodConditionBase):
+class MessageContentContains(ConditionBase):
     """
     Check if message content contains a number of substrings.
 
@@ -43,26 +36,23 @@ class MessageContentContains(AutomodConditionBase):
     use_normalization: Optional[bool] = None
     normalization_form: Optional[str] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         raw_contains = data["contains"]
         if isinstance(raw_contains, str):
             contains = [raw_contains]
         else:
             contains = [str(item) for item in raw_contains]
-        ignore_case = data.get("ignore_case")
-        if ignore_case:
+
+        if data.get("ignore_case"):
             contains = [item.lower() for item in contains]
-        return cls(
-            description=data.get("description"),
+
+        return dict(
             contains=contains,
-            count=data.get("count"),
-            ignore_case=ignore_case,
-            use_normalization=data.get("use_normalization"),
-            normalization_form=data.get("normalization_form"),
         )
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         message = event.message
         # Short-circuit if there's no message or the message is empty.
         if not (message and message.content):
@@ -91,5 +81,5 @@ class MessageContentContains(AutomodConditionBase):
         return False
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: Any) -> Condition:
     return MessageContentContains.from_data(data)

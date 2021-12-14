@@ -1,19 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-)
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
-from commanderbot.lib.integer_range import IntegerRange
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
+from commanderbot.lib import IntegerRange
 
 
 @dataclass
-class MessageHasLinks(AutomodConditionBase):
+class MessageHasLinks(ConditionBase):
     """
     Check if the message has links.
 
@@ -28,15 +22,15 @@ class MessageHasLinks(AutomodConditionBase):
 
     count: Optional[IntegerRange] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         count = IntegerRange.from_field_optional(data, "count")
-        return cls(
-            description=data.get("description"),
+        return dict(
             count=count,
         )
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         message = event.message
         if (message is None) or not message.content:
             return False
@@ -49,5 +43,5 @@ class MessageHasLinks(AutomodConditionBase):
         return count_links > 0
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: Any) -> Condition:
     return MessageHasLinks.from_data(data)

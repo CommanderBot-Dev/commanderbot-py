@@ -1,13 +1,12 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Any, Tuple
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.action import Action, ActionBase
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
-class AddReactions(AutomodActionBase):
+class AddReactions(ActionBase):
     """
     Add reactions to the message in context.
 
@@ -19,11 +18,11 @@ class AddReactions(AutomodActionBase):
 
     reactions: Tuple[str]
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if message := event.message:
             for reaction in self.reactions:
                 await message.add_reaction(reaction)
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return AddReactions.from_data(data)

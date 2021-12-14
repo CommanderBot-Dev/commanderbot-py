@@ -1,19 +1,17 @@
 from dataclasses import dataclass
-from typing import Dict, Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 from discord import Color
 from discord.abc import Messageable
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import AllowedMentions, ChannelID, JsonObject, ValueFormatter
+from commanderbot.ext.automod.action import Action, ActionBase
+from commanderbot.ext.automod.event import Event
+from commanderbot.lib import AllowedMentions, ChannelID, ValueFormatter
 from commanderbot.lib.utils import color_from_field_optional, message_to_file
-
-ST = TypeVar("ST")
 
 
 @dataclass
-class LogMessage(AutomodActionBase):
+class LogMessage(ActionBase):
     """
     Send a log message, with pings disabled by default.
 
@@ -45,27 +43,24 @@ class LogMessage(AutomodActionBase):
     fields: Optional[Dict[str, str]] = None
     allowed_mentions: Optional[AllowedMentions] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         color = color_from_field_optional(data, "color")
         allowed_mentions = AllowedMentions.from_field_optional(data, "allowed_mentions")
-        return cls(
-            description=data.get("description"),
-            content=data.get("content"),
-            channel=data.get("channel"),
-            emoji=data.get("emoji"),
+        return dict(
             color=color,
-            fields=data.get("fields"),
-            attach_message=data.get("attach_message"),
             allowed_mentions=allowed_mentions,
         )
 
-    async def resolve_channel(self, event: AutomodEvent) -> Optional[Messageable]:
+    async def resolve_channel(self, event: Event) -> Optional[Messageable]:
         if self.channel is not None:
-            return event.bot.get_channel(self.channel)
+            channel = event.bot.get_channel(self.channel)
+            assert isinstance(channel, Messageable)
+            return channel
         return event.channel
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if channel := await self.resolve_channel(event):
             parts = []
             if self.emoji:
@@ -98,5 +93,5 @@ class LogMessage(AutomodActionBase):
                 await channel.send(content, allowed_mentions=allowed_mentions)
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return LogMessage.from_data(data)

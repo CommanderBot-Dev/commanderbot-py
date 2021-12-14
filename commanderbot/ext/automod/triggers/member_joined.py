@@ -1,15 +1,12 @@
 from dataclasses import dataclass
+from typing import Any
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_trigger import (
-    AutomodTrigger,
-    AutomodTriggerBase,
-)
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.trigger import Trigger, TriggerBase
 
 
 @dataclass
-class MemberJoined(AutomodTriggerBase):
+class MemberJoined(TriggerBase):
     """
     Fires when an `on_member_join` event is received.
 
@@ -19,5 +16,5 @@ class MemberJoined(AutomodTriggerBase):
     event_types = (events.MemberJoined,)
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: Any) -> Trigger:
     return MemberJoined.from_data(data)

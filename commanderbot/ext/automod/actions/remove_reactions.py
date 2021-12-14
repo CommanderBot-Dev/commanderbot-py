@@ -1,13 +1,12 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Any, Tuple
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.action import Action, ActionBase
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
-class RemoveReactions(AutomodActionBase):
+class RemoveReactions(ActionBase):
     """
     Remove certain reactions from the message in context.
 
@@ -19,11 +18,11 @@ class RemoveReactions(AutomodActionBase):
 
     reactions: Tuple[str]
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if message := event.message:
             for reaction in self.reactions:
                 await message.clear_reaction(reaction)
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return RemoveReactions.from_data(data)

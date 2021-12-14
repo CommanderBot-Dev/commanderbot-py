@@ -2,13 +2,13 @@ from dataclasses import dataclass
 
 from discord import Member, Thread, ThreadMember
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 
 __all__ = ("ThreadMemberJoined",)
 
 
 @dataclass
-class ThreadMemberJoined(AutomodEventBase):
+class ThreadMemberJoined(EventBase):
     _member: ThreadMember
 
     @property

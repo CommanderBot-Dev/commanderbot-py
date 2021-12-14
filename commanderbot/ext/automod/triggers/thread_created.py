@@ -1,12 +1,9 @@
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import Any
 
 from commanderbot.ext.automod import events
-from commanderbot.ext.automod.automod_trigger import AutomodTrigger
+from commanderbot.ext.automod.trigger import Trigger
 from commanderbot.ext.automod.triggers.abc.thread_base import ThreadBase
-from commanderbot.lib import JsonObject
-
-ST = TypeVar("ST")
 
 
 @dataclass
@@ -25,5 +22,5 @@ class ThreadCreated(ThreadBase):
     event_types = (events.ThreadCreated,)
 
 
-def create_trigger(data: JsonObject) -> AutomodTrigger:
+def create_trigger(data: Any) -> Trigger:
     return ThreadCreated.from_data(data)

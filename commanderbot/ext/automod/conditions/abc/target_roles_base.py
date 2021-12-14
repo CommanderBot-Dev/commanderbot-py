@@ -1,32 +1,29 @@
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 from discord import Member
 
-from commanderbot.ext.automod.automod_condition import AutomodConditionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.condition import ConditionBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.guards.roles_guard import RolesGuard
-
-ST = TypeVar("ST")
 
 
 @dataclass
-class TargetRolesBase(AutomodConditionBase):
+class TargetRolesBase(ConditionBase):
     roles: RolesGuard
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         roles = RolesGuard.from_field(data, "roles")
-        return cls(
-            description=data.get("description"),
+        return dict(
             roles=roles,
         )
 
-    def get_target(self, event: AutomodEvent) -> Optional[Member]:
+    def get_target(self, event: Event) -> Optional[Member]:
         raise NotImplementedError()
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         if member := self.get_target(event):
             return not self.roles.ignore(member)
         return False

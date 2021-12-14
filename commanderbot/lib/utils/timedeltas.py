@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
-from commanderbot.lib.data import MalformedData
+from commanderbot.lib.errors import MalformedData
 from commanderbot.lib.types import JsonObject
 
 __all__ = (

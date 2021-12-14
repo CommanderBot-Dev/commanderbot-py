@@ -1,99 +1,108 @@
-from __future__ import annotations
-
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, AsyncIterable, DefaultDict, Dict, Iterable, Optional, Set, Type
+from typing import Any, AsyncIterable, DefaultDict, Dict, Optional, Type, TypeVar, cast
 
 from discord import Guild
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_rule import AutomodRule
+from commanderbot.ext.automod.action import Action, ActionCollection
+from commanderbot.ext.automod.bucket import Bucket, BucketCollection
+from commanderbot.ext.automod.condition import Condition, ConditionCollection
+from commanderbot.ext.automod.event import Event
+from commanderbot.ext.automod.node import Node, NodeCollection
+from commanderbot.ext.automod.rule import Rule, RuleCollection
+from commanderbot.ext.automod.trigger import Trigger, TriggerCollection
 from commanderbot.lib import (
+    FromData,
     GuildID,
-    JsonObject,
     LogOptions,
     ResponsiveException,
     RoleSet,
+    ToData,
 )
-from commanderbot.lib.json import to_data
-from commanderbot.lib.utils import (
-    JsonPath,
-    JsonPathOp,
-    dict_without_ellipsis,
-    update_json_with_path,
-)
+from commanderbot.lib.utils import JsonPath, JsonPathOp, dict_without_ellipsis
 
-RulesByEventType = DefaultDict[Type[AutomodEvent], Set[AutomodRule]]
-
-
-class AutomodRuleWithNameAlreadyExists(ResponsiveException):
-    def __init__(self, name: str):
-        self.name: str = name
-        super().__init__(f"A rule with the name `{name}` already exists")
-
-
-class AutomodNoRuleWithName(ResponsiveException):
-    def __init__(self, name: str):
-        self.name: str = name
-        super().__init__(f"There is no rule with the name `{name}`")
-
-
-class AutomodRuleNotRegistered(ResponsiveException):
-    def __init__(self, rule: AutomodRule):
-        self.rule: AutomodRule = rule
-        super().__init__(f"Rule `{rule.name}` is not registered")
-
-
-class AutomodInvalidFields(ResponsiveException):
-    def __init__(self, names: Set[str]):
-        self.names: Set[str] = names
-        super().__init__("These fields are invalid: " + "`" + "` `".join(names) + "`")
-
-
-class AutomodUnmodifiableFields(ResponsiveException):
-    def __init__(self, names: Set[str]):
-        self.names: Set[str] = names
-        super().__init__(
-            "These fields cannot be modified: " + "`" + "` `".join(names) + "`"
-        )
+ST = TypeVar("ST")
+NT = TypeVar("NT", bound=Node)
+NST = TypeVar("NST", bound=Node)
 
 
 @dataclass
-class AutomodGuildData:
-    # Default logging configuration for this guild.
-    default_log_options: Optional[LogOptions] = None
+class AutomodGuildData(FromData, ToData):
+    """
+    In-memory cache for a particular guild's automod data.
 
-    # Roles that are permitted to manage the extension within this guild.
+    Attributes
+    ----------
+    default_log_options
+        Default logging configuration for this guild.
+    permitted_roles
+        Roles that are permitted to manage the extension within this guild.
+    rules
+        The guild's rules.
+    buckets
+        The guild's buckets.
+    triggers
+        The guild's triggers.
+    conditions
+        The guild's conditions.
+    actions
+        The guild's actions.
+    """
+
+    default_log_options: Optional[LogOptions] = None
     permitted_roles: Optional[RoleSet] = None
 
-    # Index rules by name for faster look-up in commands.
-    rules: Dict[str, AutomodRule] = field(init=False, default_factory=dict)
-
-    # Group rules by event type for faster look-up during event dispatch.
-    rules_by_event_type: RulesByEventType = field(
-        init=False, default_factory=lambda: defaultdict(lambda: set())
+    rules: RuleCollection = field(default_factory=lambda: RuleCollection())
+    buckets: BucketCollection = field(default_factory=lambda: BucketCollection())
+    triggers: TriggerCollection = field(default_factory=lambda: TriggerCollection())
+    conditions: ConditionCollection = field(
+        default_factory=lambda: ConditionCollection()
     )
+    actions: ActionCollection = field(default_factory=lambda: ActionCollection())
 
-    @staticmethod
-    def from_data(data: JsonObject) -> AutomodGuildData:
-        default_log_options = LogOptions.from_field_optional(data, "log")
-        permitted_roles = RoleSet.from_field_optional(data, "permitted_roles")
-        guild_data = AutomodGuildData(
-            default_log_options=default_log_options,
-            permitted_roles=permitted_roles,
-        )
-        for rule_data in data.get("rules", []):
-            rule = AutomodRule.from_data(rule_data)
-            guild_data.add_rule(rule)
-        return guild_data
+    # @overrides FromData
+    @classmethod
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
+        if isinstance(data, dict):
+            default_log_options = LogOptions.from_field_optional(data, "log")
+            permitted_roles = RoleSet.from_field_optional(data, "permitted_roles")
+            rules = RuleCollection.from_field_default(
+                data, "rules", lambda: RuleCollection()
+            )
+            buckets = BucketCollection.from_field_default(
+                data, "buckets", lambda: BucketCollection()
+            )
+            triggers = TriggerCollection.from_field_default(
+                data, "triggers", lambda: TriggerCollection()
+            )
+            conditions = ConditionCollection.from_field_default(
+                data, "conditions", lambda: ConditionCollection()
+            )
+            actions = ActionCollection.from_field_default(
+                data, "actions", lambda: ActionCollection()
+            )
+            return cls(
+                default_log_options=default_log_options,
+                permitted_roles=permitted_roles,
+                rules=rules,
+                buckets=buckets,
+                triggers=triggers,
+                conditions=conditions,
+                actions=actions,
+            )
 
-    def to_data(self) -> JsonObject:
-        return dict_without_ellipsis(
-            log=self.default_log_options or ...,
-            permitted_roles=self.permitted_roles or ...,
-            rules=list(self.rules.values()) or ...,
-        )
+    def get_collection(self, node_type: Type[NT]) -> NodeCollection[NT]:
+        if node_type is Rule:
+            return cast(Any, self.rules)
+        if node_type is Bucket:
+            return cast(Any, self.buckets)
+        if node_type is Trigger:
+            return cast(Any, self.triggers)
+        if node_type is Condition:
+            return cast(Any, self.conditions)
+        if node_type is Action:
+            return cast(Any, self.actions)
+        raise ResponsiveException(f"Unknown node type: `{node_type.__name__}`")
 
     def set_default_log_options(
         self, log_options: Optional[LogOptions]
@@ -109,111 +118,6 @@ class AutomodGuildData:
         self.permitted_roles = permitted_roles
         return old_value
 
-    def all_rules(self) -> Iterable[AutomodRule]:
-        yield from self.rules.values()
-
-    def rules_for_event(self, event: AutomodEvent) -> Iterable[AutomodRule]:
-        event_type = type(event)
-        # Start with the initial set of possible rules, based on the event type.
-        for rule in self.rules_by_event_type[event_type]:
-            # Yield the rule if the event activates any of its triggers.
-            if rule.poll_triggers(event):
-                yield rule
-
-    def query_rules(self, query: str) -> Iterable[AutomodRule]:
-        # If there's an exact match, yield just that.
-        if rule := self.rules.get(query):
-            yield rule
-        else:
-            # Otherwise, yield any rules that match the query.
-            query_lower = query.lower()
-            for rule_name, rule in self.rules.items():
-                if query_lower in rule_name.lower():
-                    yield rule
-
-    def get_rule(self, name: str) -> Optional[AutomodRule]:
-        return self.rules.get(name)
-
-    def require_rule(self, name: str) -> AutomodRule:
-        if rule := self.get_rule(name):
-            return rule
-        raise AutomodNoRuleWithName(name)
-
-    def _add_rule_to_cache(self, rule: AutomodRule):
-        for trigger in rule.triggers:
-            for event_type in trigger.event_types:
-                self.rules_by_event_type[event_type].add(rule)
-
-    def add_rule(self, rule: AutomodRule):
-        if rule.name in self.rules:
-            raise AutomodRuleWithNameAlreadyExists(rule.name)
-        self.rules[rule.name] = rule
-        self._add_rule_to_cache(rule)
-
-    def add_rule_from_data(self, data: JsonObject) -> AutomodRule:
-        rule = AutomodRule.from_data(data)
-        self.add_rule(rule)
-        return rule
-
-    def _remove_rule_from_cache(self, rule: AutomodRule):
-        for rules in self.rules_by_event_type.values():
-            if rule in rules:
-                rules.remove(rule)
-
-    def remove_rule(self, rule: AutomodRule):
-        existing_rule = self.rules.get(rule.name)
-        if not (existing_rule and (existing_rule is rule)):
-            raise AutomodRuleNotRegistered(rule)
-        self._remove_rule_from_cache(rule)
-        del self.rules[rule.name]
-
-    def remove_rule_by_name(self, name: str) -> AutomodRule:
-        rule = self.require_rule(name)
-        self.remove_rule(rule)
-        return rule
-
-    def modify_rule_raw(
-        self,
-        name: str,
-        path: JsonPath,
-        op: JsonPathOp,
-        data: Any,
-    ) -> AutomodRule:
-        # Start with the serialized form of the original rule.
-        old_rule = self.require_rule(name)
-        new_data = to_data(old_rule)
-
-        # Update the modification timestamp. Note that it may still be overidden.
-        new_data["modified_on"] = datetime.utcnow().isoformat()
-
-        # Update the new rule data using the given changes.
-        update_json_with_path(new_data, path, op, data)
-
-        # Create a new rule out of the modified data.
-        new_rule = AutomodRule.from_data(new_data)
-
-        # Remove the old rule, and then add the new one.
-        self.remove_rule(old_rule)
-        self.add_rule(new_rule)
-
-        # Return the new rule.
-        return new_rule
-
-    def enable_rule_by_name(self, name: str) -> AutomodRule:
-        rule = self.require_rule(name)
-        rule.disabled = False
-        return rule
-
-    def disable_rule_by_name(self, name: str) -> AutomodRule:
-        rule = self.require_rule(name)
-        rule.disabled = True
-        return rule
-
-    def increment_rule_hits_by_name(self, name: str) -> AutomodRule:
-        rule = self.require_rule(name)
-        rule.hits += 1
-        return rule
-
 
 def _guilds_defaultdict_factory() -> DefaultDict[GuildID, AutomodGuildData]:
     return defaultdict(lambda: AutomodGuildData())
@@ -221,17 +125,23 @@ def _guilds_defaultdict_factory() -> DefaultDict[GuildID, AutomodGuildData]:
 
 # @implements AutomodStore
 @dataclass
-class AutomodData:
+class AutomodData(FromData, ToData):
     """
     Implementation of `AutomodStore` using an in-memory object hierarchy.
+
+    Attributes
+    ----------
+    guilds
+        The guilds recorded.
     """
 
     guilds: DefaultDict[GuildID, AutomodGuildData] = field(
         default_factory=_guilds_defaultdict_factory
     )
 
-    @staticmethod
-    def from_data(data: JsonObject) -> AutomodData:
+    # @overrides FromData
+    @classmethod
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         guilds = _guilds_defaultdict_factory()
         guilds.update(
             {
@@ -239,19 +149,21 @@ class AutomodData:
                 for guild_id, raw_guild_data in data.get("guilds", {}).items()
             }
         )
-        return AutomodData(guilds=guilds)
+        return cls(guilds=guilds)
 
-    def to_data(self) -> JsonObject:
-        # Omit empty guilds, as well as an empty list of guilds.
-        return dict_without_ellipsis(
+    # @overrides ToData
+    def complex_fields_to_data(self) -> Optional[Dict[str, Any]]:
+        # Map guild IDs to guild data, and omit empty guilds.
+        return dict(
             guilds=dict_without_ellipsis(
                 {
                     str(guild_id): (guild_data.to_data() or ...)
                     for guild_id, guild_data in self.guilds.items()
                 }
             )
-            or ...
         )
+
+    # @@ OPTIONS
 
     # @implements AutomodStore
     async def get_default_log_options(self, guild: Guild) -> Optional[LogOptions]:
@@ -273,58 +185,81 @@ class AutomodData:
     ) -> Optional[RoleSet]:
         return self.guilds[guild.id].set_permitted_roles(permitted_roles)
 
-    # @implements AutomodStore
-    async def all_rules(self, guild: Guild) -> AsyncIterable[AutomodRule]:
-        for rule in self.guilds[guild.id].all_rules():
-            yield rule
+    # @@ NODES
 
     # @implements AutomodStore
-    async def rules_for_event(
-        self, guild: Guild, event: AutomodEvent
-    ) -> AsyncIterable[AutomodRule]:
-        for rule in self.guilds[guild.id].rules_for_event(event):
-            yield rule
+    async def all_nodes(self, guild: Guild, node_type: Type[NT]) -> AsyncIterable[NT]:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        for node in collection:
+            yield node
 
     # @implements AutomodStore
-    async def query_rules(self, guild: Guild, query: str) -> AsyncIterable[AutomodRule]:
-        for rule in self.guilds[guild.id].query_rules(query):
-            yield rule
+    async def query_nodes(
+        self, guild: Guild, node_type: Type[NT], query: str
+    ) -> AsyncIterable[NT]:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        for node in collection.query(query):
+            yield node
 
     # @implements AutomodStore
-    async def get_rule(self, guild: Guild, name: str) -> Optional[AutomodRule]:
-        return self.guilds[guild.id].get_rule(name)
+    async def get_node(
+        self, guild: Guild, node_type: Type[NT], name: str
+    ) -> Optional[NT]:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.get(name)
 
     # @implements AutomodStore
-    async def require_rule(self, guild: Guild, name: str) -> AutomodRule:
-        return self.guilds[guild.id].require_rule(name)
+    async def require_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.require(name)
 
     # @implements AutomodStore
-    async def add_rule(self, guild: Guild, data: JsonObject) -> AutomodRule:
-        return self.guilds[guild.id].add_rule_from_data(data)
+    async def require_node_with_subtype(
+        self, guild: Guild, node_type: Type[NT], name: str, node_subtype: Type[NST]
+    ) -> NST:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.require_with_type(name, node_subtype)
 
     # @implements AutomodStore
-    async def remove_rule(self, guild: Guild, name: str) -> AutomodRule:
-        return self.guilds[guild.id].remove_rule_by_name(name)
+    async def add_node(self, guild: Guild, node_type: Type[NT], data: Any) -> NT:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.add_from_data(data)
 
     # @implements AutomodStore
-    async def modify_rule(
+    async def remove_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.remove_by_name(name)
+
+    # @implements AutomodStore
+    async def enable_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.enable_by_name(name)
+
+    # @implements AutomodStore
+    async def disable_node(self, guild: Guild, node_type: Type[NT], name: str) -> NT:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.disable_by_name(name)
+
+    # @implements AutomodStore
+    async def modify_node(
         self,
         guild: Guild,
+        node_type: Type[NT],
         name: str,
         path: JsonPath,
         op: JsonPathOp,
         data: Any,
-    ) -> AutomodRule:
-        return self.guilds[guild.id].modify_rule_raw(name, path, op, data)
+    ) -> NT:
+        collection = self.guilds[guild.id].get_collection(node_type)
+        return collection.modify(name, path, op, data)
+
+    # @@ RULES
 
     # @implements AutomodStore
-    async def enable_rule(self, guild: Guild, name: str) -> AutomodRule:
-        return self.guilds[guild.id].enable_rule_by_name(name)
+    async def rules_for_event(self, guild: Guild, event: Event) -> AsyncIterable[Rule]:
+        async for rule in self.guilds[guild.id].rules.for_event(event):
+            yield rule
 
     # @implements AutomodStore
-    async def disable_rule(self, guild: Guild, name: str) -> AutomodRule:
-        return self.guilds[guild.id].disable_rule_by_name(name)
-
-    # @implements AutomodStore
-    async def increment_rule_hits(self, guild: Guild, name: str) -> AutomodRule:
-        return self.guilds[guild.id].increment_rule_hits_by_name(name)
+    async def increment_rule_hits(self, guild: Guild, name: str) -> Rule:
+        return self.guilds[guild.id].rules.increment_hits_by_name(name)

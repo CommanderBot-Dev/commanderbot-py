@@ -1,12 +1,12 @@
 from dataclasses import dataclass
+from typing import Any
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.action import Action, ActionBase
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
-class ThrowError(AutomodActionBase):
+class ThrowError(ActionBase):
     """
     Throw an error when running the action.
 
@@ -20,9 +20,9 @@ class ThrowError(AutomodActionBase):
 
     error: str
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         raise Exception(self.error)
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return ThrowError.from_data(data)

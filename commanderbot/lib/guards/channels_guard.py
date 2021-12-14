@@ -1,16 +1,19 @@
 from dataclasses import dataclass, field
-from typing import Optional, Set
+from typing import Any, Optional, Set, Type, TypeVar
 
 from discord import TextChannel, Thread
 
-from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.data import FromData, ToData
 from commanderbot.lib.types import ChannelID
 
 __all__ = ("ChannelsGuard",)
 
 
+ST = TypeVar("ST")
+
+
 @dataclass
-class ChannelsGuard(FromDataMixin):
+class ChannelsGuard(FromData, ToData):
     """
     Check whether a channel matches a set of channels.
 
@@ -25,8 +28,9 @@ class ChannelsGuard(FromDataMixin):
     include: Set[ChannelID] = field(default_factory=set)
     exclude: Set[ChannelID] = field(default_factory=set)
 
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, dict):
             return cls(
                 include=set(data.get("include", [])),

@@ -26,6 +26,7 @@ from commanderbot.ext.automod.automod_json_store import AutomodJsonStore
 from commanderbot.ext.automod.automod_options import AutomodOptions
 from commanderbot.ext.automod.automod_state import AutomodState
 from commanderbot.ext.automod.automod_store import AutomodStore
+from commanderbot.ext.automod.node_kind import NodeKind, NodeKindConverter
 from commanderbot.lib import (
     CogGuildStateManager,
     GuildContext,
@@ -456,80 +457,114 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
     async def cmd_automod_options_permit_clear(self, ctx: GuildContext):
         await self.state[ctx.guild].clear_permitted_roles(ctx)
 
-    # @@ automod rules
+    # @@ automod nodes
 
     @cmd_automod.group(
-        name="rules",
-        brief="Browse and manage automod rules.",
+        name="nodes",
+        brief="Browse and manage automod nodes.",
     )
-    async def cmd_automod_rules(self, ctx: GuildContext):
+    async def cmd_automod_nodes(self, ctx: GuildContext):
         if not ctx.invoked_subcommand:
-            if ctx.subcommand_passed:
-                await ctx.send_help(self.cmd_automod_rules)
-            else:
-                await self.state[ctx.guild].show_rules(ctx)
+            await ctx.send_help(self.cmd_automod_nodes)
 
-    @cmd_automod_rules.command(
-        name="show",
-        brief="List and show automod rules.",
+    @cmd_automod_nodes.command(
+        name="list",
+        brief="List automod nodes.",
     )
-    async def cmd_automod_rules_show(self, ctx: GuildContext, query: str):
-        await self.state[ctx.guild].show_rules(ctx, query)
-
-    @cmd_automod_rules.command(
-        name="print",
-        brief="Print the code of an automod rule.",
-    )
-    async def cmd_automod_rules_print(
+    async def cmd_automod_nodes_list(
         self,
         ctx: GuildContext,
+        node_type: NodeKindConverter,
+        query: Optional[str],
+    ):
+        node_kind = cast(NodeKind, node_type)
+        await self.state[ctx.guild].list_nodes(ctx, node_kind, query)
+
+    @cmd_automod_nodes.command(
+        name="print",
+        brief="Print the code of an automod node.",
+    )
+    async def cmd_automod_nodes_print(
+        self,
+        ctx: GuildContext,
+        node_type: NodeKindConverter,
         query: str,
         path: Optional[str],
     ):
+        node_kind = cast(NodeKind, node_type)
         parsed_path = parse_json_path(path) if path else None
-        await self.state[ctx.guild].print_rule(ctx, query, parsed_path)
+        await self.state[ctx.guild].print_node(ctx, node_kind, query, parsed_path)
 
-    @cmd_automod_rules.command(
+    @cmd_automod_nodes.command(
         name="add",
-        brief="Add a new automod rule.",
+        brief="Add a new automod node.",
     )
-    async def cmd_automod_rules_add(self, ctx: GuildContext, *, body: str):
-        await self.state[ctx.guild].add_rule(ctx, body)
-
-    @cmd_automod_rules.command(
-        name="remove",
-        brief="Remove an automod rule.",
-    )
-    async def cmd_automod_rules_remove(self, ctx: GuildContext, name: str):
-        await self.state[ctx.guild].remove_rule(ctx, name)
-
-    @cmd_automod_rules.command(
-        name="modify",
-        brief="Modify an automod rule",
-    )
-    async def cmd_automod_rules_modify(
+    async def cmd_automod_nodes_add(
         self,
         ctx: GuildContext,
+        node_type: NodeKindConverter,
+        *,
+        body: str,
+    ):
+        node_kind = cast(NodeKind, node_type)
+        await self.state[ctx.guild].add_node(ctx, node_kind, body)
+
+    @cmd_automod_nodes.command(
+        name="remove",
+        brief="Remove an automod node.",
+    )
+    async def cmd_automod_nodes_remove(
+        self,
+        ctx: GuildContext,
+        node_type: NodeKindConverter,
+        name: str,
+    ):
+        node_kind = cast(NodeKind, node_type)
+        await self.state[ctx.guild].remove_node(ctx, node_kind, name)
+
+    @cmd_automod_nodes.command(
+        name="modify",
+        brief="Modify an automod node",
+    )
+    async def cmd_automod_nodes_modify(
+        self,
+        ctx: GuildContext,
+        node_type: NodeKindConverter,
         name: str,
         path: str,
         op: str,
         *,
         body: str,
     ):
+        node_kind = cast(NodeKind, node_type)
         parsed_path = parse_json_path(path)
         parsed_op = parse_json_path_op(op)
-        await self.state[ctx.guild].modify_rule(ctx, name, parsed_path, parsed_op, body)
+        await self.state[ctx.guild].modify_node(
+            ctx, node_kind, name, parsed_path, parsed_op, body
+        )
 
-    @cmd_automod_rules.command(
+    @cmd_automod_nodes.command(
         name="enable",
-        brief="Enable an automod rule",
+        brief="Enable an automod node",
     )
-    async def cmd_automod_rules_enable(self, ctx: GuildContext, name: str):
-        await self.state[ctx.guild].enable_rule(ctx, name)
+    async def cmd_automod_nodes_enable(
+        self,
+        ctx: GuildContext,
+        node_type: NodeKindConverter,
+        name: str,
+    ):
+        node_kind = cast(NodeKind, node_type)
+        await self.state[ctx.guild].enable_node(ctx, node_kind, name)
 
-    @cmd_automod_rules.command(
+    @cmd_automod_nodes.command(
         name="disable",
-        brief="Disable an automod rule",
+        brief="Disable an automod node",
     )
-    async def cmd_automod_rules_disable(self, ctx: GuildContext, name: str):
-        await self.state[ctx.guild].disable_rule(ctx, name)
+    async def cmd_automod_nodes_disable(
+        self,
+        ctx: GuildContext,
+        node_type: NodeKindConverter,
+        name: str,
+    ):
+        node_kind = cast(NodeKind, node_type)
+        await self.state[ctx.guild].disable_node(ctx, node_kind, name)

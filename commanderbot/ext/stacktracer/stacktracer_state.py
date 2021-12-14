@@ -38,7 +38,7 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
                 header = "Encountered an unhandled event error:"
                 lines = [
                     header,
-                    log_options.formate_error_codeblock(error),
+                    log_options.format_error_codeblock(error),
                     "Caused by the following event:",
                     event_data.format_codeblock(),
                 ]
@@ -77,7 +77,7 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
                 header = f"Encountered an unhandled command error, caused by {cause}:"
                 lines = [
                     header,
-                    log_options.formate_error_codeblock(error),
+                    log_options.format_error_codeblock(error),
                     f"Caused by the following command:",
                     f"```{ctx.command}```",
                 ]

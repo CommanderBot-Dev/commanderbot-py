@@ -1,28 +1,26 @@
 from dataclasses import dataclass
-from typing import Optional, Protocol, Type, TypeVar
+from typing import Any, Dict, Optional, Protocol
 
 from discord import Thread
 
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import AutomodTriggerBase
-from commanderbot.lib import ChannelsGuard, JsonObject
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.event import Event
+from commanderbot.ext.automod.trigger import TriggerBase
+from commanderbot.lib import ChannelsGuard
 
 
-class EventWithThread(AutomodEvent, Protocol):
+class EventWithThread(Event, Protocol):
     thread: Thread
 
 
 @dataclass
-class ThreadBase(AutomodTriggerBase):
+class ThreadBase(TriggerBase):
     parent_channels: Optional[ChannelsGuard] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         parent_channels = ChannelsGuard.from_field_optional(data, "parent_channels")
-        return cls(
-            description=data.get("description"),
+        return dict(
             parent_channels=parent_channels,
         )
 

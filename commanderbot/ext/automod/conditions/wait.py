@@ -1,21 +1,15 @@
 import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Type, TypeVar
+from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-)
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.condition import Condition, ConditionBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.utils import timedelta_from_field_optional
-
-ST = TypeVar("ST")
 
 
 @dataclass
-class Wait(AutomodConditionBase):
+class Wait(ConditionBase):
     """
     Wait a certain amount of time before continuing.
 
@@ -27,18 +21,16 @@ class Wait(AutomodConditionBase):
 
     delay: timedelta
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         delay = timedelta_from_field_optional(data, "delay")
-        return cls(
-            description=data.get("description"),
-            delay=delay,
-        )
+        return dict(delay=delay)
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         await asyncio.sleep(self.delay.total_seconds())
         return True
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: Any) -> Condition:
     return Wait.from_data(data)

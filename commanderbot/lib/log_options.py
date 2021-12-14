@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Type, TypeVar
 
 from discord import Client, Color, Message, TextChannel, Thread
 
 from commanderbot.lib.allowed_mentions import AllowedMentions
-from commanderbot.lib.from_data_mixin import FromDataMixin
+from commanderbot.lib.data import FromData, ToData
 from commanderbot.lib.responsive_exception import ResponsiveException
 from commanderbot.lib.types import ChannelID
 from commanderbot.lib.utils import (
@@ -16,8 +16,11 @@ from commanderbot.lib.utils import (
 __all__ = ("LogOptions",)
 
 
+ST = TypeVar("ST")
+
+
 @dataclass
-class LogOptions(FromDataMixin):
+class LogOptions(FromData, ToData):
     """
     Data container for various log options.
 
@@ -44,8 +47,9 @@ class LogOptions(FromDataMixin):
 
     allowed_mentions: Optional[AllowedMentions] = None
 
+    # @overrides FromData
     @classmethod
-    def try_from_data(cls, data):
+    def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, int):
             return cls(channel=data)
         elif isinstance(data, dict):
@@ -132,12 +136,12 @@ class LogOptions(FromDataMixin):
         else:
             return content
 
-    def formate_error_content(self, error: Exception) -> str:
+    def format_error_content(self, error: Exception) -> str:
         if self.stacktrace:
             return sanitize_stacktrace(error)
         return str(error)
 
-    def formate_error_codeblock(self, error: Exception) -> str:
-        error_content = self.formate_error_content(error)
+    def format_error_codeblock(self, error: Exception) -> str:
+        error_content = self.format_error_content(error)
         lines = ["```", error_content, "```"]
         return "\n".join(lines)

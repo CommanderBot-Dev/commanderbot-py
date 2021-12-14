@@ -1,22 +1,21 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from discord import Thread
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.action import Action, ActionBase
+from commanderbot.ext.automod.event import Event
 from commanderbot.lib.utils import dict_without_nones
 
 
 @dataclass
-class EditThread(AutomodActionBase):
+class EditThread(ActionBase):
     """
     Edit the thread in context.
 
     Attributes
     ----------
-    name
+    thread_name
         The new name of the thread.
     archived
         Whether to archive the thread or not.
@@ -30,13 +29,13 @@ class EditThread(AutomodActionBase):
         inactivity. Must be one of ``60``, ``1440``, ``4320``, or ``10080``.
     """
 
-    name: Optional[str] = None
+    thread_name: Optional[str] = None
     archived: Optional[bool] = None
     locked: Optional[bool] = None
     slowmode_delay: Optional[int] = None
     auto_archive_duration: Optional[int] = None
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         thread = event.channel
         if not isinstance(thread, Thread):
             return
@@ -50,5 +49,5 @@ class EditThread(AutomodActionBase):
         await thread.edit(**params)
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return EditThread.from_data(data)

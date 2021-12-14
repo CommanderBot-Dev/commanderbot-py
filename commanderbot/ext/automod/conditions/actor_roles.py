@@ -1,14 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from discord import Member
 
-from commanderbot.ext.automod.automod_condition import AutomodCondition
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.conditions.abc.target_roles_base import (
-    TargetRolesBase,
-)
-from commanderbot.lib import JsonObject
+from commanderbot.ext.automod.condition import Condition
+from commanderbot.ext.automod.conditions.abc.target_roles_base import TargetRolesBase
+from commanderbot.ext.automod.event import Event
 
 ST = TypeVar("ST")
 
@@ -24,9 +21,9 @@ class ActorRoles(TargetRolesBase):
         The roles to match against.
     """
 
-    def get_target(self, event: AutomodEvent) -> Optional[Member]:
+    def get_target(self, event: Event) -> Optional[Member]:
         return event.actor
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: Any) -> Condition:
     return ActorRoles.from_data(data)

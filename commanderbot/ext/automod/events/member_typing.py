@@ -3,13 +3,13 @@ from datetime import datetime
 
 from discord import Member, TextChannel, Thread
 
-from commanderbot.ext.automod.automod_event import AutomodEventBase
+from commanderbot.ext.automod.event import EventBase
 
 __all__ = ("MemberTyping",)
 
 
 @dataclass
-class MemberTyping(AutomodEventBase):
+class MemberTyping(EventBase):
     _channel: TextChannel | Thread
     _member: Member
     _when: datetime

@@ -9,6 +9,7 @@ from discord.ext.commands.errors import (
     CheckFailure,
     CommandInvokeError,
     CommandNotFound,
+    ConversionError,
     MissingPermissions,
     NoPrivateMessage,
     UserInputError,
@@ -26,7 +27,7 @@ class ErrorHandling:
     command_error_handlers: List[CommandErrorHandler] = field(default_factory=list)
 
     def _get_root_error(self, error: Exception) -> Exception:
-        if isinstance(error, CommandInvokeError):
+        if isinstance(error, CommandInvokeError | ConversionError):
             return error.original
         else:
             return error

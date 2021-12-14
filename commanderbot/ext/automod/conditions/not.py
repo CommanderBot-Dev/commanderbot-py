@@ -1,19 +1,16 @@
 from dataclasses import dataclass
-from typing import Tuple, Type, TypeVar
+from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_condition import (
-    AutomodCondition,
-    AutomodConditionBase,
-    deserialize_conditions,
+from commanderbot.ext.automod.condition import (
+    Condition,
+    ConditionBase,
+    ConditionCollection,
 )
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import JsonObject
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.event import Event
 
 
 @dataclass
-class Not(AutomodConditionBase):
+class Not(ConditionBase):
     """
     Passes if any of the sub-conditions fail.
 
@@ -23,23 +20,22 @@ class Not(AutomodConditionBase):
         The sub-conditions to check.
     """
 
-    conditions: Tuple[AutomodCondition]
+    conditions: ConditionCollection
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
-        raw_conditions = data["conditions"]
-        conditions = deserialize_conditions(raw_conditions)
-        return cls(
-            description=data.get("description"),
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        conditions = ConditionCollection.from_data(data["conditions"])
+        return dict(
             conditions=conditions,
         )
 
-    async def check(self, event: AutomodEvent) -> bool:
+    async def check(self, event: Event) -> bool:
         for condition in self.conditions:
             if not await condition.check(event):
                 return True
         return False
 
 
-def create_condition(data: JsonObject) -> AutomodCondition:
+def create_condition(data: Any) -> Condition:
     return Not.from_data(data)

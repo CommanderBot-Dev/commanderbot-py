@@ -1,15 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
-from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
-from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import AllowedMentions, JsonObject
-
-ST = TypeVar("ST")
+from commanderbot.ext.automod.action import Action, ActionBase
+from commanderbot.ext.automod.event import Event
+from commanderbot.lib import AllowedMentions
 
 
 @dataclass
-class ReplyToMessage(AutomodActionBase):
+class ReplyToMessage(ActionBase):
     """
     Reply to the message in context.
 
@@ -25,16 +23,15 @@ class ReplyToMessage(AutomodActionBase):
     content: str
     allowed_mentions: Optional[AllowedMentions] = None
 
+    # @overrides NodeBase
     @classmethod
-    def from_data(cls: Type[ST], data: JsonObject) -> ST:
+    def build_complex_fields(cls, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         allowed_mentions = AllowedMentions.from_field_optional(data, "allowed_mentions")
-        return cls(
-            description=data.get("description"),
-            content=data.get("content"),
+        return dict(
             allowed_mentions=allowed_mentions,
         )
 
-    async def apply(self, event: AutomodEvent):
+    async def apply(self, event: Event):
         if message := event.message:
             content = event.format_content(self.content)
             allowed_mentions = self.allowed_mentions or AllowedMentions.not_everyone()
@@ -44,5 +41,5 @@ class ReplyToMessage(AutomodActionBase):
             )
 
 
-def create_action(data: JsonObject) -> AutomodAction:
+def create_action(data: Any) -> Action:
     return ReplyToMessage.from_data(data)
