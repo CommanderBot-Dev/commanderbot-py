@@ -17,4 +17,4 @@ class TargetIsSelfBase(AutomodConditionBase):
     async def check(self, event: AutomodEvent) -> bool:
         if member := self.get_target(event):
             return member.id == event.bot.user.id
-        return True
+        return False
