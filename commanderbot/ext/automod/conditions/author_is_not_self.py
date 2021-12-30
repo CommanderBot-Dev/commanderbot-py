@@ -16,7 +16,7 @@ ST = TypeVar("ST")
 @dataclass
 class AuthorIsNotSelf(TargetIsNotSelfBase):
     """
-    Check if the author in context is not the bot itself.
+    Check if the author in context is *not* the bot itself.
     """
 
     def get_target(self, event: AutomodEvent) -> Optional[Member]:

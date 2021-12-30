@@ -5,23 +5,21 @@ from discord import Member
 
 from commanderbot.ext.automod.automod_condition import AutomodCondition
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.conditions.abc.target_is_not_bot_base import (
-    TargetIsNotBotBase,
-)
+from commanderbot.ext.automod.conditions.abc.target_is_bot_base import TargetIsBotBase
 from commanderbot.lib import JsonObject
 
 ST = TypeVar("ST")
 
 
 @dataclass
-class ActorIsNotBot(TargetIsNotBotBase):
+class AuthorIsBot(TargetIsBotBase):
     """
-    Check if the actor in context is *not* a bot.
+    Check if the author in context is a bot.
     """
 
     def get_target(self, event: AutomodEvent) -> Optional[Member]:
-        return event.actor
+        return event.author
 
 
 def create_condition(data: JsonObject) -> AutomodCondition:
-    return ActorIsNotBot.from_data(data)
+    return AuthorIsBot.from_data(data)

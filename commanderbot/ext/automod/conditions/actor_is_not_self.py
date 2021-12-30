@@ -16,7 +16,7 @@ ST = TypeVar("ST")
 @dataclass
 class ActorIsNotSelf(TargetIsNotSelfBase):
     """
-    Check if the actor in context is not the bot itself.
+    Check if the actor in context is *not* the bot itself.
     """
 
     def get_target(self, event: AutomodEvent) -> Optional[Member]:

@@ -16,7 +16,7 @@ ST = TypeVar("ST")
 @dataclass
 class AuthorIsNotBot(TargetIsNotBotBase):
     """
-    Check if the author in context is not a bot.
+    Check if the author in context is *not* a bot.
     """
 
     def get_target(self, event: AutomodEvent) -> Optional[Member]:
