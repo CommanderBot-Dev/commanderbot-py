@@ -20,10 +20,14 @@ class ChannelsGuard(FromDataMixin):
         The channels to include. A channel will match if it is in this set.
     exclude
         The channels to exclude. A channel will match if it is not in this set.
+    ignore_threads
+        Whether to ignore threads.
     """
 
     include: Set[ChannelID] = field(default_factory=set)
     exclude: Set[ChannelID] = field(default_factory=set)
+
+    ignore_threads: Optional[bool] = None
 
     @classmethod
     def try_from_data(cls, data):
@@ -31,6 +35,7 @@ class ChannelsGuard(FromDataMixin):
             return cls(
                 include=set(data.get("include", [])),
                 exclude=set(data.get("exclude", [])),
+                ignore_threads=data.get("ignore_threads"),
             )
         elif isinstance(data, list):
             return cls(include=set(data))
@@ -74,6 +79,13 @@ class ChannelsGuard(FromDataMixin):
 
     def ignore(self, channel: Optional[TextChannel | Thread]) -> bool:
         """Determine whether to ignore the channel."""
+        # If there's no channel, there's nothing to ignore.
         if channel is None:
             return False
+
+        # Check whether the channel is a thread and should be ignored.
+        if self.ignore_threads and isinstance(channel, Thread):
+            return True
+
+        # Otherwise, check based on includes and excludes.
         return self.ignore_by_includes(channel) or self.ignore_by_excludes(channel)
