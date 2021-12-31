@@ -3,11 +3,8 @@ from typing import List, Optional, Type, TypeVar
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import (
-    AutomodTrigger,
-    AutomodTriggerBase,
-)
-from commanderbot.lib import ChannelsGuard, JsonObject, RolesGuard
+from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
+from commanderbot.lib import ChannelsGuard, ChannelTypesGuard, JsonObject, RolesGuard
 
 ST = TypeVar("ST")
 
@@ -27,6 +24,8 @@ class Message(AutomodTriggerBase):
         The exact message content to match. If provided, the message must match one of
         these strings exactly. For more complex/flexible matching logic, consider using
         the `message_content_contains` or `message_content_matches` conditions.
+    channel_types
+        The channel types to match against. If empty, all channel types will match.
     channels
         The channels to match against. If empty, all channels will match.
     author_roles
@@ -36,6 +35,7 @@ class Message(AutomodTriggerBase):
     event_types = (events.MessageSent, events.MessageEdited)
 
     content: Optional[List[str]] = None
+    channel_types: Optional[ChannelTypesGuard] = None
     channels: Optional[ChannelsGuard] = None
     author_roles: Optional[RolesGuard] = None
 
@@ -44,11 +44,13 @@ class Message(AutomodTriggerBase):
         content = data.get("content")
         if isinstance(content, str):
             content = [content]
+        channel_types = ChannelTypesGuard.from_field_optional(data, "channel_types")
         channels = ChannelsGuard.from_field_optional(data, "channels")
         author_roles = RolesGuard.from_field_optional(data, "author_roles")
         return cls(
             description=data.get("description"),
             content=content,
+            channel_types=channel_types,
             channels=channels,
             author_roles=author_roles,
         )
@@ -57,6 +59,11 @@ class Message(AutomodTriggerBase):
         if (self.content is None) or (event.message is None):
             return False
         return event.message.content not in self.content
+
+    def ignore_by_channel_type(self, event: AutomodEvent) -> bool:
+        if self.channel_types is None:
+            return False
+        return self.channel_types.ignore(event.channel)
 
     def ignore_by_channel(self, event: AutomodEvent) -> bool:
         if self.channels is None:
@@ -71,6 +78,7 @@ class Message(AutomodTriggerBase):
     def ignore(self, event: AutomodEvent) -> bool:
         return (
             self.ignore_by_content(event)
+            or self.ignore_by_channel_type(event)
             or self.ignore_by_channel(event)
             or self.ignore_by_author_role(event)
         )

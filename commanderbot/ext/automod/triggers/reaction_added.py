@@ -17,6 +17,8 @@ class ReactionAdded(Reaction):
     ----------
     reactions
         The reactions to match against. If empty, all reactions will match.
+    channel_types
+        The channel types to match against. If empty, all channel types will match.
     channels
         The channels to match against. If empty, all channels will match.
     author_roles

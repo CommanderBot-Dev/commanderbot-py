@@ -3,11 +3,14 @@ from typing import Optional, Type, TypeVar
 
 from commanderbot.ext.automod import events
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.ext.automod.automod_trigger import (
-    AutomodTrigger,
-    AutomodTriggerBase,
+from commanderbot.ext.automod.automod_trigger import AutomodTrigger, AutomodTriggerBase
+from commanderbot.lib import (
+    ChannelsGuard,
+    ChannelTypesGuard,
+    JsonObject,
+    ReactionsGuard,
+    RolesGuard,
 )
-from commanderbot.lib import ChannelsGuard, JsonObject, ReactionsGuard, RolesGuard
 
 ST = TypeVar("ST")
 
@@ -25,6 +28,8 @@ class Reaction(AutomodTriggerBase):
     ----------
     reactions
         The reactions to match against. If empty, all reactions will match.
+    channel_types
+        The channel types to match against. If empty, all channel types will match.
     channels
         The channels to match against. If empty, all channels will match.
     author_roles
@@ -36,6 +41,7 @@ class Reaction(AutomodTriggerBase):
     event_types = (events.ReactionAdded, events.ReactionRemoved)
 
     reactions: Optional[ReactionsGuard] = None
+    channel_types: Optional[ChannelTypesGuard] = None
     channels: Optional[ChannelsGuard] = None
     author_roles: Optional[RolesGuard] = None
     actor_roles: Optional[RolesGuard] = None
@@ -43,12 +49,14 @@ class Reaction(AutomodTriggerBase):
     @classmethod
     def from_data(cls: Type[ST], data: JsonObject) -> ST:
         reactions = ReactionsGuard.from_field_optional(data, "reactions")
+        channel_types = ChannelTypesGuard.from_field_optional(data, "channel_types")
         channels = ChannelsGuard.from_field_optional(data, "channels")
         author_roles = RolesGuard.from_field_optional(data, "author_roles")
         actor_roles = RolesGuard.from_field_optional(data, "actor_roles")
         return cls(
             reactions=reactions,
             description=data.get("description"),
+            channel_types=channel_types,
             channels=channels,
             author_roles=author_roles,
             actor_roles=actor_roles,
@@ -58,6 +66,11 @@ class Reaction(AutomodTriggerBase):
         if self.reactions is None:
             return False
         return self.reactions.ignore(event.reaction)
+
+    def ignore_by_channel_type(self, event: AutomodEvent) -> bool:
+        if self.channel_types is None:
+            return False
+        return self.channel_types.ignore(event.channel)
 
     def ignore_by_channel(self, event: AutomodEvent) -> bool:
         if self.channels is None:
@@ -77,6 +90,7 @@ class Reaction(AutomodTriggerBase):
     def ignore(self, event: AutomodEvent) -> bool:
         return (
             self.ignore_by_reaction(event)
+            or self.ignore_by_channel_type(event)
             or self.ignore_by_channel(event)
             or self.ignore_by_author_role(event)
             or self.ignore_by_actor_role(event)
