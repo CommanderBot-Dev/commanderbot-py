@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Type
+from typing import Iterable, List, Optional, Set, Tuple, Type
 
 from discord import AllowedMentions, Member, Message, Permissions, Role
 
@@ -38,11 +38,11 @@ SAFE_PERMS.request_to_speak = True
 
 ROLE_TIPS = "\n".join(
     [
-        ">>> Tips for providing roles:",
-        "- You can provide multiple roles in one command",
-        "- Use a word that uniquely identifies each role",
-        "- If multiple words are required to specify a role, surround them with quotes",
-        "- If all else fails, use the role's ID",
+        "> Tips for providing roles:",
+        "> - You can provide multiple roles in one command",
+        "> - Use a word that uniquely identifies each role",
+        "> - If multiple words are required to specify a role, surround them with quotes",
+        "> - If all else fails, use the role's ID",
     ]
 )
 
@@ -71,7 +71,10 @@ class RolesGuildState(CogGuildState):
         # Sort by stringified role name.
         return sorted(role_pairs, key=lambda role_pair: str(role_pair[0]))
 
-    def stringify_role_pairs(self, role_pairs: List[RoleEntryPair]) -> str:
+    def flatten_role_pairs(self, role_pairs: List[RoleEntryPair]) -> str:
+        return " ".join(role.mention for role, role_entry in role_pairs)
+
+    def expand_role_pairs(self, role_pairs: List[RoleEntryPair]) -> str:
         lines = []
         for role, role_entry in role_pairs:
             # Start with the role mention.
@@ -219,10 +222,12 @@ class RolesGuildState(CogGuildState):
 
     async def show_all_roles(self, ctx: GuildContext):
         if role_pairs := await self.get_all_role_pairs():
-            role_pairs_str = self.stringify_role_pairs(role_pairs)
+            role_pairs_str = self.flatten_role_pairs(role_pairs)
             await self.reply(
                 ctx,
-                f"There are {len(role_pairs)} roles registered:\n{role_pairs_str}\n{ROLE_TIPS}",
+                f"There are {len(role_pairs)} roles registered: {role_pairs_str}"
+                + f"\n\n{ROLE_TIPS}"
+                + f"\n\n**Use `roles about <roles>` for details about roles.**",
             )
         else:
             await self.reply(ctx, f"🤷 There are no roles registered.")
@@ -231,13 +236,34 @@ class RolesGuildState(CogGuildState):
         # List only roles that are relevant to this user.
         member = ctx.author
         if role_pairs := await self.get_relevant_role_pairs(member):
-            role_pairs_str = self.stringify_role_pairs(role_pairs)
+            role_pairs_str = self.flatten_role_pairs(role_pairs)
             await self.reply(
                 ctx,
-                f"There are {len(role_pairs)} roles relevant to you:\n{role_pairs_str}\n{ROLE_TIPS}",
+                f"There are {len(role_pairs)} roles relevant to you: {role_pairs_str}"
+                + f"\n\n{ROLE_TIPS}"
+                + f"\n\n**Use `roles about <roles>` for details about roles.**",
             )
         else:
             await self.reply(ctx, f"🤷 There are no roles relevant to you.")
+
+    async def get_matching_role_pairs(
+        self, roles: List[Role]
+    ) -> List[Tuple[Role, RoleEntry]]:
+        return [
+            (role, role_entry)
+            for role in roles
+            if (role_entry := await self.store.get_role_entry(role))
+        ]
+
+    async def about_roles(self, ctx: MemberContext, roles: List[Role]):
+        if role_pairs := await self.get_matching_role_pairs(roles):
+            role_pairs_str = self.expand_role_pairs(role_pairs)
+            await self.reply(
+                ctx,
+                f"Found {len(role_pairs)} matching roles:\n{role_pairs_str}",
+            )
+        else:
+            await self.reply(ctx, f"🤷 Couldn't find any matching roles.")
 
     async def join_roles(self, ctx: MemberContext, roles: List[Role]):
         await self.join_leave_roles(ctx, roles, JoinableRolesResult)

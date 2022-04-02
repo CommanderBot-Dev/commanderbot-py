@@ -177,6 +177,16 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
     async def cmd_roles_show(self, ctx: MemberContext):
         await self.state[ctx.guild].show_relevant_roles(ctx)
 
+    # @@ roles about
+
+    @cmd_roles.command(
+        name="about",
+        brief="Describe one or more roles.",
+    )
+    @checks.member_only()
+    async def cmd_roles_about(self, ctx: MemberContext, *roles: LenientRoleConverter):
+        await self.state[ctx.guild].about_roles(ctx, cast(List[Role], list(roles)))
+
     # @@ roles join
 
     @cmd_roles.command(
