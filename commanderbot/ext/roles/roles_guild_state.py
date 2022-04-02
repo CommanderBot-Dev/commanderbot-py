@@ -17,6 +17,7 @@ from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 SAFE_PERMS = Permissions.none()
 # general
 SAFE_PERMS.read_messages = True
+SAFE_PERMS.use_slash_commands = True
 # membership
 SAFE_PERMS.change_nickname = True
 # text channel
@@ -26,12 +27,14 @@ SAFE_PERMS.embed_links = True
 SAFE_PERMS.attach_files = True
 SAFE_PERMS.add_reactions = True
 SAFE_PERMS.external_emojis = True
+SAFE_PERMS.external_stickers = True
 SAFE_PERMS.read_message_history = True
 # voice channel
 SAFE_PERMS.connect = True
 SAFE_PERMS.speak = True
 SAFE_PERMS.stream = True
 SAFE_PERMS.use_voice_activation = True
+SAFE_PERMS.request_to_speak = True
 
 ROLE_TIPS = "\n".join(
     [
