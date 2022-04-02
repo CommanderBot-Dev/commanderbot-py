@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import Any, List, Optional, cast
 
 from discord import Guild, Member, Role
 from discord.ext import commands
@@ -85,6 +85,12 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
             store=self.store,
         )
 
+    def filter_unique_roles(self, roles: Any) -> List[Role]:
+        return list({role: None for role in roles}.keys())
+
+    def filter_unique_members(self, members: Any) -> List[Member]:
+        return list({member: None for member in members}.keys())
+
     # @@ COMMANDS
 
     # @@ join
@@ -96,7 +102,8 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
     @checks.guild_only()
     @checks.member_only()
     async def cmd_join(self, ctx: MemberContext, *roles: LenientRoleConverter):
-        await self.state[ctx.guild].join_roles(ctx, cast(List[Role], list(roles)))
+        unique_roles = self.filter_unique_roles(roles)
+        await self.state[ctx.guild].join_roles(ctx, unique_roles)
 
     # @@ leave
 
@@ -107,7 +114,8 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
     @checks.guild_only()
     @checks.member_only()
     async def cmd_leave(self, ctx: MemberContext, *roles: LenientRoleConverter):
-        await self.state[ctx.guild].leave_roles(ctx, cast(List[Role], list(roles)))
+        unique_roles = self.filter_unique_roles(roles)
+        await self.state[ctx.guild].leave_roles(ctx, unique_roles)
 
     # @@ roles
 
@@ -185,7 +193,8 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
     )
     @checks.member_only()
     async def cmd_roles_about(self, ctx: MemberContext, *roles: LenientRoleConverter):
-        await self.state[ctx.guild].about_roles(ctx, cast(List[Role], list(roles)))
+        unique_roles = self.filter_unique_roles(roles)
+        await self.state[ctx.guild].about_roles(ctx, unique_roles)
 
     # @@ roles join
 
@@ -195,7 +204,8 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
     )
     @checks.member_only()
     async def cmd_roles_join(self, ctx: MemberContext, *roles: LenientRoleConverter):
-        await self.state[ctx.guild].join_roles(ctx, cast(List[Role], list(roles)))
+        unique_roles = self.filter_unique_roles(roles)
+        await self.state[ctx.guild].join_roles(ctx, unique_roles)
 
     # @@ roles leave
 
@@ -205,7 +215,8 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
     )
     @checks.member_only()
     async def cmd_roles_leave(self, ctx: MemberContext, *roles: LenientRoleConverter):
-        await self.state[ctx.guild].leave_roles(ctx, cast(List[Role], list(roles)))
+        unique_roles = self.filter_unique_roles(roles)
+        await self.state[ctx.guild].leave_roles(ctx, unique_roles)
 
     # @@ roles showall
 
@@ -236,8 +247,10 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
     async def cmd_roles_add(
         self, ctx: MemberContext, roles: Greedy[LenientRoleConverter], *members: Member
     ):
+        unique_roles = self.filter_unique_roles(roles)
+        unique_members = self.filter_unique_members(members)
         await self.state[ctx.guild].add_roles_to_members(
-            ctx, cast(List[Role], list(roles)), list(members)
+            ctx, unique_roles, unique_members
         )
 
     # @@ roles remove
@@ -255,8 +268,10 @@ class RolesCog(Cog, name="commanderbot.ext.roles"):
     async def cmd_roles_remove(
         self, ctx: MemberContext, roles: Greedy[LenientRoleConverter], *members: Member
     ):
+        unique_roles = self.filter_unique_roles(roles)
+        unique_members = self.filter_unique_members(members)
         await self.state[ctx.guild].remove_roles_from_members(
-            ctx, cast(List[Role], list(roles)), list(members)
+            ctx, unique_roles, unique_members
         )
 
     # @@ roles register
