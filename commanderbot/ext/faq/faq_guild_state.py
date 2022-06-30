@@ -123,7 +123,7 @@ class FaqGuildState(CogGuildState):
     async def list_faqs(self, ctx: GuildContext):
         if faqs := await self.store.get_all_faqs(self.guild):
             sorted_faqs = sorted(faqs, key=lambda faq: faq.key)
-            keys = " ".join(f"`{faq.key}`" for faq in sorted_faqs)
+            keys = ", ".join(f"`{faq.key}`" for faq in sorted_faqs)
             count = len(sorted_faqs)
             header = f"There are {count} FAQs available:"
             content = f"{header} {keys}"
