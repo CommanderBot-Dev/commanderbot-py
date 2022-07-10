@@ -3,5 +3,5 @@ from discord.ext.commands import Bot
 from commanderbot.ext.status.status_cog import StatusCog
 
 
-def setup(bot: Bot):
-    bot.add_cog(StatusCog(bot))
+async def setup(bot: Bot):
+    await bot.add_cog(StatusCog(bot))
