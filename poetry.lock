@@ -186,7 +186,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "discord.py"
-version = "2.0.0a4396+g9fe19dcc"
+version = "2.0.0a4431+g24b619a5"
 description = "A Python wrapper for the Discord API"
 category = "main"
 optional = false
@@ -205,8 +205,8 @@ voice = ["PyNaCl (>=1.3.0,<1.6)"]
 [package.source]
 type = "git"
 url = "git@github.com:Rapptz/discord.py.git"
-reference = "9fe19dcc"
-resolved_reference = "9fe19dcc6923e4b6133bdedafb33658bf37c9ab7"
+reference = "24b619a5"
+resolved_reference = "24b619a516e743bdfba09cb47a633a9fcab1302a"
 
 [[package]]
 name = "emoji"
@@ -532,7 +532,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "7b76a3708798ae4003e3c33e0975b5b48265b40628c73d6467493b547a99ecdb"
+content-hash = "b45f1b76f6c885d51d4871f57ee9b59b3bf2d13cfd5d33d166369ad480deb076"
 
 [metadata.files]
 aiohttp = []
