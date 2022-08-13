@@ -59,7 +59,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
     async def update_default_engine_version(self):
         """
         A task that updates 'self.default_engine_version'. If there was an issue parsing
-        the version, the attribute isn't modified. The patch version will always be set 
+        the version, the attribute isn't modified. The patch version will always be set
         to 0.
         """
         # Return early if no URL was given
@@ -133,10 +133,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_manifests)
 
-    @cmd_manifests.command(
-        name="status", 
-        brief="Show the status of version requests"
-    )
+    @cmd_manifests.command(name="status", brief="Show the status of version requests")
     async def cmd_manifests_status(self, ctx: Context):
         # Format optional attributes
         url: str = "None set"
@@ -147,7 +144,7 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
         if version_url := self.version_url:
             url = version_url
             if dt := self.previous_request_date:
-                previous_request_ts = f"<t:{datetime_to_int(dt)}:R>" 
+                previous_request_ts = f"<t:{datetime_to_int(dt)}:R>"
 
             if dt := self.update_default_engine_version.next_iteration:
                 next_request_ts = f"<t:{datetime_to_int(dt)}:R>"
@@ -175,4 +172,3 @@ class ManifestCog(Cog, name="commanderbot.ext.manifest"):
             await ctx.message.add_reaction("✅")
         else:
             await ctx.message.add_reaction("❌")
-            

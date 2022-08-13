@@ -51,4 +51,3 @@ class JiraIssue:
             "Resolution": self.resolution,
             "Votes": self.votes,
         }
-        

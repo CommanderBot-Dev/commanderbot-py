@@ -23,9 +23,9 @@ class VoteCog(Cog, name="commanderbot.ext.vote"):
         for custom_emoji in CUSTOM_EMOJI_PATTERN.finditer(message_content):
             found_emojis.append(
                 {
-                    "match_start": custom_emoji.start(), 
-                    "match_end": custom_emoji.end(), 
-                    "emoji": custom_emoji.group()
+                    "match_start": custom_emoji.start(),
+                    "match_end": custom_emoji.end(),
+                    "emoji": custom_emoji.group(),
                 }
             )
 
