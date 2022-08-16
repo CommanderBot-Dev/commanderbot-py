@@ -26,7 +26,7 @@ class DeleteMessageButton(ui.View):
             except:
                 pass
 
-        # Delete the message ran the command
+        # Delete the message that ran the command
         try:
             await self.ctx.message.delete()
         except:
@@ -35,8 +35,7 @@ class DeleteMessageButton(ui.View):
     # Since this view should be added to the last message in 'self.to_delete',
     # We only need to edit the view on the last one
     async def on_timeout(self):
-        if msg := self.to_delete[-1]:
-            try:
-                await msg.edit(view=None)
-            except:
-                pass
+        try:
+            await self.to_delete[-1].edit(view=None)
+        except:
+            pass
