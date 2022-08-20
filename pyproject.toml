@@ -11,7 +11,7 @@ keywords = ['discord', 'bot']
 
 [tool.poetry.dependencies]
 python = "^3.10"
-"discord.py" = {git = "git@github.com:Rapptz/discord.py.git", rev = "0e386ec"}
+"discord.py" = "^2.0.0"
 
 # These are used for logging.
 colorama = "^0.4.3"
