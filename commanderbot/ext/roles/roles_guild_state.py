@@ -17,12 +17,11 @@ from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 SAFE_PERMS = Permissions.none()
 # general
 SAFE_PERMS.read_messages = True
-SAFE_PERMS.use_slash_commands = True
+SAFE_PERMS.use_application_commands = True
 # membership
 SAFE_PERMS.change_nickname = True
 # text channel
 SAFE_PERMS.send_messages = True
-SAFE_PERMS.use_threads = True
 SAFE_PERMS.embed_links = True
 SAFE_PERMS.attach_files = True
 SAFE_PERMS.add_reactions = True
