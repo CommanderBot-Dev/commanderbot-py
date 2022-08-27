@@ -5,6 +5,7 @@ from commanderbot.lib.responsive_exception import ResponsiveException
 class ManifestError(ResponsiveException):
     pass
 
+
 class InvalidPackType(ManifestError):
     def __init__(self, given_pack_type: str):
         self.given_pack_type = given_pack_type

@@ -11,13 +11,7 @@ keywords = ['discord', 'bot']
 
 [tool.poetry.dependencies]
 python = "^3.10"
-
-# This is the last announced version of the discord.py 2.0 beta. RIP.
-# "discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "848d752" }
-
-# NOTE See: https://github.com/python-poetry/poetry/issues/4402
-# This was fixed in stable, but doesn't seem to be fixed in the beta branch.
-SQLAlchemy = ">=1.4,<1.4.23"
+"discord.py" = "^2.0.0"
 
 # These are used for logging.
 colorama = "^0.4.3"
@@ -30,21 +24,19 @@ tokenstream = "^1.2.3"
 lectern = ">=0.18.0"
 mecha = ">=0.15.0"
 beet = ">=0.45.3"
-allay = "^1.2.0"
+allay = "^1.3.0"
 aiohttp = "^3.7.4"
 PyYAML = "^5.4.1"
 emoji = "^1.4.2"
 jsonpath-ng = "^1.5.3"
-black = "^21.11-beta.1"
+python-dotenv = "^0.20.0"
+# NOTE See: https://github.com/python-poetry/poetry/issues/4402
+# This was fixed in stable, but doesn't seem to be fixed in the beta branch.
+SQLAlchemy = ">=1.4,<1.4.23"
 
-[tool.poetry.group.dev.dependencies]
-black = "^21.9b0"
+[tool.poetry.dev-dependencies]
+black = "^22.6.0"
 isort = "^5.10.1"
-rope = "^0.22.0"
-
-# TODO Update to pycord or another discord.py alternative when it's ready.
-# FIXME Comment this out before attempting to publish the package to PyPI.
-"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", rev = "848d752" }
 
 [tool.isort]
 profile = "black"
@@ -53,5 +45,5 @@ profile = "black"
 typeCheckingMode = "basic"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

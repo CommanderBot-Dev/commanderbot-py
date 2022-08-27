@@ -8,25 +8,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Added support for `.env` files (to provide the bot token)
+- `allay`:
+  - New command, turns a plaintext markdown-like format into a text component with optional indentation levels
 - `automod`:
   - Added new thread fields to event metadata
-  - Implemented new `thread_updated` trigger
-  - Implemented new `thread_auto_archive_duration` condition
-
+  - Implemented new `ChannelTypesGuard` to account for threads
+  - Implemented new triggers:
+    - `thread_updated`
+  - Implemented new conditions:
+    - `actor_is_bot`
+    - `actor_is_self`
+    - `author_is_bot`
+    - `author_is_self`
+    - `actor_member_for`
+    - `author_member_for`
+    - `member_for`
+    - `message_has_mentions`
+    - `thread_auto_archive_duration`
+  - Implemented new actions:
+    - `check_messages`
+    - `dm_member`
 - `manifest`:
   - Added a task that requests the latest `min_engine_version`
   - Now accepts a `version_url` option in the bot config
   - Added `manifests` command with `status` and `update` subcommands
     - `status` shows the status of version requests
     - `update` manually requests the version
-
-- `allay`:
-  - New command, turns a plaintext markdown-like format into a text component with optional indentation levels
+- `roles`:
+  - Implemented new `about` subcommand
 
 ### Changed
 
+- **Updated to the latest version of discord.py** (after it was revived from the dead)
+- `faq`:
+  - The list of FAQs is now separated by comma
 - `manifest`:
   - Generated manifests were changed into file attachments
+- `quote`:
+  - Improved attachment/embed handling
+- `roles`:
+  - Updated the set of safe permissions to reduce unnecessary warnings
+  - Duplicate roles are now filtered-out prior to joining/leaving
+  - Now using difflib to help disambiguate roles
+
+### Fixed
+
+- Utcnow and datetime fixes (#75)
 
 ## [0.18.0] - 2021-10-04
 

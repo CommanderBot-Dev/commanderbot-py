@@ -19,7 +19,7 @@ from commanderbot.lib.utils.utils import utcnow_aware
 class CommanderBot(CommanderBotBase):
     def __init__(self, *args, **kwargs):
         # Account for options that don't belong to the discord.py Bot base.
-        extensions_data = kwargs.pop("extensions", None)
+        self._extensions_data = kwargs.pop("extensions", None)
 
         # Account for options that need further processing.
         intents = Intents.from_field_optional(kwargs, "intents")
@@ -54,12 +54,8 @@ class CommanderBot(CommanderBotBase):
 
         # Configure extensions.
         self.configured_extensions: Dict[str, ConfiguredExtension] = {}
-        if extensions_data:
-            self._configure_extensions(extensions_data)
-        else:
-            self.log.warning("No extensions configured.")
 
-    def _configure_extensions(self, extensions_data: list):
+    async def _configure_extensions(self, extensions_data: list):
         if not isinstance(extensions_data, list):
             raise ValueError(f"Invalid extensions: {extensions_data}")
 
@@ -82,7 +78,7 @@ class CommanderBot(CommanderBotBase):
         for ext in enabled_extensions:
             self.log.info(f"[->] {ext.name}")
             try:
-                self.load_extension(ext.name)
+                await self.load_extension(ext.name)
             except:
                 self.log.exception(f"Failed to load extension: {ext.name}")
 
@@ -116,6 +112,13 @@ class CommanderBot(CommanderBotBase):
     # @implements CommanderBotBase
     def add_command_error_handler(self, handler: CommandErrorHandler):
         self.error_handling.add_command_error_handler(handler)
+
+    # @overrides Bot
+    async def setup_hook(self):
+        if self._extensions_data:
+            await self._configure_extensions(self._extensions_data)
+        else:
+            self.log.warning("No extensions configured.")
 
     # @overrides Bot
     async def on_connect(self):

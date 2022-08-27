@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Iterable, List, cast
+from typing import Iterable, cast
 
 import emoji
 from discord import Message
@@ -19,10 +19,14 @@ class VoteCog(Cog, name="commanderbot.ext.vote"):
         message_content: str = str(message.clean_content)
 
         # Find unicode and custom emojis in the message
-        found_emojis: List[Dict[str, int | str]] = emoji.emoji_lis(message_content)
+        found_emojis: list = emoji.emoji_list(message_content)
         for custom_emoji in CUSTOM_EMOJI_PATTERN.finditer(message_content):
             found_emojis.append(
-                {"location": custom_emoji.start(), "emoji": custom_emoji.group()}
+                {
+                    "match_start": custom_emoji.start(),
+                    "match_end": custom_emoji.end(),
+                    "emoji": custom_emoji.group(),
+                }
             )
 
         # Return early with the default emojis if no emojis were found
@@ -30,8 +34,8 @@ class VoteCog(Cog, name="commanderbot.ext.vote"):
             return DEFAULT_VOTE_EMOJIS
 
         # Create a list of unique emojis that are sorted in the order they appeared
-        emojis: List[str] = []
-        for e in sorted(found_emojis, key=lambda i: i["location"]):
+        emojis: list[str] = []
+        for e in sorted(found_emojis, key=lambda i: i["match_start"]):
             emoji_char: str = str(e["emoji"])
             if emoji_char not in emojis:
                 emojis.append(emoji_char)

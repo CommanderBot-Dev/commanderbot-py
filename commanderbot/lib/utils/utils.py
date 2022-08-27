@@ -129,7 +129,7 @@ def message_to_file(message: Message, filename: Optional[str] = None) -> File:
 def str_to_file(contents: str, filename: str) -> File:
     fp = io.BytesIO(contents.encode())
     return File(fp=fp, filename=filename)
-    
+
 
 async def send_message_or_file(
     destination: Messageable,
