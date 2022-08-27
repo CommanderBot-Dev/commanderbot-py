@@ -3,6 +3,8 @@ import json
 import os
 from logging import getLogger
 
+from dotenv import load_dotenv
+
 from commanderbot.core.commander_bot import CommanderBot
 from commanderbot.lib.logging import setup_logging
 
@@ -19,6 +21,11 @@ def run():
     arg_parser.add_argument(
         "--tokenfile",
         help="Bot token file (prefer using the BOT_TOKEN environment variable)",
+    )
+    arg_parser.add_argument(
+        "--envfile",
+        help="The .env file to load environment variables from (defaults to .env)",
+        default=".env",
     )
     arg_parser.add_argument("--log", help="Log level", default="WARNING")
     parsed_args = arg_parser.parse_args()
@@ -39,6 +46,9 @@ def run():
     log.debug("Successfully parsed configuration file!")
 
     log.info(f"Number of configuration keys: {len(config)}")
+
+    envfile = parsed_args.envfile
+    load_dotenv(envfile)
 
     bot_token = os.environ.get("BOT_TOKEN", None)
 

@@ -29,6 +29,7 @@ aiohttp = "^3.7.4"
 PyYAML = "^5.4.1"
 emoji = "^1.4.2"
 jsonpath-ng = "^1.5.3"
+python-dotenv = "^0.20.0"
 # NOTE See: https://github.com/python-poetry/poetry/issues/4402
 # This was fixed in stable, but doesn't seem to be fixed in the beta branch.
 SQLAlchemy = ">=1.4,<1.4.23"

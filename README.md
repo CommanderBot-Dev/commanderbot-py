@@ -21,9 +21,8 @@ You will need the following:
 3. A Python 3.10+ environment.
    - It is recommended to use a [virtual environment](https://docs.python.org/3/tutorial/venv.html) for this.
    - You can use [pyenv](https://github.com/pyenv/pyenv) to build and run Python 3.10.
-4. If you have [poetry](https://python-poetry.org/), you can `poetry install` instead of using `pip`. (Just make sure that dev dependencies are also installed.) Otherwise, you need to install a few packages with `pip`:
+4. If you have [poetry](https://python-poetry.org/), you can `poetry install` instead of using `pip`. (Just make sure that dev dependencies are also installed.) Otherwise, you may use `pip`:
    - Run `pip install commanderbot` to install the bot core package.
-   - Run `pip install git+https://github.com/Rapptz/discord.py.git@848d752` to install the latest (and final) version of the discord.py 2.0 beta from GitHub.
 
 The first thing you should do is check the CLI help menu:
 
@@ -31,11 +30,13 @@ The first thing you should do is check the CLI help menu:
 python -m commanderbot --help
 ```
 
-There are three ways to provide your bot token:
+There are several ways to provide a bot token:
 
 1. (Recommended) As the `BOT_TOKEN` environment variable: `BOT_TOKEN=put_your_bot_token_here`
+   - Supports `.env` files: use `.env` in the working directory or provide the `--envfile` option
 2. As a CLI option: `--token put_your_bot_token_here`
-3. Manually, when prompted during start-up
+3. As a standalone file: `--tokenfile path_to_file_with_bot_token`
+4. Manually, when prompted during start-up
 
 Here's an example that provides the bot token as an argument:
 
