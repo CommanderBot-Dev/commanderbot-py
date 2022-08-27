@@ -22,11 +22,7 @@ class PosterBoardCog(Cog, name="commanderbot.ext.poster_board"):
         content: Optional[str] = None,
         colour: Optional[Colour] = None,
     ):
-        embed = Embed(
-            title=title if title is not None else Embed.Empty,
-            description=content if content is not None else Embed.Empty,
-            colour=colour if colour is not None else Embed.Empty,
-        )
+        embed = Embed(title=title, description=content, colour=colour)
         await destination.send(embed=embed)
 
     @group(name="posterboard", aliases=["pb"])
