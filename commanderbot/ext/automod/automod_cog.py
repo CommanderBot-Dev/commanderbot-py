@@ -229,52 +229,51 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
                 after=cast(TextChannel | Thread, after),
             )
 
+    # @@ THREADS
+
+    @Cog.listener()
+    async def on_thread_create(self, thread: Thread):
+        # https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_join
+        if guild_state := self._guild_state_for_thread(thread):
+            await guild_state.on_thread_create(thread)
+
     @Cog.listener()
     async def on_thread_join(self, thread: Thread):
-        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_join
-        # NOTE Blame the official Discord API for this jank work-around.
-        # From the discord.py docs:
-        # > Note that from the API’s perspective there is no way to differentiate
-        # > between a thread being created or the bot joining a thread.
-        # So what we do is we check the `me` property of the thread to determine whether
-        # we're a member of it, and use that to determine how to proceed.
+        # https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_join
         if guild_state := self._guild_state_for_thread(thread):
-            # If we're a member of the thread, we must've just joined it.
-            if thread.me:
-                await guild_state.on_thread_join(thread)
-            # Otherwise, it must be a newly-created thread.
-            else:
-                await guild_state.on_thread_create(thread)
+            await guild_state.on_thread_join(thread)
+
+    @Cog.listener()
+    async def on_thread_update(self, before: Thread, after: Thread):
+        # https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_update
+        if guild_state := self._guild_state_for_thread(after):
+            await guild_state.on_thread_update(before, after)
 
     @Cog.listener()
     async def on_thread_remove(self, thread: Thread):
-        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_remove
+        # https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_remove
         if guild_state := self._guild_state_for_thread(thread):
             await guild_state.on_thread_remove(thread)
 
     @Cog.listener()
     async def on_thread_delete(self, thread: Thread):
-        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_delete
+        # https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_delete
         if guild_state := self._guild_state_for_thread(thread):
             await guild_state.on_thread_delete(thread)
 
     @Cog.listener()
-    async def on_thread_update(self, before: Thread, after: Thread):
-        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_update
-        if guild_state := self._guild_state_for_thread(after):
-            await guild_state.on_thread_update(before, after)
-
-    @Cog.listener()
     async def on_thread_member_join(self, member: ThreadMember):
-        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_member_join
+        # https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_member_join
         if guild_state := self._guild_state_for_thread_member(member):
             await guild_state.on_thread_member_join(member)
 
     @Cog.listener()
-    async def on_thread_member_leave(self, member: ThreadMember):
-        # https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_member_leave
+    async def on_thread_member_remove(self, member: ThreadMember):
+        # https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_member_remove
         if guild_state := self._guild_state_for_thread_member(member):
-            await guild_state.on_thread_member_leave(member)
+            await guild_state.on_thread_member_remove(member)
+
+    # @@ MEMBERS
 
     @Cog.listener()
     async def on_member_join(self, member: Member):

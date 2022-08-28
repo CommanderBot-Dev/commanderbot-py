@@ -14,7 +14,7 @@ class ThreadUpdated(ThreadBase):
     """
     Fires when an `on_thread_update` event is received.
 
-    See: https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_update
+    See: https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_update
 
     Attributes
     ----------

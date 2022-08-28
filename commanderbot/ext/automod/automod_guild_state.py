@@ -387,11 +387,16 @@ class AutomodGuildState(CogGuildState):
             events.GuildChannelUpdated(self.bot, self.log, before, after)
         )
 
+    # @@ THREADS
+
     async def on_thread_create(self, thread: Thread):
         await self._do_event(events.ThreadCreated(self.bot, self.log, thread))
 
     async def on_thread_join(self, thread: Thread):
         await self._do_event(events.ThreadJoined(self.bot, self.log, thread))
+
+    async def on_thread_update(self, before: Thread, after: Thread):
+        await self._do_event(events.ThreadUpdated(self.bot, self.log, before, after))
 
     async def on_thread_remove(self, thread: Thread):
         await self._do_event(events.ThreadRemoved(self.bot, self.log, thread))
@@ -399,14 +404,13 @@ class AutomodGuildState(CogGuildState):
     async def on_thread_delete(self, thread: Thread):
         await self._do_event(events.ThreadDeleted(self.bot, self.log, thread))
 
-    async def on_thread_update(self, before: Thread, after: Thread):
-        await self._do_event(events.ThreadUpdated(self.bot, self.log, before, after))
-
     async def on_thread_member_join(self, member: ThreadMember):
         await self._do_event(events.ThreadMemberJoined(self.bot, self.log, member))
 
-    async def on_thread_member_leave(self, member: ThreadMember):
+    async def on_thread_member_remove(self, member: ThreadMember):
         await self._do_event(events.ThreadMemberLeft(self.bot, self.log, member))
+
+    # @@ MEMBERS
 
     async def on_member_join(self, member: Member):
         await self._do_event(events.MemberJoined(self.bot, self.log, member))

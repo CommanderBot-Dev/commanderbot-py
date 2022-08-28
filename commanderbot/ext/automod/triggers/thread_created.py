@@ -12,9 +12,9 @@ ST = TypeVar("ST")
 @dataclass
 class ThreadCreated(ThreadBase):
     """
-    Fires when an `on_thread_join` event is received without already being a member.
+    Fires when an `on_thread_create` event is received.
 
-    See: https://discordpy.readthedocs.io/en/master/api.html#discord.on_thread_join
+    See: https://discordpy.readthedocs.io/en/stable/api.html#discord.on_thread_create
 
     Attributes
     ----------
