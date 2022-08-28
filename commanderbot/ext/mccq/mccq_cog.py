@@ -1,14 +1,22 @@
 from logging import Logger, getLogger
 from sre_constants import error as RegexError
-from typing import Optional
+from typing import Optional, cast
 
 import mccq.errors
-from discord import Game
-from discord.ext.commands import Bot, Cog, Context, command
+from discord import Game, Member
+from discord.ext.commands import Bot, Cog, Context, check, command
 from mccq.query_manager import QueryManager
 from mccq.version_database import VersionDatabase
 
 from commanderbot.lib import checks
+
+
+def member_is_elevated():
+    async def predicate(ctx: Context):
+        cog: MCCQCog = cast(MCCQCog, ctx.cog)
+        return isinstance(ctx.author, Member) and (ctx.author.id in cog.elevated_users)
+
+    return check(predicate)
 
 
 class MCCQCog(Cog, name="commanderbot.ext.mccq"):
@@ -51,6 +59,9 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
 
         # max lines of results, useful to prevent potential chat spam
         self.max_results = options.get("max_results", None)
+
+        # allow certain users to run the reload command
+        self.elevated_users: list[int] = options.get("elevated_users", [])
 
         # create java edition query manager, if a url was provided
         self.java_query_manager: Optional[QueryManager] = None
@@ -276,7 +287,10 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
         aliases=["mccreload"],
         hidden=True,
     )
-    @checks.is_owner()
+    @checks.any_of(
+        checks.is_owner(),
+        member_is_elevated(),
+    )
     async def cmd_mccreload(self, ctx):
         await self.mccreload(ctx)
 
