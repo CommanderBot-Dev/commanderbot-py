@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Added a config option for `mccq` to allow certain users to run the reload command
 
+### Changed
+
+- Adjusted the format of the presence status set by `mccq`
+
 ## [0.19.0] - 2022-08-27
 
 ### Added

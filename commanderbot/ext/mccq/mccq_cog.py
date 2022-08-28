@@ -3,7 +3,7 @@ from sre_constants import error as RegexError
 from typing import Optional, cast
 
 import mccq.errors
-from discord import Game, Member
+from discord import Activity, ActivityType, Member
 from discord.ext.commands import Bot, Cog, Context, check, command
 from mccq.query_manager import QueryManager
 from mccq.version_database import VersionDatabase
@@ -111,7 +111,7 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
                         self.presence_version
                     )
                 )
-                presence_parts.append(f"{java_presence_version} (Java)")
+                presence_parts.append(f"JE {java_presence_version}")
 
             # and the latest bedrock version, if configured
             if self.bedrock_query_manager:
@@ -121,15 +121,16 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
                         self.presence_version
                     )
                 )
-                presence_parts.append(f"{bedrock_presence_version} (Bedrock)")
+                presence_parts.append(f"BE {bedrock_presence_version}")
 
             # and then set the bot's presence status
             if presence_parts:
-                presence_text = ", ".join(presence_parts)
+                presence_text = " & ".join(presence_parts)
                 self.log.info(
                     "Setting presence to latest version: {}".format(presence_text)
                 )
-                await self.bot.change_presence(activity=Game(name=presence_text))
+                activity = Activity(name=presence_text, type=ActivityType.playing)
+                await self.bot.change_presence(activity=activity)
             else:
                 self.log.warning("No presence version to update")
 
