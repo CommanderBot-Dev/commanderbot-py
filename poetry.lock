@@ -318,6 +318,14 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "mccq"
+version = "1.0.2"
+description = "Minecraft command query program. Inspired by the in-game help command, with added features like multiple version support and expandable regex search."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "mdurl"
 version = "0.1.2"
 description = "Markdown URL utilities"
@@ -520,7 +528,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "5300ca23efdbef40df3f0b1cf6bc3613691dd938c04109b5e56143ddaf3ba564"
+content-hash = "10ae5b36c3d2fc7dc49210efd021dd035dbcbb2d4f10fe34003835e8c07ba421"
 
 [metadata.files]
 aiohttp = []
@@ -627,6 +635,10 @@ markupsafe = [
     {file = "MarkupSafe-2.1.1-cp39-cp39-win32.whl", hash = "sha256:d4306c36ca495956b6d568d276ac11fdd9c30a36f1b6eb928070dc5360b22e1c"},
     {file = "MarkupSafe-2.1.1-cp39-cp39-win_amd64.whl", hash = "sha256:46d00d6cfecdde84d40e572d63735ef81423ad31184100411e6e3388d405e247"},
     {file = "MarkupSafe-2.1.1.tar.gz", hash = "sha256:7f91197cc9e48f989d12e4e6fbc46495c446636dfc81b9ccf50bb0ec74b91d4b"},
+]
+mccq = [
+    {file = "mccq-1.0.2-py3-none-any.whl", hash = "sha256:abfad271f10b3a77149276024de35f82b56732df280f206335a15a539f3f5c54"},
+    {file = "mccq-1.0.2.tar.gz", hash = "sha256:13c29a494f0c467fe6cbd0d3be02e2dfdc9bcf9d1edeb5c1bb259cb742c44db3"},
 ]
 mdurl = []
 mecha = [
