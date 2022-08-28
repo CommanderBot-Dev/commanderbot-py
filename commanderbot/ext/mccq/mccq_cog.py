@@ -3,7 +3,7 @@ from sre_constants import error as RegexError
 from typing import Optional, cast
 
 import mccq.errors
-from discord import Activity, ActivityType, Member
+from discord import Activity, ActivityType, AllowedMentions, Member, Message
 from discord.ext.commands import Bot, Cog, Context, check, command
 from mccq.query_manager import QueryManager
 from mccq.version_database import VersionDatabase
@@ -145,13 +145,16 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
 
         await ctx.message.add_reaction("✅")
 
+    async def reply(self, message: Message, content: str):
+        await message.reply(content, allowed_mentions=AllowedMentions.none())
+
     async def mcc(self, ctx: Context, command: str, query_manager: QueryManager):
         # if no command was provided, print help and short-circuit
         if not command:
             help_message = "".join(
                 ("```", QueryManager.ARGUMENT_PARSER.format_help(), "```")
             )
-            await ctx.message.reply(help_message)
+            await self.reply(ctx.message, help_message)
             return
 
         try:
@@ -181,24 +184,25 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
             self.log.info(
                 "Failed to parse arguments for the command: {}".format(command)
             )
-            await ctx.message.reply("Invalid arguments for that command")
+            await self.reply(ctx.message, "Invalid arguments for that command")
             return
 
         except mccq.errors.NoVersionsAvailable:
             self.log.info("No versions available for the command: {}".format(command))
-            await ctx.message.reply("No versions available for that command")
+            await self.reply(ctx.message, "No versions available for that command")
             return
 
         except (mccq.errors.LoaderFailure, mccq.errors.ParserFailure):
             self.log.exception(
                 "Failed to load data for the command: {}".format(command)
             )
-            await ctx.message.reply("Failed to load data for that command")
+            await self.reply(ctx.message, "Failed to load data for that command")
             return
 
         except RegexError:
             self.log.info("Invalid regex for the command: {}".format(command))
-            await ctx.message.reply(
+            await self.reply(
+                ctx.message,
                 "Invalid regex for that command (you may need to use escaping)",
             )
             return
@@ -215,7 +219,7 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
         if not results:
             # let the user know if there were no results, and short-circuit
             # note this is different from an invalid base command
-            await ctx.message.reply("No results found for that command")
+            await self.reply(ctx.message, "No results found for that command")
             return
 
         # if any version produced more than one command, render one paragraph per version
@@ -273,7 +277,7 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
 
         # sometimes the message is too big to send
         try:
-            await ctx.message.reply(message)
+            await self.reply(ctx.message, message)
         except:
             num_full_results = sum(len(lines) for lines in results.values())
             self.log.exception(
