@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 - Added support for `.env` files (to provide the bot token)
+- Implemented `mccq` command (from cogbot)
 - `allay`:
   - New command, turns a plaintext markdown-like format into a text component with optional indentation levels
 - `automod`:
