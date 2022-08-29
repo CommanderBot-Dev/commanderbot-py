@@ -7,6 +7,7 @@ from discord.ext.commands import Bot, Cog, Context, command
 
 DEFAULT_VOTE_EMOJIS = ("👍", "👎")
 CUSTOM_EMOJI_PATTERN = re.compile(r"\<\:\w+\:\d+\>")
+LEFTOVERS_PATTERN = re.compile("🇦|🇧|🇨|🇩|🇪|🇫|🇬|🇭|🇮|🇯|🇰|🇱|🇲|🇳|🇴|🇵|🇶|🇷|🇸|🇹|🇺|🇻|🇼|🇽|🇾|🇿")
 
 
 class VoteCog(Cog, name="commanderbot.ext.vote"):
@@ -18,14 +19,33 @@ class VoteCog(Cog, name="commanderbot.ext.vote"):
         # Get message content and cast it to a string
         message_content: str = str(message.clean_content)
 
-        # Find unicode and custom emojis in the message
+        # Find unicode emoji in the message
         found_emojis: list = emoji.emoji_list(message_content)
-        for custom_emoji in CUSTOM_EMOJI_PATTERN.finditer(message_content):
+
+        # Find custom Discord emoji
+        for match in CUSTOM_EMOJI_PATTERN.finditer(message_content):
             found_emojis.append(
                 {
-                    "match_start": custom_emoji.start(),
-                    "match_end": custom_emoji.end(),
-                    "emoji": custom_emoji.group(),
+                    "match_start": match.start(),
+                    "match_end": match.end(),
+                    "emoji": match.group(),
+                }
+            )
+
+        # Create a copy of the message with all emojis removed
+        leftovers = message_content
+        for e in found_emojis:
+            i = e["match_start"]
+            j = e["match_end"]
+            leftovers = leftovers[:i] + leftovers[j + 1 :]
+
+        # Find any other leftover matches, such as regional indicators
+        for match in LEFTOVERS_PATTERN.finditer(leftovers):
+            found_emojis.append(
+                {
+                    "match_start": match.start(),
+                    "match_end": match.end(),
+                    "emoji": match.group(),
                 }
             )
 
@@ -34,13 +54,13 @@ class VoteCog(Cog, name="commanderbot.ext.vote"):
             return DEFAULT_VOTE_EMOJIS
 
         # Create a list of unique emojis that are sorted in the order they appeared
-        emojis: list[str] = []
+        unique_emojis: list[str] = []
         for e in sorted(found_emojis, key=lambda i: i["match_start"]):
             emoji_char: str = str(e["emoji"])
-            if emoji_char not in emojis:
-                emojis.append(emoji_char)
+            if emoji_char not in unique_emojis:
+                unique_emojis.append(emoji_char)
 
-        return emojis
+        return unique_emojis
 
     @command(name="vote")
     async def cmd_vote(self, ctx: Context):
