@@ -64,7 +64,7 @@ class JiraClient:
             raise RequestError(issue_id)
 
     async def get_issue(self, issue: str) -> JiraIssue:
-        # Extract the issue ID and base URL or throw an
+        # Extract the issue ID parts and base URL or throw an
         # exception if the regex matches fail
         unfiltered_url: str = issue.split("?")[0]
         base_url: str = self.url
@@ -77,7 +77,7 @@ class JiraClient:
         else:
             raise InvalidIssueFormat
 
-        # Format issue ID
+        # Create issue ID
         issue_id = "-".join((project.upper(), str(int(id))))
 
         # Request issue data and get its fields
