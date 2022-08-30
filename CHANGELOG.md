@@ -9,10 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 - Added a config option for `mccq` to allow certain users to run the reload command
+- Added a link button under `jira` issue embeds
 
 ### Changed
 
 - Adjusted the format of the presence status set by `mccq`
+- Querying `jira` issues using a URL as the argument will now ignore the base URL stored in the `jira` cog and instead get it from the argument
 
 ## [0.19.0] - 2022-08-27
 
