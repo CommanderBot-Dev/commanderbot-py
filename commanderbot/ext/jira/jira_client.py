@@ -6,8 +6,8 @@ import aiohttp
 from commanderbot.ext.jira.jira_issue import JiraIssue, StatusColor
 from commanderbot.lib.responsive_exception import ResponsiveException
 
-JIRA_URL_PATTERN = re.compile(r"^(https?://[^/]+).*?(\w+)\-(\d+)")
-JIRA_ISSUE_ID_PATTERN = re.compile(r"^(\w+)\-(\d+)")
+JIRA_URL_PATTERN = re.compile(r"^(https?://[^/]+).*?(\w+)-(\d+)")
+JIRA_ISSUE_ID_PATTERN = re.compile(r"^(\w+)-(\d+)")
 
 
 class JiraException(ResponsiveException):
