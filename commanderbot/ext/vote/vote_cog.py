@@ -1,4 +1,5 @@
 import re
+from ast import alias
 from typing import Iterable, cast
 
 import emoji
@@ -62,7 +63,7 @@ class VoteCog(Cog, name="commanderbot.ext.vote"):
 
         return unique_emojis
 
-    @command(name="vote")
+    @command(name="vote", aliases=["poll"])
     async def cmd_vote(self, ctx: Context):
         # Determine which emoji reactions to seed the message with, silently ignoring
         # errors raised by any individual emoji.
