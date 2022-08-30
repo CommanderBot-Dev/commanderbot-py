@@ -1,6 +1,6 @@
 from logging import Logger, getLogger
 
-from discord import Embed
+from discord import ui, Embed
 from discord.ext.commands import Bot, Cog, Context, command
 
 from commanderbot.ext.jira.jira_client import JiraClient
@@ -22,13 +22,9 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
         self.jira_client: JiraClient = JiraClient(url)
 
     @command(name="jira", aliases=["bug"])
-    async def cmd_jira(self, ctx: Context, issue_id: str):
-        # Extract the issue ID if the command was given a URL. Issue IDs given
-        # directly are not affected
-        issue_id = issue_id.split("?")[0].split("/")[-1].upper()
-
+    async def cmd_jira(self, ctx: Context, issue_or_url: str):
         # Try to get the issue
-        issue: JiraIssue = await self.jira_client.get_issue(issue_id)
+        issue: JiraIssue = await self.jira_client.get_issue(issue_or_url)
 
         # Create embed title and limit it to 256 characters
         title: str = f"[{issue.issue_id}] {issue.summary}"
@@ -47,4 +43,8 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
         for k, v in issue.fields.items():
             issue_embed.add_field(name=k, value=v)
 
-        await ctx.send(embed=issue_embed)
+        # Create view with link button
+        view: ui.View = ui.View()
+        view.add_item(ui.Button(label="View on Jira", url=issue.url))
+
+        await ctx.send(embed=issue_embed, view=view)
