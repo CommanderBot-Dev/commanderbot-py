@@ -1,11 +1,12 @@
-from discord.ext.commands import Bot, Cog, Context, command
+from discord import app_commands, Interaction
+from discord.ext.commands import Bot, Cog
 
 
 class PingCog(Cog, name="commanderbot.ext.ping"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 
-    @command(name="ping")
-    async def cmd_ping(self, ctx: Context):
+    @app_commands.command(name="ping", description="Ping the bot")
+    async def cmd_ping(self, interaction: Interaction):
         latency_ms = round(self.bot.latency * 1000)
-        await ctx.send(f"Pong! Latency: {latency_ms}ms")
+        await interaction.response.send_message(f"🏓 Pong! Latency: `{latency_ms}`ms")
