@@ -6,6 +6,7 @@ from discord.app_commands import AppCommand
 from discord.ext.commands import Bot, Cog, Context, group
 
 from commanderbot.ext.sudo.sudo_data import SyncType
+from commanderbot.ext.sudo.sudo_exceptions import SyncError, SyncUnknownGuild
 from commanderbot.lib import checks
 
 
@@ -83,19 +84,19 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
     async def cmd_sudo_sync_guild(self, ctx: Context):
         # If we didn't invote a subcommand, sync the current guild the normal way
         if not ctx.invoked_subcommand:
-            if sync_to := Object(id=ctx.guild.id) if ctx.guild else None:
+            if sync_to := self._get_current_guild(ctx):
                 await self._sync_guild_app_commands(ctx, sync_to)
             else:
-                await ctx.reply("Unknown guild")
+                raise SyncUnknownGuild(sync_to)
 
     @cmd_sudo_sync_guild.command(name="sync_only", brief="Sync app commands to a guild")
     async def cmd_sudo_sync_guild_sync_only(
         self, ctx: Context, guild: Optional[Object] = None
     ):
-        if sync_to := guild if guild else Object(id=ctx.guild.id):
+        if sync_to := guild if guild else self._get_current_guild(ctx):
             await self._sync_guild_app_commands(ctx, sync_to, SyncType.SYNC_ONLY)
         else:
-            await ctx.reply("Unknown guild")
+            raise SyncUnknownGuild(sync_to)
 
     @cmd_sudo_sync_guild.command(
         name="copy", brief="Copy and sync app commands to a guild"
@@ -103,10 +104,10 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
     async def cmd_sudo_sync_guild_copy(
         self, ctx: Context, guild: Optional[Object] = None
     ):
-        if sync_to := guild if guild else Object(id=ctx.guild.id):
+        if sync_to := guild if guild else self._get_current_guild(ctx):
             await self._sync_guild_app_commands(ctx, sync_to, SyncType.COPY)
         else:
-            await ctx.reply("Unknown guild")
+            raise SyncUnknownGuild(sync_to)
 
     @cmd_sudo_sync_guild.command(
         name="remove", brief="Remove app commands from a guild"
@@ -114,10 +115,16 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
     async def cmd_sudo_sync_guild_remove(
         self, ctx: Context, guild: Optional[Object] = None
     ):
-        if sync_to := guild if guild else Object(id=ctx.guild.id):
+        if sync_to := guild if guild else self._get_current_guild(ctx):
             await self._sync_guild_app_commands(ctx, sync_to, SyncType.REMOVE)
         else:
-            await ctx.reply("Unknown guild")
+            raise SyncUnknownGuild(sync_to)
+
+    def _get_current_guild(self, ctx: Context) -> Optional[Object]:
+        """
+        Gets the current guild from `ctx` if it exists
+        """
+        return Object(id=ctx.guild.id) if ctx.guild else None
 
     async def _sync_guild_app_commands(
         self, ctx: Context, guild: Object, sync_type: SyncType = SyncType.SYNC_ONLY
@@ -126,7 +133,7 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         await ctx.message.add_reaction("⏲️")
 
         # Create message used for saying if we're syncing with the current guild or with a guild ID
-        is_current_guild: bool = guild == Object(id=ctx.guild.id)
+        is_current_guild: bool = guild == self._get_current_guild(ctx)
         syncing_to_msg: str = (
             "the current guild" if is_current_guild else f"guild `{guild.id}`"
         )
@@ -148,12 +155,10 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         except HTTPException as ex:
             await ctx.message.add_reaction("🔥")
 
-            self.log.warn(f"Unable to sync app commands with guild {guild.id}: {ex.text}")
-            await ctx.reply(
-                f"Unable to sync app commands with {syncing_to_msg}\nReason: `{ex.text}`",
-                mention_author=False,
+            self.log.warn(
+                f"Unable to sync app commands with guild {guild.id}: {ex.text}"
             )
-            return
+            raise SyncError(guild, ex.text)
         finally:
             await ctx.message.remove_reaction("⏲️", self.bot.user)
 
