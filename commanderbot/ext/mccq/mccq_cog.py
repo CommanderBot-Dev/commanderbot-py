@@ -93,56 +93,56 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
             version=version, actual=actual_version
         )
 
+    async def update_status(self, presence_version: str):
+        self.log.info(f"Updating status with version: {presence_version}")
+
+        presence_parts: list[str] = []
+
+        # get the latest java version, if configured
+        if self.java_query_manager:
+            self.java_query_manager.database.get(presence_version)
+            java_presence_version = self.java_query_manager.database.get_actual_version(
+                presence_version
+            )
+            presence_parts.append(f"JE {java_presence_version}")
+
+        # and the latest bedrock version, if configured
+        if self.bedrock_query_manager:
+            self.bedrock_query_manager.database.get(presence_version)
+            bedrock_presence_version = (
+                self.bedrock_query_manager.database.get_actual_version(presence_version)
+            )
+            presence_parts.append(f"BE {bedrock_presence_version}")
+
+        # and then set the bot's presence status
+        if presence_parts:
+            presence_text = " & ".join(presence_parts)
+            self.log.info(
+                "Setting presence to latest version: {}".format(presence_text)
+            )
+            activity = Activity(name=presence_text, type=ActivityType.playing)
+            await self.bot.change_presence(activity=activity)
+        else:
+            self.log.warning("No presence version to update")
+
+    async def maybe_update_status(self):
+        if self.presence_version:
+            await self.update_status(self.presence_version)
+
     async def reload(self):
         if self.java_query_manager:
             self.java_query_manager.reload()
-
         if self.bedrock_query_manager:
             self.bedrock_query_manager.reload()
-
-        if self.presence_version:
-            presence_parts: list[str] = []
-
-            # get the latest java version, if configured
-            if self.java_query_manager:
-                self.java_query_manager.database.get(self.presence_version)
-                java_presence_version = (
-                    self.java_query_manager.database.get_actual_version(
-                        self.presence_version
-                    )
-                )
-                presence_parts.append(f"JE {java_presence_version}")
-
-            # and the latest bedrock version, if configured
-            if self.bedrock_query_manager:
-                self.bedrock_query_manager.database.get(self.presence_version)
-                bedrock_presence_version = (
-                    self.bedrock_query_manager.database.get_actual_version(
-                        self.presence_version
-                    )
-                )
-                presence_parts.append(f"BE {bedrock_presence_version}")
-
-            # and then set the bot's presence status
-            if presence_parts:
-                presence_text = " & ".join(presence_parts)
-                self.log.info(
-                    "Setting presence to latest version: {}".format(presence_text)
-                )
-                activity = Activity(name=presence_text, type=ActivityType.playing)
-                await self.bot.change_presence(activity=activity)
-            else:
-                self.log.warning("No presence version to update")
+        await self.maybe_update_status()
 
     async def mccreload(self, ctx: Context):
         try:
             await self.reload()
-
         except:
             self.log.exception("An unexpected error occurred while reloading commands")
             await ctx.message.add_reaction("🤯")
             return
-
         await ctx.message.add_reaction("✅")
 
     async def reply(self, message: Message, content: str):
@@ -286,6 +286,28 @@ class MCCQCog(Cog, name="commanderbot.ext.mccq"):
                 )
             )
             await ctx.message.add_reaction("😬")
+
+    # @@ Listeners
+
+    @Cog.listener()
+    async def on_ready(self):
+        await self.maybe_update_status()
+
+    @Cog.listener()
+    async def on_resumed(self):
+        await self.maybe_update_status()
+
+    @Cog.listener()
+    async def on_presence_update(self, before: Member, after: Member):
+        if (
+            (self.presence_version)
+            and (bot_user := self.bot.user)
+            and (bot_user.id == after.id)
+        ):
+            self.log.info("My status changed!")
+            await self.update_status(self.presence_version)
+
+    # @@ Commands
 
     @command(
         name="mccqreload",
