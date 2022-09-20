@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from discord import Color, TextChannel, Thread
+from discord import Interaction, Color, TextChannel, Thread
 from discord.ext.commands import Context
 
 from commanderbot.ext.stacktracer.stacktracer_guild_state import StacktracerGuildState
@@ -12,6 +12,7 @@ from commanderbot.lib import (
     GuildPartitionedCogState,
     LogOptions,
 )
+from commanderbot.lib.utils.interactions import command_name
 from commanderbot.lib.utils import format_context_cause
 
 
@@ -93,6 +94,47 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
                 # If something went wrong here, print another exception to the console.
                 self.log.exception(
                     f"Failed to log command error to channel with ID {log_options.channel}"
+                )
+
+    async def handle_app_command_error(
+        self, error: Exception, interaction: Interaction, handled: bool
+    ) -> Optional[bool]:
+        # If the error was already handled, ignore it.
+        if handled:
+            return
+
+        # If this error originated from a guild, use the guild's logging configuration.
+        if guild := interaction.guild:
+            log_options = await self.store.get_guild_log_options(guild)
+        # Otherwise, use the global logging configuration.
+        else:
+            log_options = await self.store.get_global_log_options()
+
+        # Attempt to print the error to the log channel, if any.
+        if log_options:
+            try:
+                cause = format_context_cause(interaction)
+                header = (
+                    f"Encountered an unhandled app command error, caused by {cause}:"
+                )
+                lines = [
+                    header,
+                    log_options.formate_error_codeblock(error),
+                    f"Caused by the following app command:",
+                    f"```{command_name(interaction)}```",
+                ]
+                content = "\n".join(lines)
+                await log_options.send(
+                    self.bot,
+                    content,
+                    file_callback=lambda: (header, content, "error.txt"),
+                )
+                # Stop the error from being printed to console.
+                return True
+            except:
+                # If something went wrong here, print another exception to the console.
+                self.log.exception(
+                    f"Failed to log app command error to channel with ID {log_options.channel}"
                 )
 
     async def reply(self, ctx: Context, content: str):

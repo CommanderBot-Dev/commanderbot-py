@@ -1,6 +1,6 @@
 from typing import Optional, cast
 
-from discord import Color, Message, TextChannel, Thread, User
+from discord import Interaction, Color, Message, TextChannel, Thread, User
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog, Context
 
@@ -78,6 +78,7 @@ class StacktracerCog(Cog, name="commanderbot.ext.stacktracer"):
         if isinstance(bot, CommanderBotBase):
             bot.add_event_error_handler(self.handle_event_error)
             bot.add_command_error_handler(self.handle_command_error)
+            bot.add_app_command_error_handler(self.handle_app_command_error)
 
     async def handle_event_error(
         self, error: Exception, event_data: EventData, handled: bool
@@ -88,6 +89,11 @@ class StacktracerCog(Cog, name="commanderbot.ext.stacktracer"):
         self, error: Exception, ctx: Context, handled: bool
     ) -> Optional[bool]:
         return await self.state.handle_command_error(error, ctx, handled)
+
+    async def handle_app_command_error(
+        self, error: Exception, interaction: Interaction, handled: bool
+    ) -> Optional[bool]:
+        return await self.state.handle_app_command_error(error, interaction, handled)
 
     @Cog.listener()
     async def on_message_delete(self, message: Message):
