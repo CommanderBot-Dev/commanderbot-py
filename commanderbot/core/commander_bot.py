@@ -149,5 +149,6 @@ class CommanderBot(CommanderBotBase):
     async def on_command_error(self, ctx: Context, ex: Exception):
         await self.error_handling.on_command_error(ex, ctx)
 
+    # Callback for `CommandTree.on_error()`
     async def on_app_command_error(self, interaction: Interaction, ex: Exception):
         await self.error_handling.on_app_command_error(ex, interaction)
