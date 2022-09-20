@@ -1,7 +1,8 @@
 from logging import Logger, getLogger
 
-from discord import ui, Embed
-from discord.ext.commands import Bot, Cog, Context, command
+from discord import Interaction, ui, Embed
+from discord.app_commands import command
+from discord.ext.commands import Bot, Cog
 
 from commanderbot.ext.jira.jira_client import JiraClient
 from commanderbot.ext.jira.jira_issue import JiraIssue
@@ -21,8 +22,8 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
         # Create the Jira client
         self.jira_client: JiraClient = JiraClient(url)
 
-    @command(name="jira", aliases=["bug"])
-    async def cmd_jira(self, ctx: Context, issue_or_url: str):
+    @command(name="jira", description="Query a Jira issue")
+    async def cmd_jira(self, interaction: Interaction, issue_or_url: str):
         # Try to get the issue
         issue: JiraIssue = await self.jira_client.get_issue(issue_or_url)
 
@@ -47,4 +48,4 @@ class JiraCog(Cog, name="commanderbot.ext.jira"):
         view: ui.View = ui.View()
         view.add_item(ui.Button(label="View on Jira", url=issue.url))
 
-        await ctx.send(embed=issue_embed, view=view)
+        await interaction.response.send_message(embed=issue_embed, view=view)
