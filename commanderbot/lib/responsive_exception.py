@@ -1,7 +1,9 @@
 from typing import Optional
 
-from discord import AllowedMentions
+from discord import Interaction, AllowedMentions
 from discord.ext.commands import Context
+
+from commanderbot.lib.utils.interactions import send_or_followup
 
 __all__ = ("ResponsiveException",)
 
@@ -21,7 +23,7 @@ class ResponsiveException(Exception):
 
     async def respond(
         self,
-        ctx: Context,
+        ctx: Context | Interaction,
         allowed_mentions: Optional[AllowedMentions] = None,
     ):
         allowed_mentions = (
@@ -29,7 +31,9 @@ class ResponsiveException(Exception):
             or self.allowed_mentions
             or self.allowed_mentions_default_factory()
         )
-        await ctx.message.reply(
-            str(self),
-            allowed_mentions=allowed_mentions,
-        )
+
+        match ctx:
+            case Context():
+                await ctx.message.reply(str(self), allowed_mentions=allowed_mentions)
+            case Interaction():
+                await send_or_followup(ctx, str(self), allowed_mentions=allowed_mentions)

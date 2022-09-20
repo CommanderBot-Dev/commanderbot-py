@@ -17,7 +17,16 @@ from typing import (
     cast,
 )
 
-from discord import AllowedMentions, File, Member, Message, TextChannel, Thread, User
+from discord import (
+    Interaction,
+    AllowedMentions,
+    File,
+    Member,
+    Message,
+    TextChannel,
+    Thread,
+    User,
+)
 from discord.abc import Messageable
 from discord.ext.commands import Bot, Context
 
@@ -82,10 +91,10 @@ def sanitize_stacktrace(error: Exception) -> str:
     return "".join(lines)
 
 
-def format_context_cause(ctx: Context) -> str:
+def format_context_cause(ctx: Context | Interaction) -> str:
     parts = []
 
-    if author := ctx.author:
+    if author := (ctx.author if isinstance(ctx, Context) else ctx.user):
         parts.append(author.mention)
     else:
         parts.append("`Unknown User`")
