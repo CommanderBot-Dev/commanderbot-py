@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from logging import Logger, getLogger
 from typing import Any, Dict, List, Optional
 
+from discord.interactions import Interaction
 from discord.ext.commands import Context
 
 from commanderbot.core.commander_bot_base import CommanderBotBase
@@ -11,6 +12,7 @@ from commanderbot.core.error_handling import (
     CommandErrorHandler,
     ErrorHandling,
     EventErrorHandler,
+    AppCommandErrorHandler
 )
 from commanderbot.lib import AllowedMentions, EventData, Intents
 from commanderbot.lib.utils.utils import utcnow_aware
@@ -43,6 +45,7 @@ class CommanderBot(CommanderBotBase):
 
         # Create an error handling component.
         self.error_handling = ErrorHandling(log=self.log)
+        self.tree.on_error = self.on_app_command_error
 
         # Warn about a lack of configured intents.
         if intents is None:
@@ -113,6 +116,10 @@ class CommanderBot(CommanderBotBase):
     def add_command_error_handler(self, handler: CommandErrorHandler):
         self.error_handling.add_command_error_handler(handler)
 
+    # @implements CommanderBotBase
+    def add_app_command_error_handler(self, handler: AppCommandErrorHandler):
+        self.error_handling.add_app_command_error_handler(handler)
+
     # @overrides Bot
     async def setup_hook(self):
         if self._extensions_data:
@@ -141,3 +148,6 @@ class CommanderBot(CommanderBotBase):
     # @overrides Bot
     async def on_command_error(self, ctx: Context, ex: Exception):
         await self.error_handling.on_command_error(ex, ctx)
+
+    async def on_app_command_error(self, interaction: Interaction, ex: Exception):
+        await self.error_handling.on_app_command_error(ex, interaction)

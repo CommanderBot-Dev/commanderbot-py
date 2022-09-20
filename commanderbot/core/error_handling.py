@@ -3,6 +3,8 @@ from logging import Logger
 from typing import List, Optional
 
 import discord
+import discord.app_commands as ac
+from discord.interactions import Interaction
 from discord.ext.commands import Context
 from discord.ext.commands.errors import (
     BotMissingPermissions,
@@ -14,8 +16,13 @@ from discord.ext.commands.errors import (
     UserInputError,
 )
 
-from commanderbot.core.commander_bot_base import CommandErrorHandler, EventErrorHandler
+from commanderbot.core.commander_bot_base import (
+    CommandErrorHandler,
+    EventErrorHandler,
+    AppCommandErrorHandler,
+)
 from commanderbot.lib import AllowedMentions, EventData, ResponsiveException
+from commanderbot.lib.utils.interactions import send_or_followup, command_name
 
 
 @dataclass
@@ -24,9 +31,12 @@ class ErrorHandling:
 
     event_error_handlers: List[EventErrorHandler] = field(default_factory=list)
     command_error_handlers: List[CommandErrorHandler] = field(default_factory=list)
+    app_command_error_handlers: List[AppCommandErrorHandler] = field(
+        default_factory=list
+    )
 
     def _get_root_error(self, error: Exception) -> Exception:
-        if isinstance(error, CommandInvokeError):
+        if isinstance(error, (CommandInvokeError, ac.CommandInvokeError)):
             return error.original
         else:
             return error
@@ -36,6 +46,9 @@ class ErrorHandling:
 
     def add_command_error_handler(self, handler: CommandErrorHandler):
         self.command_error_handlers.append(handler)
+
+    def add_app_command_error_handler(self, handler: AppCommandErrorHandler):
+        self.app_command_error_handlers.append(handler)
 
     async def reply(
         self,
@@ -111,26 +124,91 @@ class ErrorHandling:
             await self.reply(ctx, f"🔥 Something went wrong trying to do that.")
 
     async def try_handle_command_error(self, error: Exception, ctx: Context) -> bool:
-        if isinstance(error, CommandNotFound):
-            return True
-        elif isinstance(error, UserInputError):
-            await self.reply(ctx, f"😬 Bad input: {error}")
-            await ctx.send_help(ctx.command)
-            return True
-        elif isinstance(error, MissingPermissions):
-            await self.reply(ctx, f"😠 You don't have permission to do that.")
-            return True
-        elif isinstance(error, BotMissingPermissions):
-            await self.reply(ctx, f"😳 I don't have permission to do that.")
-            return True
-        elif isinstance(error, NoPrivateMessage):
-            await self.reply(ctx, f"🤐 You can't do that in a private message.")
-            return True
-        elif isinstance(error, CheckFailure):
-            await self.reply(ctx, f"🤔 You can't do that.")
-            return True
-        elif isinstance(error, ResponsiveException):
-            await error.respond(ctx)
-            return True
+        match error:
+            case CommandNotFound():
+                return True
+            case UserInputError():
+                await self.reply(ctx, f"😬 Bad input: {error}")
+                await ctx.send_help(ctx.command)
+                return True
+            case MissingPermissions():
+                await self.reply(ctx, f"😠 You don't have permission to do that.")
+                return True
+            case BotMissingPermissions():
+                await self.reply(ctx, f"😳 I don't have permission to do that.")
+                return True
+            case NoPrivateMessage():
+                await self.reply(ctx, f"🤐 You can't do that in a private message.")
+                return True
+            case CheckFailure():
+                await self.reply(ctx, f"🤔 You can't do that.")
+                return True
+            case ResponsiveException():
+                await error.respond(ctx)
+                return True
+            case _:
+                return False
 
-        return False
+    async def on_app_command_error(self, ex: Exception, interaction: Interaction):
+        # Extract the root error.
+        error = self._get_root_error(ex)
+
+        # Attempt to handle the error ourselves.
+        handled = await self.try_handle_app_command_error(error, interaction)
+
+        # Pipe the error through our registered app command error handlers, regardless of
+        # whether the error was handled. Handlers can decide on their own whether to do
+        # anything with errors that have already been handled.
+        for handler in self.app_command_error_handlers:
+            try:
+                if result := await handler(error, interaction, handled):
+                    handled = result
+            except:
+                # If something went wrong here, print another exception to the console.
+                self.log.exception(
+                    "Handler for app command errors caused another error:"
+                )
+
+        # If it wasn't handled, re-raise so it can be printed to the console, and then
+        # let the user know something went wrong.
+        if not handled:
+            try:
+                raise error
+            except:
+                self.log.exception(
+                    f"Ignoring unhandled exception from command: `{command_name(interaction)}`"
+                )
+
+            await send_or_followup(
+                interaction, f"🔥 Something went wrong trying to do that."
+            )
+
+    async def try_handle_app_command_error(
+        self, error: Exception, interaction: Interaction
+    ):
+        match error:
+            case ac.CommandNotFound():
+                return True
+            case ac.MissingPermissions():
+                await send_or_followup(
+                    interaction, f"😠 You don't have permission to do that."
+                )
+                return True
+            case ac.BotMissingPermissions():
+                await send_or_followup(
+                    interaction, f"😳 I don't have permission to do that."
+                )
+                return True
+            case ac.NoPrivateMessage():
+                await send_or_followup(
+                    interaction, f"🤐 You can't do that in a private message."
+                )
+                return True
+            case ac.CheckFailure():
+                await send_or_followup(interaction, f"🤔 You can't do that.")
+                return True
+            case ResponsiveException():
+                await error.respond(interaction)
+                return True
+            case _:
+                return False
