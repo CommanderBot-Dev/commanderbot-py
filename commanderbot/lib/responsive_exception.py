@@ -36,4 +36,6 @@ class ResponsiveException(Exception):
             case Context():
                 await ctx.message.reply(str(self), allowed_mentions=allowed_mentions)
             case Interaction():
-                await send_or_followup(ctx, str(self), allowed_mentions=allowed_mentions)
+                await send_or_followup(
+                    ctx, str(self), allowed_mentions=allowed_mentions
+                )
