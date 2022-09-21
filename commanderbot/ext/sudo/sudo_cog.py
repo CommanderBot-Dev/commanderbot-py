@@ -64,30 +64,12 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_sudo_sync)
 
-    @cmd_sudo_sync.group(name="global", brief="Sync global app commands")
+    @cmd_sudo_sync.command(name="global", brief="Sync global app commands")
     async def cmd_sudo_sync_global(self, ctx: Context):
-        if not ctx.invoked_subcommand:
-            await self._sync_global_app_commands(ctx)
-
-    @cmd_sudo_sync_global.command(name="sync", brief="Sync global app commands")
-    async def cmd_sudo_sync_global_sync(self, ctx: Context):
-        await self._sync_global_app_commands(ctx)
-
-    @cmd_sudo_sync_global.command(name="remove", brief="Remove global app commands")
-    async def cmd_sudo_sync_global_remove(self, ctx: Context):
-        await self._sync_global_app_commands(ctx, SyncType.REMOVE)
-    
-    async def _sync_global_app_commands(self, ctx: Context, sync_type = SyncType.SYNC):
         self.log.info("Started syncing app commands globally...")
         await ctx.message.add_reaction("⏲️")
 
-        synced_commands: list[AppCommand] = []
-        match sync_type:
-            case sync_type.SYNC:
-                synced_commands = await self.bot.tree.sync()
-            case sync_type.REMOVE:
-                self.bot.tree.clear_commands(guild=None)
-                synced_commands = await self.bot.tree.sync()
+        synced_commands: list[AppCommand] = await self.bot.tree.sync()
 
         await ctx.message.add_reaction("✅")
         await ctx.message.remove_reaction("⏲️", self.bot.user)
