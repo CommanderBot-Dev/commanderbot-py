@@ -172,7 +172,9 @@ class ErrorHandling:
                 )
 
             await send_or_followup(
-                interaction, f"🔥 Something went wrong trying to do that."
+                interaction,
+                f"🔥 Something went wrong trying to do that.",
+                ephemeral=True,
             )
 
     async def try_handle_app_command_error(
@@ -183,21 +185,29 @@ class ErrorHandling:
                 return True
             case ace.MissingPermissions():
                 await send_or_followup(
-                    interaction, f"😠 You don't have permission to do that."
+                    interaction,
+                    f"😠 You don't have permission to do that.",
+                    ephemeral=True,
                 )
                 return True
             case ace.BotMissingPermissions():
                 await send_or_followup(
-                    interaction, f"😳 I don't have permission to do that."
+                    interaction,
+                    f"😳 I don't have permission to do that.",
+                    ephemeral=True,
                 )
                 return True
             case ace.NoPrivateMessage():
                 await send_or_followup(
-                    interaction, f"🤐 You can't do that in a private message."
+                    interaction,
+                    f"🤐 You can't do that in a private message.",
+                    ephemeral=True,
                 )
                 return True
             case ace.CheckFailure():
-                await send_or_followup(interaction, f"🤔 You can't do that.")
+                await send_or_followup(
+                    interaction, f"🤔 You can't do that.", ephemeral=True
+                )
                 return True
             case ResponsiveException():
                 await error.respond(interaction)

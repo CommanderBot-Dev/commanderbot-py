@@ -10,7 +10,7 @@ async def send_or_followup(
     content,
     *,
     allowed_mentions: Optional[AllowedMentions] = None,
-    ephemeral=True
+    ephemeral=False
 ):
     """
     Respond to an interaction using `Interaction.response.send_message()`.
