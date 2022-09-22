@@ -7,6 +7,7 @@ from discord.ext.commands import Bot, Cog, Context, group
 
 from commanderbot.ext.sudo.sudo_data import SyncType
 from commanderbot.ext.sudo.sudo_exceptions import SyncError, SyncUnknownGuild
+from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 from commanderbot.lib import checks
 
 
@@ -58,6 +59,18 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         embed.add_field(name="Presence", value=presence_enabled)
 
         await ctx.reply(embed=embed, mention_author=False)
+
+    @cmd_sudo.command(name="shutdown", brief="Shutdowns the bot")
+    async def cmd_sudo_shutdown(self, ctx: Context):
+        result = await confirm_with_reaction(
+            self.bot, ctx, "Are you sure you want to shutdown the bot?"
+        )
+        match result:
+            case ConfirmationResult.YES:
+                await ctx.reply("😴 Shutting down...", mention_author=False)
+                await self.bot.close()
+            case (ConfirmationResult.NO | ConfirmationResult.NO_RESPONSE):
+                await ctx.reply("🙂 Continuing...", mention_author=False)
 
     @cmd_sudo.group(name="sync", brief="Sync app commands")
     async def cmd_sudo_sync(self, ctx: Context):
