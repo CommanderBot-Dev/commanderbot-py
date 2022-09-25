@@ -20,6 +20,7 @@ __all__ = (
     "ChannelID",
     "RoleID",
     "UserID",
+    "ForumTagID",
     "RawOptions",
     "JsonObject",
     "MemberOrUser",
@@ -38,6 +39,7 @@ GuildID = IDType
 ChannelID = IDType
 RoleID = IDType
 UserID = IDType
+ForumTagID = IDType
 
 RawOptions = Any
 

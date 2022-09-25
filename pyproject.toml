@@ -13,7 +13,7 @@ keywords = ['discord', 'bot']
 python = "^3.10"
 
 # Core dependencies.
-"discord.py" = "^2.0.0"
+"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", branch = "master"}
 python-dotenv = "^0.20.0"
 
 # These are used for logging.
