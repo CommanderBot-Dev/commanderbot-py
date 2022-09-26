@@ -183,6 +183,11 @@ class ErrorHandling:
         match error:
             case ace.CommandNotFound():
                 return True
+            case ace.TransformerError():
+                await send_or_followup(
+                    interaction, f"😬 Bad input: {error.value}", ephemeral=True
+                )
+                return True
             case ace.MissingPermissions():
                 await send_or_followup(
                     interaction,
