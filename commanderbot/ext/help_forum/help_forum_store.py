@@ -10,22 +10,28 @@ class HelpForumException(ResponsiveException):
 
 
 class ForumChannelAlreadyRegistered(HelpForumException):
-    def __init__(self, name: str):
-        self.name = name
-        super().__init__(f"🤷 Forum channel `{name}` is already registered")
+    def __init__(self, channel_id: ChannelID):
+        self.channel_id = channel_id
+        super().__init__(f"🤷 Forum channel <#{self.channel_id}> is already registered")
 
 
 class ForumChannelNotRegistered(HelpForumException):
-    def __init__(self, name: str):
-        self.name = name
-        super().__init__(f"🤷 Forum channel `{name}` is not registered")
+    def __init__(self, channel_id: ChannelID):
+        self.channel_id = channel_id
+        super().__init__(f"🤷 Forum channel <#{self.channel_id}> is not registered")
 
 
-class HelpForumForumData(Protocol):
+class HelpForum(Protocol):
     channel_id: ChannelID
     resolved_emoji: str
     unresolved_tag_id: ForumTagID
     resolved_tag_id: ForumTagID
+    total_threads: int
+    resolved_threads: int
+
+    @property
+    def resolved_percentage(self) -> float:
+        ...
 
 
 class HelpForumStore(Protocol):
@@ -34,58 +40,54 @@ class HelpForumStore(Protocol):
     """
 
     async def is_forum_registered(
-        self, guild: Guild, forum_channel: ForumChannel
+        self, guild: Guild, channel: ForumChannel
     ) -> bool:
         ...
 
     async def register_forum_channel(
         self,
         guild: Guild,
-        forum_channel: ForumChannel,
+        channel: ForumChannel,
         resolved_emoji: str,
-        unresolved_tag: ForumTagID,
-        resolved_tag: ForumTagID,
-    ) -> HelpForumForumData:
+        unresolved_tag: str,
+        resolved_tag: str,
+    ) -> HelpForum:
         ...
 
     async def deregister_forum_channel(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> HelpForumForumData:
+        self, guild: Guild, channel: ForumChannel
+    ) -> HelpForum:
         ...
 
-    async def get_help_forum_data(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> Optional[HelpForumForumData]:
+    async def increment_total_threads(self, help_forum: HelpForum):
         ...
 
-    async def get_resolved_emoji(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> Optional[str]:
+    async def increment_resolved_threads(self, help_forum: HelpForum):
         ...
 
-    async def get_unresolved_tag_id(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> Optional[ForumTagID]:
+    async def try_get_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> HelpForum:
         ...
 
-    async def get_resolved_tag_id(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> Optional[ForumTagID]:
+    async def get_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> Optional[HelpForum]:
         ...
 
     async def modify_resolved_emoji(
-        self, guild: Guild, forum_channel: ForumChannel, emoji: str
-    ) -> HelpForumForumData:
+        self, guild: Guild, channel: ForumChannel, emoji: str
+    ) -> HelpForum:
         ...
 
     async def modify_unresolved_tag_id(
-        self, guild: Guild, forum_channel: ForumChannel, tag: ForumTagID
-    ) -> HelpForumForumData:
+        self, guild: Guild, channel: ForumChannel, tag: ForumTagID
+    ) -> HelpForum:
         ...
 
     async def modify_resolved_tag_id(
-        self, guild: Guild, forum_channel: ForumChannel, tag: ForumTagID
-    ) -> HelpForumForumData:
+        self, guild: Guild, channel: ForumChannel, tag: ForumTagID
+    ) -> HelpForum:
         ...
 
     async def set_log_options(

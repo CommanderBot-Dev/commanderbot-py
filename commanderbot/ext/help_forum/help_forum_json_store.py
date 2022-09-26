@@ -4,8 +4,9 @@ from typing import Optional
 from discord import ForumChannel, Guild
 
 from commanderbot.ext.help_forum.help_forum_data import HelpForumData
-from commanderbot.ext.help_forum.help_forum_store import HelpForumForumData
+from commanderbot.ext.help_forum.help_forum_store import HelpForum
 from commanderbot.lib import CogStore, ForumTagID, JsonFileDatabaseAdapter, LogOptions
+
 
 # @implements HelpForumStore
 @dataclass
@@ -16,83 +17,92 @@ class HelpForumJsonStore(CogStore):
 
     db: JsonFileDatabaseAdapter[HelpForumData]
 
+    # @implements HelpForumStore
     async def is_forum_registered(
-        self, guild: Guild, forum_channel: ForumChannel
+        self, guild: Guild, channel: ForumChannel
     ) -> bool:
         cache = await self.db.get_cache()
-        return await cache.is_forum_registered(guild, forum_channel)
+        return await cache.is_forum_registered(guild, channel)
 
+    # @implements HelpForumStore
     async def register_forum_channel(
         self,
         guild: Guild,
-        forum_channel: ForumChannel,
+        channel: ForumChannel,
         resolved_emoji: str,
-        unresolved_tag: ForumTagID,
-        resolved_tag: ForumTagID,
-    ) -> HelpForumForumData:
+        unresolved_tag: str,
+        resolved_tag: str,
+    ) -> HelpForum:
         cache = await self.db.get_cache()
         help_forum = await cache.register_forum_channel(
-            guild, forum_channel, resolved_emoji, unresolved_tag, resolved_tag
+            guild, channel, resolved_emoji, unresolved_tag, resolved_tag
         )
         await self.db.dirty()
         return help_forum
 
+    # @implements HelpForumStore
     async def deregister_forum_channel(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> HelpForumForumData:
+        self, guild: Guild, channel: ForumChannel
+    ) -> HelpForum:
         cache = await self.db.get_cache()
-        help_forum = await cache.deregister_forum_channel(guild, forum_channel)
+        help_forum = await cache.deregister_forum_channel(guild, channel)
         await self.db.dirty()
         return help_forum
 
-    async def get_help_forum_data(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> Optional[HelpForumForumData]:
+    # @implements HelpForumStore
+    async def increment_total_threads(self, help_forum: HelpForum):
         cache = await self.db.get_cache()
-        return await cache.get_help_forum_data(guild, forum_channel)
+        await cache.increment_total_threads(help_forum)
+        await self.db.dirty()
 
-    async def get_resolved_emoji(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> Optional[str]:
+    # @implements HelpForumStore
+    async def increment_resolved_threads(self, help_forum: HelpForum):
         cache = await self.db.get_cache()
-        return await cache.get_resolved_emoji(guild, forum_channel)
+        await cache.increment_resolved_threads(help_forum)
+        await self.db.dirty()
 
-    async def get_unresolved_tag_id(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> Optional[ForumTagID]:
+    # @implements HelpForumStore
+    async def try_get_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> HelpForum:
         cache = await self.db.get_cache()
-        return await cache.get_unresolved_tag_id(guild, forum_channel)
+        return await cache.try_get_forum(guild, channel)
 
-    async def get_resolved_tag_id(
-        self, guild: Guild, forum_channel: ForumChannel
-    ) -> Optional[ForumTagID]:
+    # @implements HelpForumStore
+    async def get_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> Optional[HelpForum]:
         cache = await self.db.get_cache()
-        return await cache.get_resolved_tag_id(guild, forum_channel)
+        return await cache.get_forum(guild, channel)
 
+    # @implements HelpForumStore
     async def modify_resolved_emoji(
-        self, guild: Guild, forum_channel: ForumChannel, emoji: str
-    ) -> HelpForumForumData:
+        self, guild: Guild, channel: ForumChannel, emoji: str
+    ) -> HelpForum:
         cache = await self.db.get_cache()
-        help_forum = await cache.modify_resolved_emoji(guild, forum_channel, emoji)
+        help_forum = await cache.modify_resolved_emoji(guild, channel, emoji)
         await self.db.dirty()
         return help_forum
 
+    # @implements HelpForumStore
     async def modify_unresolved_tag_id(
-        self, guild: Guild, forum_channel: ForumChannel, tag: ForumTagID
-    ) -> HelpForumForumData:
+        self, guild: Guild, channel: ForumChannel, tag: ForumTagID
+    ) -> HelpForum:
         cache = await self.db.get_cache()
-        help_forum = await cache.modify_unresolved_tag_id(guild, forum_channel, tag)
+        help_forum = await cache.modify_unresolved_tag_id(guild, channel, tag)
         await self.db.dirty()
         return help_forum
 
+    # @implements HelpForumStore
     async def modify_resolved_tag_id(
-        self, guild: Guild, forum_channel: ForumChannel, tag: ForumTagID
-    ) -> HelpForumForumData:
+        self, guild: Guild, channel: ForumChannel, tag: ForumTagID
+    ) -> HelpForum:
         cache = await self.db.get_cache()
-        help_forum = await cache.modify_resolved_tag_id(guild, forum_channel, tag)
+        help_forum = await cache.modify_resolved_tag_id(guild, channel, tag)
         await self.db.dirty()
         return help_forum
 
+    # @implements HelpForumStore
     async def set_log_options(
         self, guild: Guild, log_options: Optional[LogOptions]
     ) -> Optional[LogOptions]:
