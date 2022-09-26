@@ -177,3 +177,25 @@ async def send_message_or_file(
             allowed_mentions=allowed_mentions,
             **kwargs,
         )
+
+
+def is_int(value: str):
+    """
+    Returns `True` if `value` can be casted to an int
+    """
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
+
+
+def is_float(value: str):
+    """
+    Returns `True` if `value` can be casted to a float
+    """
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
