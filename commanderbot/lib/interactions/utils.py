@@ -1,6 +1,6 @@
 from typing import Optional
 
-from discord import Interaction, AllowedMentions
+from discord import AllowedMentions, Interaction
 
 __all__ = ("send_or_followup", "command_name")
 
