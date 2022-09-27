@@ -12,7 +12,7 @@ from commanderbot.lib import (
     GuildPartitionedCogState,
     LogOptions,
 )
-from commanderbot.lib.utils.interactions import command_name
+from commanderbot.lib.interactions import command_name
 from commanderbot.lib.utils import format_context_cause
 
 

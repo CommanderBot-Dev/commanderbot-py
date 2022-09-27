@@ -3,8 +3,6 @@ from typing import Optional
 from discord import Interaction, AllowedMentions
 from discord.ext.commands import Context
 
-from commanderbot.lib.utils.interactions import send_or_followup
-
 __all__ = ("ResponsiveException",)
 
 
@@ -32,10 +30,14 @@ class ResponsiveException(Exception):
             or self.allowed_mentions_default_factory()
         )
 
-        match ctx:
-            case Context():
-                await ctx.message.reply(str(self), allowed_mentions=allowed_mentions)
-            case Interaction():
-                await send_or_followup(
-                    ctx, str(self), allowed_mentions=allowed_mentions, ephemeral=True
+        if isinstance(ctx, Context):
+            await ctx.message.reply(str(self), allowed_mentions=allowed_mentions)
+        elif isinstance(ctx, Interaction):
+            if not ctx.response.is_done():
+                await ctx.response.send_message(
+                    str(self), allowed_mentions=allowed_mentions, ephemeral=True
+                )
+            else:
+                await ctx.followup.send(
+                    str(self), allowed_mentions=allowed_mentions, ephemeral=True
                 )

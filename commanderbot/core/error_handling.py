@@ -14,7 +14,7 @@ from commanderbot.core.commander_bot_base import (
     AppCommandErrorHandler,
 )
 from commanderbot.lib import EventData, ResponsiveException
-from commanderbot.lib.utils.interactions import send_or_followup, command_name
+from commanderbot.lib.interactions import send_or_followup, command_name
 
 
 @dataclass
@@ -185,7 +185,7 @@ class ErrorHandling:
                 return True
             case ace.TransformerError():
                 await send_or_followup(
-                    interaction, f"😬 Bad input: {error.value}", ephemeral=True
+                    interaction, f"😬 `{error.value}` is invalid for `{type(error.transformer).__name__}`", ephemeral=True
                 )
                 return True
             case ace.MissingPermissions():
