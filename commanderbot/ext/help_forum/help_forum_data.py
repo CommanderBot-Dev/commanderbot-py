@@ -1,16 +1,10 @@
-import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, DefaultDict, Dict, Optional, Type, TypeVar
 
-from discord import ForumChannel, Guild
-from emoji import is_emoji
+from discord import ForumChannel, ForumTag, Guild
 
-from commanderbot.ext.help_forum.help_forum_store import (
-    ForumChannelAlreadyRegistered,
-    ForumChannelNotRegistered,
-    HelpForum,
-)
+from commanderbot.ext.help_forum.help_forum_store import HelpForum
 from commanderbot.lib import (
     ChannelID,
     ForumTagID,
@@ -25,22 +19,30 @@ from commanderbot.lib.utils.utils import dict_without_ellipsis, dict_without_fal
 
 ST = TypeVar("ST")
 
-CUSTOM_EMOJI_PATTERN = re.compile(r"\<\:\w+\:\d+\>")
+
+class HelpForumException(ResponsiveException):
+    pass
 
 
-class HelpForumInvalidTag(ResponsiveException):
+class ForumChannelAlreadyRegistered(HelpForumException):
+    def __init__(self, channel_id: ChannelID):
+        self.channel_id = channel_id
+        super().__init__(f"🤷 <#{self.channel_id}> is already registered")
+
+
+class ForumChannelNotRegistered(HelpForumException):
+    def __init__(self, channel_id: ChannelID):
+        self.channel_id = channel_id
+        super().__init__(f"🤷 <#{self.channel_id}> is not registered")
+
+
+class HelpForumInvalidTag(HelpForumException):
     def __init__(self, channel: ChannelID, tag: str):
         self.channel_id = channel
         self.tag = tag
         super().__init__(
-            f"😬 Tag `{self.tag}` does not exist in forum <#{self.channel_id}>"
+            f"😬 Tag `{self.tag}` does not exist in <#{self.channel_id}>"
         )
-
-
-class HelpForumInvalidEmoji(ResponsiveException):
-    def __init__(self, emoji: str):
-        self.emoji = emoji
-        super().__init__(f"`{emoji}` is not a valid Unicode or Custom emoji")
 
 
 @dataclass
@@ -118,18 +120,20 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
 
         return data
 
-    def is_forum_registered(self, channel: ForumChannel) -> bool:
-        return channel.id in self.help_forums
+    def _is_forum_registered(self, channel: ForumChannel):
+        return channel.id in self.help_forums.keys()
 
-    def _require_help_forum(self, channel: ForumChannel) -> HelpForumForumData:
+    def _require_valid_tag(self, channel: ForumChannel, tag: str) -> ForumTag:
+        if found_tag := try_get_tag_from_channel(channel, tag):
+            return found_tag
+        raise HelpForumInvalidTag(channel.id, tag)
+
+    def require_help_forum(self, channel: ForumChannel) -> HelpForumForumData:
         # Returns the help forum data if it exists
         if forum := self.help_forums.get(channel.id):
             return forum
         # Otherwise, raise
         raise ForumChannelNotRegistered(channel.id)
-
-    def _is_unicode_or_custom_emoji(self, emoji: str) -> bool:
-        return bool(is_emoji(emoji) or CUSTOM_EMOJI_PATTERN.match(emoji))
 
     def register_forum_channel(
         self,
@@ -139,20 +143,14 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
         resolved_tag: str,
     ) -> HelpForumForumData:
         # Check if the forum channel was registered
-        if self.is_forum_registered(channel):
+        if self._is_forum_registered(channel):
             raise ForumChannelAlreadyRegistered(channel.id)
-
-        # Check if the resolved emoji is valid
-        if not self._is_unicode_or_custom_emoji(resolved_emoji):
-            raise HelpForumInvalidEmoji(resolved_emoji)
 
         # Check if the tags exist in the forum channel
         tag_ids: list[ForumTagID] = []
         for tag_str in (unresolved_tag, resolved_tag):
-            if tag := try_get_tag_from_channel(channel, tag_str):
-                tag_ids.append(tag.id)
-            else:
-                raise HelpForumInvalidTag(channel.id, tag_str)
+            if valid_tag := self._require_valid_tag(channel, tag_str):
+                tag_ids.append(valid_tag.id)
 
         # Create and add a new help forum
         forum = HelpForumForumData(
@@ -171,46 +169,40 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
 
     def deregister_forum_channel(self, channel: ForumChannel) -> HelpForumForumData:
         # The help forum channel should exist
-        forum = self._require_help_forum(channel)
+        forum = self.require_help_forum(channel)
         # Remove it
         del self.help_forums[forum.channel_id]
         # Return it
         return forum
 
-    def try_get_forum(self, channel: ForumChannel) -> HelpForumForumData:
-        return self._require_help_forum(channel)
-
-    def get_forum(self, channel: ForumChannel) -> Optional[HelpForumForumData]:
-        # Get the help forum if it exists
-        return self.help_forums.get(channel.id)
-
     def modify_resolved_emoji(
         self, channel: ForumChannel, emoji: str
     ) -> HelpForumForumData:
         # Modify resolved emoji for a help forum
-        if forum := self._require_help_forum(channel):
-            if not self._is_unicode_or_custom_emoji(emoji):
-                raise HelpForumInvalidEmoji(emoji)
-
+        if forum := self.require_help_forum(channel):
             forum.resolved_emoji = emoji
             return forum
         raise ForumChannelNotRegistered(channel.id)
 
-    def modify_unresolved_tag_id(
-        self, channel: ForumChannel, tag: ForumTagID
+    def modify_unresolved_tag(
+        self, channel: ForumChannel, tag: str
     ) -> HelpForumForumData:
         # Modify unresolved tag ID for a help forum
-        if forum := self._require_help_forum(channel):
-            forum.unresolved_tag_id = tag
+        forum = self.require_help_forum(channel)
+        valid_tag = self._require_valid_tag(channel, tag)
+        if forum and valid_tag:
+            forum.unresolved_tag_id = valid_tag.id
             return forum
         raise ForumChannelNotRegistered(channel.id)
 
-    def modify_resolved_tag_id(
-        self, channel: ForumChannel, tag: ForumTagID
+    def modify_resolved_tag(
+        self, channel: ForumChannel, tag: str
     ) -> HelpForumForumData:
         # Modify resolved tag ID for a help forum
-        if forum := self._require_help_forum(channel):
-            forum.resolved_tag_id = tag
+        forum = self.require_help_forum(channel)
+        valid_tag = self._require_valid_tag(channel, tag)
+        if forum and valid_tag:
+            forum.resolved_tag_id = valid_tag.id
             return forum
         raise ForumChannelNotRegistered(channel.id)
 
@@ -262,8 +254,10 @@ class HelpForumData(JsonSerializable, FromDataMixin):
         return data
 
     # @implements HelpForumStore
-    async def is_forum_registered(self, guild: Guild, channel: ForumChannel) -> bool:
-        return self.guilds[guild.id].is_forum_registered(channel)
+    async def require_help_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> HelpForumForumData:
+        return self.guilds[guild.id].require_help_forum(channel)
 
     # @implements HelpForumStore
     async def register_forum_channel(
@@ -293,34 +287,22 @@ class HelpForumData(JsonSerializable, FromDataMixin):
         help_forum.resolved_threads += 1
 
     # @implements HelpForumStore
-    async def try_get_forum(
-        self, guild: Guild, channel: ForumChannel
-    ) -> HelpForumForumData:
-        return self.guilds[guild.id].try_get_forum(channel)
-
-    # @implements HelpForumStore
-    async def get_forum(
-        self, guild: Guild, channel: ForumChannel
-    ) -> Optional[HelpForumForumData]:
-        return self.guilds[guild.id].get_forum(channel)
-
-    # @implements HelpForumStore
     async def modify_resolved_emoji(
         self, guild: Guild, channel: ForumChannel, emoji: str
     ) -> HelpForumForumData:
         return self.guilds[guild.id].modify_resolved_emoji(channel, emoji)
 
     # @implements HelpForumStore
-    async def modify_unresolved_tag_id(
-        self, guild: Guild, channel: ForumChannel, tag: ForumTagID
+    async def modify_unresolved_tag(
+        self, guild: Guild, channel: ForumChannel, tag: str
     ) -> HelpForumForumData:
-        return self.guilds[guild.id].modify_unresolved_tag_id(channel, tag)
+        return self.guilds[guild.id].modify_unresolved_tag(channel, tag)
 
     # @implements HelpForumStore
-    async def modify_resolved_tag_id(
-        self, guild: Guild, channel: ForumChannel, tag: ForumTagID
+    async def modify_resolved_tag(
+        self, guild: Guild, channel: ForumChannel, tag: str
     ) -> HelpForumForumData:
-        return self.guilds[guild.id].modify_resolved_tag_id(channel, tag)
+        return self.guilds[guild.id].modify_resolved_tag(channel, tag)
 
     # @implements HelpForumStore
     async def set_log_options(

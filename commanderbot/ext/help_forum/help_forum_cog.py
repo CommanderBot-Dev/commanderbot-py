@@ -1,5 +1,5 @@
 from discord import ForumChannel, ForumTag, Guild, Interaction, Permissions
-from discord.app_commands import Group, describe
+from discord.app_commands import Group, Transform, describe
 from discord.ext.commands import Bot, Cog
 
 from commanderbot.ext.help_forum.help_forum_data import HelpForumData
@@ -15,6 +15,7 @@ from commanderbot.lib import (
     JsonFileDatabaseOptions,
     UnsupportedDatabaseOptions,
 )
+from commanderbot.lib.interactions import EmojiTransformer
 
 
 def _make_store(bot: Bot, cog: Cog, options: HelpForumOptions) -> HelpForumStore:
@@ -85,7 +86,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
         self,
         interaction: Interaction,
         channel: ForumChannel,
-        resolved_emoji: str,
+        resolved_emoji: Transform[str, EmojiTransformer],
         unresolved_tag: str,
         resolved_tag: str,
     ):
@@ -112,30 +113,43 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
         assert isinstance(interaction.guild, Guild)
         await self.state[interaction.guild].details(interaction, channel)
 
-    # @@ forum query
-
-    @cmd_forum.command(name="query", description="Query forum channel tags")
-    @describe(channel="The forum channel to query")
-    async def cmd_forum_query(self, interaction: Interaction, channel: ForumChannel):
-        assert isinstance(interaction.guild, Guild)
-
-        # Build message
-        message = "\n".join(
-            (
-                f"Tags for <#{channel.id}>",
-                "```py",
-                *(self._format_tag_name(tag) for tag in channel.available_tags),
-                "```",
-            )
-        )
-
-        # Send response
-        await interaction.response.send_message(message)
-
     # @@ forum modify
 
-    @cmd_forum_modify.command(name="resolved-emoji", description="Modify the resolved emoji for a help forum")
+    @cmd_forum_modify.command(
+        name="resolved-emoji", description="Modify the resolved emoji for a help forum"
+    )
     @describe(channel="The channel to modify", emoji="The new emoji")
-    async def cmd_forum_modify_resolved_emoji(self, interaction: Interaction, channel: ForumChannel, emoji: str):
+    async def cmd_forum_modify_resolved_emoji(
+        self,
+        interaction: Interaction,
+        channel: ForumChannel,
+        emoji: Transform[str, EmojiTransformer],
+    ):
         assert isinstance(interaction.guild, Guild)
-        await self.state[interaction.guild].modify_resolved_emoji(interaction, channel, emoji)
+        await self.state[interaction.guild].modify_resolved_emoji(
+            interaction, channel, emoji
+        )
+
+    @cmd_forum_modify.command(
+        name="unresolved-tag", description="Modify the unresolved tag for a help forum"
+    )
+    @describe(channel="The channel to modify", tag="ID or name of the new tag")
+    async def cmd_forum_modify_unresolved_tag(
+        self, interaction: Interaction, channel: ForumChannel, tag: str
+    ):
+        assert isinstance(interaction.guild, Guild)
+        await self.state[interaction.guild].modify_unresolved_tag(
+            interaction, channel, tag
+        )
+
+    @cmd_forum_modify.command(
+        name="resolved-tag", description="Modify the resolved tag for a help forum"
+    )
+    @describe(channel="The channel to modify", tag="ID or name of the new tag")
+    async def cmd_forum_modify_resolved_tag(
+        self, interaction: Interaction, channel: ForumChannel, tag: str
+    ):
+        assert isinstance(interaction.guild, Guild)
+        await self.state[interaction.guild].modify_resolved_tag(
+            interaction, channel, tag
+        )

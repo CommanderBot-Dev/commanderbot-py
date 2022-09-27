@@ -2,23 +2,7 @@ from typing import Optional, Protocol
 
 from discord import ForumChannel, Guild
 
-from commanderbot.lib import ChannelID, ForumTagID, LogOptions, ResponsiveException
-
-
-class HelpForumException(ResponsiveException):
-    pass
-
-
-class ForumChannelAlreadyRegistered(HelpForumException):
-    def __init__(self, channel_id: ChannelID):
-        self.channel_id = channel_id
-        super().__init__(f"🤷 Forum channel <#{self.channel_id}> is already registered")
-
-
-class ForumChannelNotRegistered(HelpForumException):
-    def __init__(self, channel_id: ChannelID):
-        self.channel_id = channel_id
-        super().__init__(f"🤷 Forum channel <#{self.channel_id}> is not registered")
+from commanderbot.lib import ChannelID, ForumTagID, LogOptions
 
 
 class HelpForum(Protocol):
@@ -39,9 +23,9 @@ class HelpForumStore(Protocol):
     Abstracts the data storage and persistence of the help forum cog
     """
 
-    async def is_forum_registered(
+    async def require_help_forum(
         self, guild: Guild, channel: ForumChannel
-    ) -> bool:
+    ) -> HelpForum:
         ...
 
     async def register_forum_channel(
@@ -65,28 +49,18 @@ class HelpForumStore(Protocol):
     async def increment_resolved_threads(self, help_forum: HelpForum):
         ...
 
-    async def try_get_forum(
-        self, guild: Guild, channel: ForumChannel
-    ) -> HelpForum:
-        ...
-
-    async def get_forum(
-        self, guild: Guild, channel: ForumChannel
-    ) -> Optional[HelpForum]:
-        ...
-
     async def modify_resolved_emoji(
         self, guild: Guild, channel: ForumChannel, emoji: str
     ) -> HelpForum:
         ...
 
-    async def modify_unresolved_tag_id(
-        self, guild: Guild, channel: ForumChannel, tag: ForumTagID
+    async def modify_unresolved_tag(
+        self, guild: Guild, channel: ForumChannel, tag: str
     ) -> HelpForum:
         ...
 
-    async def modify_resolved_tag_id(
-        self, guild: Guild, channel: ForumChannel, tag: ForumTagID
+    async def modify_resolved_tag(
+        self, guild: Guild, channel: ForumChannel, tag: str
     ) -> HelpForum:
         ...
 
