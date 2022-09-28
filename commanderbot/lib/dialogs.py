@@ -2,6 +2,7 @@ import asyncio
 from enum import Enum
 from typing import Optional, Union
 
+import discord
 from discord import (
     ButtonStyle,
     Interaction,
@@ -90,26 +91,40 @@ async def confirm_with_reaction(
 
 
 class ConfirmView(View):
-    def __init__(self, user: Union[Member, User], timeout: int = 180):
-        self.user: Union[Member, User] = user
-        self.response: Optional[WebhookMessage] = None
-        self.result: ConfirmationResult = ConfirmationResult.NO_RESPONSE
+    def __init__(
+        self,
+        original_interaction: Interaction,
+        timeout: int = 180,
+    ):
+        self.original_interaction = original_interaction
+        self.result = ConfirmationResult.NO_RESPONSE
+        self.followup_message: Optional[WebhookMessage] = None
         super().__init__(timeout=timeout)
 
     @button(label="Yes", style=ButtonStyle.green)
     async def yes_callback(self, interaction: Interaction, button: Button):
-        await interaction.response.defer()
         self.result = ConfirmationResult.YES
+        # Run `_on_confirm()` before deferring so the buttons and view doesn't get re-enabled for a short time
         await self._on_confirm(button)
-
+        # Defer the interaction (Mostly to prevent exceptions)
+        await interaction.response.defer()
+        
     @button(label="No", style=ButtonStyle.red)
     async def no_callback(self, interaction: Interaction, button: Button):
-        await interaction.response.defer()
         self.result = ConfirmationResult.NO
+        # Run `_on_confirm()` before deferring so the buttons and view doesn't get re-enabled for a short time
         await self._on_confirm(button)
+        # Defer the interaction (Mostly to prevent exceptions)
+        await interaction.response.defer()
 
     async def interaction_check(self, interaction: Interaction) -> bool:
-        return self.user == interaction.user
+        # Only allow the user, who this view is for, to interact with it
+        if self.original_interaction.user != interaction.user:
+            await interaction.response.send_message(
+                "😠 This confirmation dialog isn't for you!", ephemeral=True
+            )
+            return False
+        return True
 
     async def on_timeout(self):
         # Disable all buttons and set their color to gray
@@ -119,45 +134,48 @@ class ConfirmView(View):
             item.disabled = True
 
         # Edit the view
-        assert self.response
-        await self.response.edit(view=self)
+        assert self.followup_message
+        await self.followup_message.edit(view=self)
 
-    async def _on_confirm(self, button: Optional[Button] = None):
+    async def _on_confirm(self, button: Button):
         # Stop accepting inputs
         self.stop()
 
         # Remove all buttons except for the one interacted with
-        # The button was was inteacted with will be disabled
         for item in self.children[:]:
             assert isinstance(item, Button)
             if item is not button:
                 self.remove_item(item)
-            else:
-                item.disabled = True
+
+        # Disable the button that was interacted with
+        button.disabled = True
 
         # Edit the view
-        assert self.response
-        await self.response.edit(view=self)
+        assert self.followup_message
+        await self.followup_message.edit(view=self)
 
 
 async def confirm_with_buttons(
-    interaction: Interaction, content: str, timeout: int = 60
+    interaction: Interaction,
+    content: str,
+    *,
+    timeout: int = 60,
+    ephemeral=True,
+    allowed_mentions: discord.AllowedMentions = discord.AllowedMentions.none()
 ):
     """
     Ask a user to confirm an action via a `discord.ui.View` with buttons.
 
-    A response will be sent as a followup message to `interaction` composed of the 
-    given `content`. The view will wait for up to `timeout` seconds for a "yes" or 
+    A response will be sent as a followup message to `interaction` composed of the
+    given `content`. The view will wait for up to `timeout` seconds for a "yes" or
     "no" response. If no response is received, "no response" will be returned.
     """
 
-    # Defer the response if necessary so the followups work correctly
-    if not interaction.response.is_done():
-        await interaction.response.defer()
-
     # Create the view and send it as a followup
-    view = ConfirmView(interaction.user, timeout)
-    view.response = await interaction.followup.send(content, view=view, ephemeral=True)
+    view = ConfirmView(interaction, timeout)
+    view.followup_message = await interaction.followup.send(
+        content, view=view, ephemeral=ephemeral, allowed_mentions=allowed_mentions
+    )
 
     # Wait for the view to have an interaction or a timeout
     await view.wait()
