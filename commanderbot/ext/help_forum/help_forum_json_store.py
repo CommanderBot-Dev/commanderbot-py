@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple
 
-from discord import ForumChannel, Guild
+from discord import ForumChannel, ForumTag, Guild
 
 from commanderbot.ext.help_forum.help_forum_data import HelpForumData
 from commanderbot.ext.help_forum.help_forum_store import HelpForum
@@ -18,9 +18,17 @@ class HelpForumJsonStore(CogStore):
     db: JsonFileDatabaseAdapter[HelpForumData]
 
     # @implements HelpForumStore
-    async def require_help_forum(self, guild: Guild, channel: ForumChannel) -> HelpForum:
+    async def require_help_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> HelpForum:
         cache = await self.db.get_cache()
         return await cache.require_help_forum(guild, channel)
+
+    async def get_help_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> Optional[HelpForum]:
+        cache = await self.db.get_cache()
+        return await cache.get_help_forum(guild, channel)
 
     # @implements HelpForumStore
     async def register_forum_channel(
@@ -71,20 +79,25 @@ class HelpForumJsonStore(CogStore):
     # @implements HelpForumStore
     async def modify_unresolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
-    ) -> HelpForum:
+    ) -> Tuple[HelpForum, ForumTag]:
         cache = await self.db.get_cache()
-        help_forum = await cache.modify_unresolved_tag(guild, channel, tag)
+        help_forum, new_tag = await cache.modify_unresolved_tag(guild, channel, tag)
         await self.db.dirty()
-        return help_forum
+        return (help_forum, new_tag)
 
     # @implements HelpForumStore
     async def modify_resolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
-    ) -> HelpForum:
+    ) -> Tuple[HelpForum, ForumTag]:
         cache = await self.db.get_cache()
-        help_forum = await cache.modify_resolved_tag(guild, channel, tag)
+        help_forum, new_tag = await cache.modify_resolved_tag(guild, channel, tag)
         await self.db.dirty()
-        return help_forum
+        return (help_forum, new_tag)
+
+    # @implements HelpForumStore
+    async def get_log_options(self, guild: Guild) -> Optional[LogOptions]:
+        cache = await self.db.get_cache()
+        return await cache.get_log_options(guild)
 
     # @implements HelpForumStore
     async def set_log_options(

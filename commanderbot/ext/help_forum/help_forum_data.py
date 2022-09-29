@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, DefaultDict, Dict, Optional, Type, TypeVar
+from typing import Any, DefaultDict, Dict, Optional, Tuple, Type, TypeVar
 
 from discord import ForumChannel, ForumTag, Guild
 
@@ -14,7 +14,7 @@ from commanderbot.lib import (
     LogOptions,
     ResponsiveException,
 )
-from commanderbot.lib.utils.forums import try_get_tag_from_channel
+from commanderbot.lib.forums import try_get_tag_insensitive
 from commanderbot.lib.utils.utils import dict_without_ellipsis, dict_without_falsies
 
 ST = TypeVar("ST")
@@ -40,9 +40,7 @@ class HelpForumInvalidTag(HelpForumException):
     def __init__(self, channel: ChannelID, tag: str):
         self.channel_id = channel
         self.tag = tag
-        super().__init__(
-            f"😬 Tag `{self.tag}` does not exist in <#{self.channel_id}>"
-        )
+        super().__init__(f"😬 Tag `{self.tag}` does not exist in <#{self.channel_id}>")
 
 
 @dataclass
@@ -79,10 +77,14 @@ class HelpForumForumData(JsonSerializable, FromDataMixin):
         }
 
     @property
+    def tag_ids(self) -> tuple[ForumTagID, ForumTagID]:
+        return (self.unresolved_tag_id, self.resolved_tag_id)
+
+    @property
     def resolved_percentage(self) -> float:
         if self.total_threads == 0:
             return 0.0
-        return (self.resolved_threads / self.total_threads) * 100
+        return max(0.0, min(100.0, (self.resolved_threads / self.total_threads) * 100))
 
 
 @dataclass
@@ -124,7 +126,7 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
         return channel.id in self.help_forums.keys()
 
     def _require_valid_tag(self, channel: ForumChannel, tag: str) -> ForumTag:
-        if found_tag := try_get_tag_from_channel(channel, tag):
+        if found_tag := try_get_tag_insensitive(channel, tag):
             return found_tag
         raise HelpForumInvalidTag(channel.id, tag)
 
@@ -134,6 +136,9 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
             return forum
         # Otherwise, raise
         raise ForumChannelNotRegistered(channel.id)
+
+    def get_help_forum(self, channel: ForumChannel) -> Optional[HelpForumForumData]:
+        return self.help_forums.get(channel.id)
 
     def register_forum_channel(
         self,
@@ -186,25 +191,25 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
 
     def modify_unresolved_tag(
         self, channel: ForumChannel, tag: str
-    ) -> HelpForumForumData:
+    ) -> Tuple[HelpForumForumData, ForumTag]:
         # Modify unresolved tag ID for a help forum
         forum = self.require_help_forum(channel)
         valid_tag = self._require_valid_tag(channel, tag)
-        if forum and valid_tag:
-            forum.unresolved_tag_id = valid_tag.id
-            return forum
-        raise ForumChannelNotRegistered(channel.id)
+        forum.unresolved_tag_id = valid_tag.id
+        return (forum, valid_tag)
 
     def modify_resolved_tag(
         self, channel: ForumChannel, tag: str
-    ) -> HelpForumForumData:
+    ) -> Tuple[HelpForumForumData, ForumTag]:
         # Modify resolved tag ID for a help forum
         forum = self.require_help_forum(channel)
         valid_tag = self._require_valid_tag(channel, tag)
-        if forum and valid_tag:
-            forum.resolved_tag_id = valid_tag.id
-            return forum
-        raise ForumChannelNotRegistered(channel.id)
+        forum.resolved_tag_id = valid_tag.id
+        return (forum, valid_tag)
+
+    def get_log_options(self) -> Optional[LogOptions]:
+        # Get the log options for this guild
+        return self.log_options
 
     def set_log_options(
         self, log_options: Optional[LogOptions]
@@ -260,6 +265,12 @@ class HelpForumData(JsonSerializable, FromDataMixin):
         return self.guilds[guild.id].require_help_forum(channel)
 
     # @implements HelpForumStore
+    async def get_help_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> Optional[HelpForum]:
+        return self.guilds[guild.id].get_help_forum(channel)
+
+    # @implements HelpForumStore
     async def register_forum_channel(
         self,
         guild: Guild,
@@ -295,14 +306,18 @@ class HelpForumData(JsonSerializable, FromDataMixin):
     # @implements HelpForumStore
     async def modify_unresolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
-    ) -> HelpForumForumData:
+    ) -> Tuple[HelpForumForumData, ForumTag]:
         return self.guilds[guild.id].modify_unresolved_tag(channel, tag)
 
     # @implements HelpForumStore
     async def modify_resolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
-    ) -> HelpForumForumData:
+    ) -> Tuple[HelpForumForumData, ForumTag]:
         return self.guilds[guild.id].modify_resolved_tag(channel, tag)
+
+    # @implements HelpForumStore
+    async def get_log_options(self, guild: Guild) -> Optional[LogOptions]:
+        return self.guilds[guild.id].get_log_options()
 
     # @implements HelpForumStore
     async def set_log_options(

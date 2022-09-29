@@ -4,6 +4,7 @@ from commanderbot.ext.help_forum.help_forum_guild_state import HelpForumGuildSta
 from commanderbot.ext.help_forum.help_forum_store import HelpForumStore
 from commanderbot.lib import GuildPartitionedCogState
 
+
 @dataclass
 class HelpForumState(GuildPartitionedCogState[HelpForumGuildState]):
     """

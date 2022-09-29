@@ -1,6 +1,6 @@
-from typing import Optional, Protocol
+from typing import Optional, Protocol, Tuple
 
-from discord import ForumChannel, Guild
+from discord import ForumChannel, ForumTag, Guild
 
 from commanderbot.lib import ChannelID, ForumTagID, LogOptions
 
@@ -12,6 +12,10 @@ class HelpForum(Protocol):
     resolved_tag_id: ForumTagID
     total_threads: int
     resolved_threads: int
+
+    @property
+    def tag_ids(self) -> tuple[ForumTagID, ForumTagID]:
+        ...
 
     @property
     def resolved_percentage(self) -> float:
@@ -26,6 +30,11 @@ class HelpForumStore(Protocol):
     async def require_help_forum(
         self, guild: Guild, channel: ForumChannel
     ) -> HelpForum:
+        ...
+
+    async def get_help_forum(
+        self, guild: Guild, channel: ForumChannel
+    ) -> Optional[HelpForum]:
         ...
 
     async def register_forum_channel(
@@ -56,12 +65,15 @@ class HelpForumStore(Protocol):
 
     async def modify_unresolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
-    ) -> HelpForum:
+    ) -> Tuple[HelpForum, ForumTag]:
         ...
 
     async def modify_resolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
-    ) -> HelpForum:
+    ) -> Tuple[HelpForum, ForumTag]:
+        ...
+
+    async def get_log_options(self, guild: Guild) -> Optional[LogOptions]:
         ...
 
     async def set_log_options(

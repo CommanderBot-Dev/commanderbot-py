@@ -1,6 +1,21 @@
-from discord import ForumChannel, ForumTag, Guild, Interaction, Permissions
-from discord.app_commands import Group, Transform, describe
-from discord.ext.commands import Bot, Cog
+from discord import (
+    ForumChannel,
+    Guild,
+    Interaction,
+    Message,
+    RawReactionActionEvent,
+    RawThreadUpdateEvent,
+    Thread,
+)
+from discord.app_commands import (
+    Group,
+    Transform,
+    command,
+    default_permissions,
+    describe,
+    guild_only,
+)
+from discord.ext.commands import Bot, Cog, GroupCog
 
 from commanderbot.ext.help_forum.help_forum_data import HelpForumData
 from commanderbot.ext.help_forum.help_forum_guild_state import HelpForumGuildState
@@ -16,6 +31,7 @@ from commanderbot.lib import (
     UnsupportedDatabaseOptions,
 )
 from commanderbot.lib.interactions import EmojiTransformer
+from commanderbot.lib.utils import is_bot
 
 
 def _make_store(bot: Bot, cog: Cog, options: HelpForumOptions) -> HelpForumStore:
@@ -35,7 +51,14 @@ def _make_store(bot: Bot, cog: Cog, options: HelpForumOptions) -> HelpForumStore
     raise UnsupportedDatabaseOptions(db_options)
 
 
-class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
+@guild_only()
+@default_permissions(manage_channels=True)
+class HelpForumCog(
+    GroupCog,
+    name="commanderbot.ext.help_forum",
+    group_name="forum",
+    group_description="Manage help forums",
+):
     def __init__(self, bot: Bot, **options):
         self.bot: Bot = bot
         self.options = HelpForumOptions.from_data(options)
@@ -53,29 +76,40 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
             store=self.store,
         )
 
-    def _format_tag_name(self, tag: ForumTag):
-        formatted_emoji = f"{tag.emoji} " if tag.emoji else ""
-        return f"{formatted_emoji}{tag.name} ID={tag.id}"
+    # @@ LISTENERS
+
+    @Cog.listener()
+    async def on_thread_create(self, thread: Thread):
+        await self.state[thread.guild].on_thread_create(thread)
+
+    @Cog.listener()
+    async def on_thread_update(self, before: Thread, after: Thread):
+        await self.state[before.guild].on_thread_update(before, after)
+
+    @Cog.listener()
+    async def on_raw_thread_update(self, payload: RawThreadUpdateEvent):
+        await self.state[payload.guild_id].on_raw_thread_update(payload)
+
+    @Cog.listener()
+    async def on_message(self, message: Message):
+        if not is_bot(self.bot, message.author) and isinstance(message.channel, Thread):
+            await self.state[message.channel.guild].on_message(message)
+
+    @Cog.listener()
+    async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
+        guild = payload.guild_id
+        member = payload.member
+        if guild and member and (not is_bot(self.bot, member)):
+            await self.state[guild].on_raw_reaction_add(payload)
 
     # @@ COMMANDS
 
     # groups
-    cmd_forum = Group(
-        name="forum",
-        description="Manage help forums",
-        guild_only=True,
-        default_permissions=Permissions(manage_channels=True),
-    )
-
-    cmd_forum_modify = Group(
-        name="modify", description="Modify help forums", parent=cmd_forum
-    )
+    cmd_forum_modify = Group(name="modify", description="Modify help forums")
 
     # @@ forum register/deregister/details
 
-    @cmd_forum.command(
-        name="register", description="Register a forum channel as a help forum"
-    )
+    @command(name="register", description="Register a forum channel as a help forum")
     @describe(
         channel="The forum channel to register",
         resolved_emoji="The emoji that's used for resolving threads",
@@ -95,7 +129,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
             interaction, channel, resolved_emoji, unresolved_tag, resolved_tag
         )
 
-    @cmd_forum.command(
+    @command(
         name="deregister", description="Deregister a forum channel as a help forum"
     )
     @describe(channel="The forum channel to register")
@@ -107,7 +141,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
             interaction, channel
         )
 
-    @cmd_forum.command(name="details", description="Show the details of a forum")
+    @command(name="details", description="Show the details of a forum")
     @describe(channel="The channel to show details about")
     async def cmd_forum_details(self, interaction: Interaction, channel: ForumChannel):
         assert isinstance(interaction.guild, Guild)
