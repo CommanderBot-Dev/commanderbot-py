@@ -58,8 +58,8 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         embed.add_field(name="Guild Members", value=guild_members_enabled)
         embed.add_field(name="Presence", value=presence_enabled)
         embed.add_field(name="Command Prefix", value=f"`{self.bot.command_prefix}`")
-        embed.add_field(name="Commands", value=f"`{len(self.bot.commands)}`")
-        embed.add_field(name="App Commands", value=f"`{len(self.bot.tree.get_commands())}`")
+        embed.add_field(name="Command Count", value=f"`{len(self.bot.commands)}`")
+        embed.add_field(name="App Command Count", value=f"`{len(self.bot.tree.get_commands())}`")
 
         await ctx.reply(embed=embed, mention_author=False)
 
