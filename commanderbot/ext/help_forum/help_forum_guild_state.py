@@ -198,7 +198,7 @@ class HelpForumGuildState(CogGuildState):
                 )
 
                 # Increment resolved threads
-                await self.store.increment_total_threads(forum)
+                await self.store.increment_resolved_threads(forum)
 
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
         """
@@ -239,7 +239,7 @@ class HelpForumGuildState(CogGuildState):
                 )
 
                 # Increment resolved threads
-                await self.store.increment_total_threads(forum)
+                await self.store.increment_resolved_threads(forum)
 
     async def register_forum_channel(
         self,
