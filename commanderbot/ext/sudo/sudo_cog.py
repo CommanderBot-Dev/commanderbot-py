@@ -46,20 +46,25 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         elif app.flags.gateway_presence_limited:
             presence_enabled = "✅ (Limited)"
 
+        fields = {
+            "Owner": f"{app.owner.mention} ({app.owner})",
+            "Flags": app.flags.value,
+            "App Commands": has_app_commands,
+            "Message Content": message_content_enabled,
+            "Guild Members": guild_members_enabled,
+            "Presence": presence_enabled,
+            "Command Prefix": f"`{self.bot.command_prefix}`",
+            "Command Count": f"`{len(self.bot.commands)}`",
+            "App Command Count": f"`{len(self.bot.tree.get_commands())}`",
+        }
+
         embed: Embed = Embed(
             title=app.name, description=app.description, color=0x00ACED
         )
 
         embed.set_thumbnail(url=app.icon.url if app.icon else None)
-        embed.add_field(name="Owner", value=f"{app.owner.mention} ({app.owner})")
-        embed.add_field(name="Flags", value=app.flags.value)
-        embed.add_field(name="App Commands", value=has_app_commands)
-        embed.add_field(name="Message Content", value=message_content_enabled)
-        embed.add_field(name="Guild Members", value=guild_members_enabled)
-        embed.add_field(name="Presence", value=presence_enabled)
-        embed.add_field(name="Command Prefix", value=f"`{self.bot.command_prefix}`")
-        embed.add_field(name="Command Count", value=f"`{len(self.bot.commands)}`")
-        embed.add_field(name="App Command Count", value=f"`{len(self.bot.tree.get_commands())}`")
+        for k, v in fields.items():
+            embed.add_field(name=k, value=v)
 
         await ctx.reply(embed=embed, mention_author=False)
 
