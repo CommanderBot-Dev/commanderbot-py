@@ -5,6 +5,10 @@ from enum import Enum
 
 class StatusColor(Enum):
     UNKNOWN = 0x00ACED
+    DEFAULT = 0x42526E
+    INPROGRESS = 0x0052CC
+    SUCCESS = 0x00875A
+
     MEDIUM_GRAY = 0x42526E
     BLUE_GRAY = 0x42526E
     GREEN = 0x00875A
