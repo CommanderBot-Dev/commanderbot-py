@@ -43,6 +43,7 @@ aiohttp = "^3.7.4"
 emoji = "^2.0.0"
 mccq = "^1.0.2"
 nbtlib = "^1.12.1"
+psutil = "^5.9.2"
 
 [tool.poetry.dev-dependencies]
 black = "^22.8.0"
