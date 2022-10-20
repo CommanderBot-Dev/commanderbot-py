@@ -1,20 +1,27 @@
+import platform
 from logging import Logger, getLogger
 from typing import Optional
 
-from discord import AppInfo, Object, Embed, HTTPException
+import psutil
+from discord import AppInfo, Embed, HTTPException, Object
 from discord.app_commands import AppCommand
 from discord.ext.commands import Bot, Cog, Context, group
 
 from commanderbot.ext.sudo.sudo_data import SyncType
 from commanderbot.ext.sudo.sudo_exceptions import SyncError, SyncUnknownGuild
-from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
 from commanderbot.lib import checks
+from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
+from commanderbot.lib.utils import SizeUnit, bytes_to, pointer_size
 
 
 class SudoCog(Cog, name="commanderbot.ext.sudo"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
         self.log: Logger = getLogger(self.qualified_name)
+
+        # Grab the current process and get its CPU usage to throw away the initial 0% usage.
+        self.process: psutil.Process = psutil.Process()
+        self.process.cpu_percent()
 
     @group(name="sudo", brief="Commands for bot maintainers")
     @checks.guild_only()
@@ -25,6 +32,7 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
 
     @cmd_sudo.command(name="appinfo", brief="Show application info")
     async def cmd_appinfo(self, ctx: Context):
+        # Get app info
         app: AppInfo = await self.bot.application_info()
 
         has_app_commands: str = "✅" if app.flags.app_commands_badge else "❌"
@@ -46,18 +54,50 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         elif app.flags.gateway_presence_limited:
             presence_enabled = "✅ (Limited)"
 
+        # Get basic info on the running process
+        uname = platform.uname()
+        ptr_size: int = pointer_size()
+
+        architecture: str = "x86" if ptr_size == 32 else f"x{ptr_size}"
+        cpu_usage: float = self.process.cpu_percent() / psutil.cpu_count()
+        memory_usage: float = bytes_to(
+            self.process.memory_full_info().uss, SizeUnit.MEGABYTE, binary=True
+        )
+
+        # Create embed fields
+        commands_field = (
+            f"Total: `{len(self.bot.commands)}`",
+            f"Prefix: `{self.bot.command_prefix}`",
+        )
+
+        app_commands_field = (
+            f"Total: `{len(self.bot.tree.get_commands())}`",
+            f"Global Commands: {has_app_commands}",
+        )
+
+        system_field = (
+            f"OS: `{uname.system} {architecture}`",
+            f"Version: `{uname.version}`",
+        )
+
+        process_field = (
+            f"CPU: `{cpu_usage:.2f}%`",
+            f"RAM: `{memory_usage:.2f} MiB`",
+        )
+
         fields = {
             "Owner": f"{app.owner.mention} ({app.owner})",
-            "Flags": app.flags.value,
-            "App Commands": has_app_commands,
+            "Flags": f"`{app.flags.value}`",
             "Message Content": message_content_enabled,
             "Guild Members": guild_members_enabled,
             "Presence": presence_enabled,
-            "Command Prefix": f"`{self.bot.command_prefix}`",
-            "Command Count": f"`{len(self.bot.commands)}`",
-            "App Command Count": f"`{len(self.bot.tree.get_commands())}`",
+            "Commands": "\n".join(commands_field),
+            "App Commands": "\n".join(app_commands_field),
+            "System": "\n".join(system_field),
+            "Process": "\n".join(process_field),
         }
 
+        # Create embed and add fields
         embed: Embed = Embed(
             title=app.name, description=app.description, color=0x00ACED
         )
