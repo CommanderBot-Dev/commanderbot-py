@@ -1,9 +1,12 @@
 import io
 import json
+import math
 import os
 import re
+import sys
 import traceback
 from datetime import datetime, timezone
+from enum import Enum
 from typing import (
     Any,
     AsyncIterable,
@@ -18,9 +21,9 @@ from typing import (
 )
 
 from discord import (
-    Interaction,
     AllowedMentions,
     File,
+    Interaction,
     Member,
     Message,
     TextChannel,
@@ -199,3 +202,29 @@ def is_float(value: str):
         return True
     except ValueError:
         return False
+
+
+def pointer_size() -> int:
+    """
+    Returns the size of a pointer (in bits) for the system that Python is running on
+    """
+    return math.ceil(sys.maxsize.bit_length() / 8) * 8
+
+
+class SizeUnit(Enum):
+    KILOBYTE = 1
+    MEGABYTE = 2
+    GIGABYTE = 3
+    TERRABYTE = 4
+    PETABYTE = 5
+    EXABYTE = 6
+    ZETTABYTE = 7
+    YOTTABYTE = 8
+
+
+def bytes_to(n_bytes: int, to: SizeUnit, *, binary: bool = False) -> float:
+    """
+    Converts `n_bytes` to a different `SizeUnit`
+    """
+    divisor: float = 1024.0 if binary else 1000.0
+    return n_bytes / (divisor**to.value)
