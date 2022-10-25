@@ -10,11 +10,11 @@ homepage = "https://github.com/CommanderBot-Dev/commanderbot-py"
 keywords = ['discord', 'bot']
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 
 # Core dependencies.
-"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", branch = "master"}
-python-dotenv = "^0.20.0"
+"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", branch = "master" }
+python-dotenv = "^0.21.0"
 
 # These are used for logging.
 colorama = "^0.4.3"
