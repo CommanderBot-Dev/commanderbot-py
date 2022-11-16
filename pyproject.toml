@@ -13,7 +13,7 @@ keywords = ['discord', 'bot']
 python = "^3.11"
 
 # Core dependencies.
-"discord.py" = { git = "https://github.com/Rapptz/discord.py.git", branch = "master" }
+"discord.py" = "^2.1.0"
 python-dotenv = "^0.21.0"
 
 # These are used for logging.
@@ -45,8 +45,8 @@ mccq = "^1.0.2"
 nbtlib = "^1.12.1"
 psutil = "^5.9.2"
 
-[tool.poetry.dev-dependencies]
-black = "^22.8.0"
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
 isort = "^5.10.1"
 
 [tool.isort]
