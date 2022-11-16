@@ -38,6 +38,10 @@ def json_dump(
         fp.write(output)
 
 
+def json_dumps(data: JsonObject) -> str:
+    return json.dumps(data, cls=ExtendedJsonEncoder)
+
+
 async def json_dump_async(
     data: JsonObject,
     path: Path,
