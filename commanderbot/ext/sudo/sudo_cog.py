@@ -7,11 +7,18 @@ from discord import AppInfo, Embed, HTTPException, Object
 from discord.app_commands import AppCommand
 from discord.ext.commands import Bot, Cog, Context, group
 
-from commanderbot.ext.sudo.sudo_data import SyncType
-from commanderbot.ext.sudo.sudo_exceptions import SyncError, SyncUnknownGuild
-from commanderbot.lib import checks
+from commanderbot.ext.sudo.sudo_data import SyncType, CogUsesStore
+from commanderbot.ext.sudo.sudo_exceptions import (
+    CogHasNoStore,
+    SyncError,
+    SyncUnknownGuild,
+    UnknownCog,
+    UnsupportedStoreExport,
+)
+from commanderbot.lib import JsonFileDatabaseAdapter, checks
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_reaction
-from commanderbot.lib.utils import SizeUnit, bytes_to, pointer_size
+from commanderbot.lib.json import json_dumps
+from commanderbot.lib.utils import SizeUnit, bytes_to, pointer_size, str_to_file
 
 
 class SudoCog(Cog, name="commanderbot.ext.sudo"):
@@ -120,6 +127,35 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
             case (ConfirmationResult.NO | ConfirmationResult.NO_RESPONSE):
                 await ctx.reply("🙂 Continuing...", mention_author=False)
 
+    @cmd_sudo.command(name="export", brief="Exports a cog's store if it has one")
+    async def cmd_sudo_export(self, ctx: Context, cog: str):
+        # Try to get the cog
+        found_cog = self.bot.get_cog(cog)
+        if not found_cog:
+            raise UnknownCog(cog)
+
+        # Try to get the database adapter if it exists
+        if isinstance(found_cog, CogUsesStore):
+            db = found_cog.store.db
+            match db:
+                case JsonFileDatabaseAdapter():
+                    await self._export_json_store(ctx, found_cog, db)
+                case _:
+                    raise UnsupportedStoreExport(db)
+        else:
+            raise CogHasNoStore(found_cog)
+
+    async def _export_json_store(
+        self, ctx: Context, cog: Cog, db: JsonFileDatabaseAdapter
+    ):
+        data = await db.get_cache()
+        data = db.serializer(data)
+        await ctx.reply(
+            content=f"Exported Json store for `{cog.qualified_name}`",
+            file=str_to_file(json_dumps(data), f"{cog.qualified_name}.json"),
+            mention_author=False,
+        )
+
     @cmd_sudo.group(name="sync", brief="Sync app commands")
     async def cmd_sudo_sync(self, ctx: Context):
         if not ctx.invoked_subcommand:
@@ -132,6 +168,7 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
 
         synced_commands: list[AppCommand] = await self.bot.tree.sync()
 
+        assert(self.bot.user)
         await ctx.message.add_reaction("✅")
         await ctx.message.remove_reaction("⏲️", self.bot.user)
 
@@ -221,6 +258,7 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
             )
             raise SyncError(guild, ex.text)
         finally:
+            assert(self.bot.user)
             await ctx.message.remove_reaction("⏲️", self.bot.user)
 
         # Send message with sync results and print it in the log too
