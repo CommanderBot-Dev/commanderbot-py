@@ -13,7 +13,7 @@ def to_data(obj: Any) -> Any:
 
 
 def json_load(path: Path) -> JsonObject:
-    with open(path) as fp:
+    with open(path, encoding="utf-8") as fp:
         data = json.load(fp)
     return data
 
@@ -33,8 +33,8 @@ def json_dump(
     if mkdir:
         path.parent.mkdir(parents=True, exist_ok=True)
     # NOTE Serialize the JSON first, otherwise invalid data may corrupt the file.
-    output = json.dumps(data, indent=indent, cls=ExtendedJsonEncoder, ensure_ascii=False)
-    with open(path, "w") as fp:
+    output = json.dumps(data, indent=indent, cls=ExtendedJsonEncoder, ensure_ascii=False).encode("utf-8")
+    with open(path, "wb") as fp:
         fp.write(output)
 
 
