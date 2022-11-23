@@ -10,15 +10,11 @@ class HelpForum(Protocol):
     resolved_emoji: str
     unresolved_tag_id: ForumTagID
     resolved_tag_id: ForumTagID
-    total_threads: int
-    resolved_threads: int
+    threads_created: int
+    resolutions: int
 
     @property
-    def tag_ids(self) -> tuple[ForumTagID, ForumTagID]:
-        ...
-
-    @property
-    def resolved_percentage(self) -> float:
+    def thread_state_tags(self) -> tuple[ForumTagID, ForumTagID]:
         ...
 
 
@@ -52,10 +48,10 @@ class HelpForumStore(Protocol):
     ) -> HelpForum:
         ...
 
-    async def increment_total_threads(self, help_forum: HelpForum):
+    async def increment_threads_created(self, help_forum: HelpForum):
         ...
 
-    async def increment_resolved_threads(self, help_forum: HelpForum):
+    async def increment_resolutions(self, help_forum: HelpForum):
         ...
 
     async def modify_resolved_emoji(

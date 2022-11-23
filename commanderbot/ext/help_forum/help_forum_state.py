@@ -8,7 +8,7 @@ from commanderbot.lib import GuildPartitionedCogState
 @dataclass
 class HelpForumState(GuildPartitionedCogState[HelpForumGuildState]):
     """
-    Encapsulates the state and logic of the helo forum cog, for each guild.
+    Encapsulates the state and logic of the help forum cog, for each guild.
     """
 
     store: HelpForumStore

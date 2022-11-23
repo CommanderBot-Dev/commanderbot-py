@@ -20,7 +20,7 @@ from discord import (
 from commanderbot.ext.help_forum.help_forum_store import HelpForum, HelpForumStore
 from commanderbot.lib import CogGuildState
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_buttons
-from commanderbot.lib.forums import format_tag, has_tag, tag_from_id
+from commanderbot.lib.forums import format_tag, has_tag
 from commanderbot.lib.types import ForumTagID
 
 
@@ -63,7 +63,9 @@ class HelpForumGuildState(CogGuildState):
         # Create a new tag list by first removing the current state tags, then
         # prepend the new state tag if it exists
         tags = [
-            Object(id=i.id) for i in thread.applied_tags if i.id not in forum.tag_ids
+            Object(id=i.id)
+            for i in thread.applied_tags
+            if i.id not in forum.thread_state_tags
         ]
         if thread_has_tag:
             tags.insert(0, Object(id=new_state_tag))
@@ -111,32 +113,7 @@ class HelpForumGuildState(CogGuildState):
             )
 
             # Increment total threads
-            await self.store.increment_total_threads(forum)
-
-    async def on_thread_update(self, before: Thread, after: Thread):
-        """
-        Called whenever a thread in the cache is updated. This will not trigger for
-        unarchived threads.
-
-        This event enforces the channel's archive duration. It will also ignore
-        threads being archived.
-        """
-
-        # Ignore updates to threads outside of forum channels
-        channel = before.parent
-        if not isinstance(channel, ForumChannel):
-            return
-
-        # Ignore updates to threads that are being archived or unarchived
-        if before.archived or after.archived:
-            return
-
-        # Check if the forum channel was registered as a help forum
-        if _ := await self.store.get_help_forum(self.guild, channel):
-            # If it was, enforce the default archive duration if needed
-            default_archive_duration = channel.default_auto_archive_duration
-            if after.auto_archive_duration > default_archive_duration:
-                await after.edit(auto_archive_duration=default_archive_duration)
+            await self.store.increment_threads_created(forum)
 
     async def on_raw_thread_update(self, payload: RawThreadUpdateEvent):
         """
@@ -198,7 +175,7 @@ class HelpForumGuildState(CogGuildState):
                 )
 
                 # Increment resolved threads
-                await self.store.increment_resolved_threads(forum)
+                await self.store.increment_resolutions(forum)
 
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
         """
@@ -239,7 +216,7 @@ class HelpForumGuildState(CogGuildState):
                 )
 
                 # Increment resolved threads
-                await self.store.increment_resolved_threads(forum)
+                await self.store.increment_resolutions(forum)
 
     async def register_forum_channel(
         self,
@@ -290,8 +267,8 @@ class HelpForumGuildState(CogGuildState):
     async def details(self, interaction: Interaction, channel: ForumChannel):
         # Get data from the help forum if it was registered
         forum = await self.store.require_help_forum(self.guild, channel)
-        unresolved_tag = tag_from_id(channel, forum.unresolved_tag_id)
-        resolved_tag = tag_from_id(channel, forum.resolved_tag_id)
+        unresolved_tag = channel.get_tag(forum.unresolved_tag_id)
+        resolved_tag = channel.get_tag(forum.resolved_tag_id)
 
         formatted_unresolved_tag = (
             f"`{format_tag(unresolved_tag)}`" if unresolved_tag else "**No tag set!**"
@@ -305,9 +282,9 @@ class HelpForumGuildState(CogGuildState):
             "Resolved Emoji": forum.resolved_emoji,
             "Unresolved Tag": formatted_unresolved_tag,
             "Resolved Tag": formatted_resolved_tag,
-            "Threads Created": f"`{forum.total_threads}`",
-            "Threads Resolved": f"`{forum.resolved_threads}`",
-            "Percent Resolved": f"`{forum.resolved_percentage:.2f}%`",
+            "Threads Created": f"`{forum.threads_created}`",
+            "Resolutions": f"`{forum.resolutions}`",
+            "Auto-archive Duration": f"`{channel.default_auto_archive_duration}`",
         }
 
         # Create embed and add fields

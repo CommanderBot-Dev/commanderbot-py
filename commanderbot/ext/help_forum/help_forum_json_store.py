@@ -56,15 +56,15 @@ class HelpForumJsonStore(CogStore):
         return help_forum
 
     # @implements HelpForumStore
-    async def increment_total_threads(self, help_forum: HelpForum):
+    async def increment_threads_created(self, help_forum: HelpForum):
         cache = await self.db.get_cache()
-        await cache.increment_total_threads(help_forum)
+        await cache.increment_threads_created(help_forum)
         await self.db.dirty()
 
     # @implements HelpForumStore
-    async def increment_resolved_threads(self, help_forum: HelpForum):
+    async def increment_resolutions(self, help_forum: HelpForum):
         cache = await self.db.get_cache()
-        await cache.increment_resolved_threads(help_forum)
+        await cache.increment_resolutions(help_forum)
         await self.db.dirty()
 
     # @implements HelpForumStore

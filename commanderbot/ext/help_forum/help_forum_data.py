@@ -14,7 +14,7 @@ from commanderbot.lib import (
     LogOptions,
     ResponsiveException,
 )
-from commanderbot.lib.forums import try_get_tag_insensitive
+from commanderbot.lib.forums import try_get_tag
 from commanderbot.lib.utils.utils import dict_without_ellipsis, dict_without_falsies
 
 ST = TypeVar("ST")
@@ -49,8 +49,8 @@ class HelpForumForumData(JsonSerializable, FromDataMixin):
     resolved_emoji: str
     unresolved_tag_id: ForumTagID
     resolved_tag_id: ForumTagID
-    total_threads: int
-    resolved_threads: int
+    threads_created: int
+    resolutions: int
 
     # @overrides FromDataMixin
     @classmethod
@@ -61,8 +61,8 @@ class HelpForumForumData(JsonSerializable, FromDataMixin):
                 resolved_emoji=data["resolved_emoji"],
                 unresolved_tag_id=data["unresolved_tag_id"],
                 resolved_tag_id=data["resolved_tag_id"],
-                total_threads=data["total_threads"],
-                resolved_threads=data["resolved_threads"],
+                threads_created=data["threads_created"],
+                resolutions=data["resolutions"],
             )
 
     # @implements JsonSerializable
@@ -72,19 +72,13 @@ class HelpForumForumData(JsonSerializable, FromDataMixin):
             "resolved_emoji": self.resolved_emoji,
             "unresolved_tag_id": self.unresolved_tag_id,
             "resolved_tag_id": self.resolved_tag_id,
-            "total_threads": self.total_threads,
-            "resolved_threads": self.resolved_threads,
+            "threads_created": self.threads_created,
+            "resolutions": self.resolutions,
         }
 
     @property
-    def tag_ids(self) -> tuple[ForumTagID, ForumTagID]:
+    def thread_state_tags(self) -> tuple[ForumTagID, ForumTagID]:
         return (self.unresolved_tag_id, self.resolved_tag_id)
-
-    @property
-    def resolved_percentage(self) -> float:
-        if self.total_threads == 0:
-            return 0.0
-        return max(0.0, min(100.0, (self.resolved_threads / self.total_threads) * 100))
 
 
 @dataclass
@@ -125,8 +119,8 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
     def _is_forum_registered(self, channel: ForumChannel):
         return channel.id in self.help_forums.keys()
 
-    def _require_valid_tag(self, channel: ForumChannel, tag: str) -> ForumTag:
-        if found_tag := try_get_tag_insensitive(channel, tag):
+    def _require_tag(self, channel: ForumChannel, tag: str) -> ForumTag:
+        if found_tag := try_get_tag(channel, tag, insensitive=True):
             return found_tag
         raise HelpForumInvalidTag(channel.id, tag)
 
@@ -147,24 +141,22 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
         unresolved_tag: str,
         resolved_tag: str,
     ) -> HelpForumForumData:
-        # Check if the forum channel was registered
+        # Check if the forum channel was already registered
         if self._is_forum_registered(channel):
             raise ForumChannelAlreadyRegistered(channel.id)
 
         # Check if the tags exist in the forum channel
-        tag_ids: list[ForumTagID] = []
-        for tag_str in (unresolved_tag, resolved_tag):
-            if valid_tag := self._require_valid_tag(channel, tag_str):
-                tag_ids.append(valid_tag.id)
+        valid_unresolved_tag: ForumTag = self._require_tag(channel, unresolved_tag)
+        valid_resolved_tag: ForumTag = self._require_tag(channel, resolved_tag)
 
         # Create and add a new help forum
         forum = HelpForumForumData(
             channel_id=channel.id,
             resolved_emoji=resolved_emoji,
-            unresolved_tag_id=tag_ids[0],
-            resolved_tag_id=tag_ids[1],
-            total_threads=0,
-            resolved_threads=0,
+            unresolved_tag_id=valid_unresolved_tag.id,
+            resolved_tag_id=valid_resolved_tag.id,
+            threads_created=0,
+            resolutions=0,
         )
 
         self.help_forums[channel.id] = forum
@@ -194,7 +186,7 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
     ) -> Tuple[HelpForumForumData, ForumTag]:
         # Modify unresolved tag ID for a help forum
         forum = self.require_help_forum(channel)
-        valid_tag = self._require_valid_tag(channel, tag)
+        valid_tag = self._require_tag(channel, tag)
         forum.unresolved_tag_id = valid_tag.id
         return (forum, valid_tag)
 
@@ -203,7 +195,7 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
     ) -> Tuple[HelpForumForumData, ForumTag]:
         # Modify resolved tag ID for a help forum
         forum = self.require_help_forum(channel)
-        valid_tag = self._require_valid_tag(channel, tag)
+        valid_tag = self._require_tag(channel, tag)
         forum.resolved_tag_id = valid_tag.id
         return (forum, valid_tag)
 
@@ -261,7 +253,7 @@ class HelpForumData(JsonSerializable, FromDataMixin):
     # @implements HelpForumStore
     async def require_help_forum(
         self, guild: Guild, channel: ForumChannel
-    ) -> HelpForumForumData:
+    ) -> HelpForum:
         return self.guilds[guild.id].require_help_forum(channel)
 
     # @implements HelpForumStore
@@ -278,7 +270,7 @@ class HelpForumData(JsonSerializable, FromDataMixin):
         resolved_emoji: str,
         unresolved_tag: str,
         resolved_tag: str,
-    ) -> HelpForumForumData:
+    ) -> HelpForum:
         return self.guilds[guild.id].register_forum_channel(
             channel, resolved_emoji, unresolved_tag, resolved_tag
         )
@@ -286,33 +278,33 @@ class HelpForumData(JsonSerializable, FromDataMixin):
     # @implements HelpForumStore
     async def deregister_forum_channel(
         self, guild: Guild, channel: ForumChannel
-    ) -> HelpForumForumData:
+    ) -> HelpForum:
         return self.guilds[guild.id].deregister_forum_channel(channel)
 
     # @implements HelpForumStore
-    async def increment_total_threads(self, help_forum: HelpForum):
-        help_forum.total_threads += 1
+    async def increment_threads_created(self, help_forum: HelpForum):
+        help_forum.threads_created += 1
 
     # @implements HelpForumStore
-    async def increment_resolved_threads(self, help_forum: HelpForum):
-        help_forum.resolved_threads += 1
+    async def increment_resolutions(self, help_forum: HelpForum):
+        help_forum.resolutions += 1
 
     # @implements HelpForumStore
     async def modify_resolved_emoji(
         self, guild: Guild, channel: ForumChannel, emoji: str
-    ) -> HelpForumForumData:
+    ) -> HelpForum:
         return self.guilds[guild.id].modify_resolved_emoji(channel, emoji)
 
     # @implements HelpForumStore
     async def modify_unresolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
-    ) -> Tuple[HelpForumForumData, ForumTag]:
+    ) -> Tuple[HelpForum, ForumTag]:
         return self.guilds[guild.id].modify_unresolved_tag(channel, tag)
 
     # @implements HelpForumStore
     async def modify_resolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
-    ) -> Tuple[HelpForumForumData, ForumTag]:
+    ) -> Tuple[HelpForum, ForumTag]:
         return self.guilds[guild.id].modify_resolved_tag(channel, tag)
 
     # @implements HelpForumStore

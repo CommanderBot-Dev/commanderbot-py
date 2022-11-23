@@ -83,10 +83,6 @@ class HelpForumCog(
         await self.state[thread.guild].on_thread_create(thread)
 
     @Cog.listener()
-    async def on_thread_update(self, before: Thread, after: Thread):
-        await self.state[before.guild].on_thread_update(before, after)
-
-    @Cog.listener()
     async def on_raw_thread_update(self, payload: RawThreadUpdateEvent):
         await self.state[payload.guild_id].on_raw_thread_update(payload)
 
