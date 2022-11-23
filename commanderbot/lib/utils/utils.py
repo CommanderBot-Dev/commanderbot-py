@@ -1,12 +1,9 @@
 import io
 import json
-import math
 import os
 import re
-import sys
 import traceback
 from datetime import datetime, timezone
-from enum import Enum
 from typing import (
     Any,
     AsyncIterable,
@@ -20,16 +17,7 @@ from typing import (
     cast,
 )
 
-from discord import (
-    AllowedMentions,
-    File,
-    Interaction,
-    Member,
-    Message,
-    TextChannel,
-    Thread,
-    User,
-)
+from discord import AllowedMentions, File, Member, Message, TextChannel, Thread, User
 from discord.abc import Messageable
 from discord.ext.commands import Bot, Context
 
@@ -94,10 +82,10 @@ def sanitize_stacktrace(error: Exception) -> str:
     return "".join(lines)
 
 
-def format_context_cause(ctx: Context | Interaction) -> str:
+def format_context_cause(ctx: Context) -> str:
     parts = []
 
-    if author := (ctx.author if isinstance(ctx, Context) else ctx.user):
+    if author := ctx.author:
         parts.append(author.mention)
     else:
         parts.append("`Unknown User`")
@@ -139,7 +127,7 @@ def message_to_file(message: Message, filename: Optional[str] = None) -> File:
 
 
 def str_to_file(contents: str, filename: str) -> File:
-    fp = io.BytesIO(contents.encode("utf-8"))
+    fp = io.BytesIO(contents.encode())
     return File(fp=fp, filename=filename)
 
 
@@ -180,51 +168,3 @@ async def send_message_or_file(
             allowed_mentions=allowed_mentions,
             **kwargs,
         )
-
-
-def is_int(value: str):
-    """
-    Returns `True` if `value` can be casted to an int
-    """
-    try:
-        int(value)
-        return True
-    except ValueError:
-        return False
-
-
-def is_float(value: str):
-    """
-    Returns `True` if `value` can be casted to a float
-    """
-    try:
-        float(value)
-        return True
-    except ValueError:
-        return False
-
-
-def pointer_size() -> int:
-    """
-    Returns the size of a pointer (in bits) for the system that Python is running on
-    """
-    return math.ceil(sys.maxsize.bit_length() / 8) * 8
-
-
-class SizeUnit(Enum):
-    KILOBYTE = 1
-    MEGABYTE = 2
-    GIGABYTE = 3
-    TERRABYTE = 4
-    PETABYTE = 5
-    EXABYTE = 6
-    ZETTABYTE = 7
-    YOTTABYTE = 8
-
-
-def bytes_to(n_bytes: int, to: SizeUnit, *, binary: bool = False) -> float:
-    """
-    Converts `n_bytes` to a different `SizeUnit`
-    """
-    divisor: float = 1024.0 if binary else 1000.0
-    return n_bytes / (divisor**to.value)
