@@ -1,9 +1,12 @@
 import io
 import json
+import math
 import os
 import re
+import sys
 import traceback
 from datetime import datetime, timezone
+from enum import Enum
 from typing import (
     Any,
     AsyncIterable,
@@ -17,7 +20,16 @@ from typing import (
     cast,
 )
 
-from discord import AllowedMentions, File, Member, Message, TextChannel, Thread, User
+from discord import (
+    AllowedMentions,
+    File,
+    Interaction,
+    Member,
+    Message,
+    TextChannel,
+    Thread,
+    User,
+)
 from discord.abc import Messageable
 from discord.ext.commands import Bot, Context
 
@@ -36,7 +48,6 @@ def is_bot(bot: Bot, user: Any) -> bool:
 def member_roles_from(member: User | Member, role_ids: Set[RoleID]) -> Set[RoleID]:
     """
     Return the set of matching member roles.
-
     A plain [User] may be passed, however an empty set will always be returned.
     """
     if isinstance(member, User):
@@ -82,10 +93,10 @@ def sanitize_stacktrace(error: Exception) -> str:
     return "".join(lines)
 
 
-def format_context_cause(ctx: Context) -> str:
+def format_context_cause(ctx: Context | Interaction) -> str:
     parts = []
 
-    if author := ctx.author:
+    if author := (ctx.author if isinstance(ctx, Context) else ctx.user):
         parts.append(author.mention)
     else:
         parts.append("`Unknown User`")
@@ -142,7 +153,6 @@ async def send_message_or_file(
 ) -> Message:
     """
     Send `content` as a message if it fits, otherwise attach it as a file.
-
     Arguments
     ---------
     destination
@@ -168,3 +178,51 @@ async def send_message_or_file(
             allowed_mentions=allowed_mentions,
             **kwargs,
         )
+
+
+def is_int(value: str):
+    """
+    Returns `True` if `value` can be casted to an int
+    """
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
+
+
+def is_float(value: str):
+    """
+    Returns `True` if `value` can be casted to a float
+    """
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+
+def pointer_size() -> int:
+    """
+    Returns the size of a pointer (in bits) for the system that Python is running on
+    """
+    return math.ceil(sys.maxsize.bit_length() / 8) * 8
+
+
+class SizeUnit(Enum):
+    KILOBYTE = 1
+    MEGABYTE = 2
+    GIGABYTE = 3
+    TERRABYTE = 4
+    PETABYTE = 5
+    EXABYTE = 6
+    ZETTABYTE = 7
+    YOTTABYTE = 8
+
+
+def bytes_to(n_bytes: int, to: SizeUnit, *, binary: bool = False) -> float:
+    """
+    Converts `n_bytes` to a different `SizeUnit`
+    """
+    divisor: float = 1024.0 if binary else 1000.0
+    return n_bytes / (divisor**to.value)
