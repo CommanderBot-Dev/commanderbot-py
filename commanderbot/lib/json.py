@@ -33,13 +33,13 @@ def json_dump(
     if mkdir:
         path.parent.mkdir(parents=True, exist_ok=True)
     # NOTE Serialize the JSON first, otherwise invalid data may corrupt the file.
-    output = json.dumps(data, indent=indent, cls=ExtendedJsonEncoder)
+    output = json.dumps(data, indent=indent, cls=ExtendedJsonEncoder, ensure_ascii=False)
     with open(path, "w") as fp:
         fp.write(output)
 
 
 def json_dumps(data: JsonObject) -> str:
-    return json.dumps(data, cls=ExtendedJsonEncoder)
+    return json.dumps(data, cls=ExtendedJsonEncoder, ensure_ascii=False)
 
 
 async def json_dump_async(
