@@ -2,7 +2,6 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any
-
 from commanderbot.lib.extended_json_encoder import ExtendedJsonEncoder
 from commanderbot.lib.types import JsonObject
 
@@ -33,8 +32,8 @@ def json_dump(
     if mkdir:
         path.parent.mkdir(parents=True, exist_ok=True)
     # NOTE Serialize the JSON first, otherwise invalid data may corrupt the file.
-    output = json.dumps(data, indent=indent, cls=ExtendedJsonEncoder, ensure_ascii=False).encode("utf-8")
-    with open(path, "wb") as fp:
+    output = json.dumps(data, indent=indent, cls=ExtendedJsonEncoder, ensure_ascii=False)
+    with open(path, "w", encoding="utf-8") as fp:
         fp.write(output)
 
 
