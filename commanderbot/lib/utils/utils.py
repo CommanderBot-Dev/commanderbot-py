@@ -1,11 +1,10 @@
 import io
 import json
-import math
 import os
 import re
-import sys
 import traceback
 from datetime import datetime, timezone
+from ctypes import sizeof, c_void_p
 from enum import Enum
 from typing import (
     Any,
@@ -206,7 +205,7 @@ def pointer_size() -> int:
     """
     Returns the size of a pointer (in bits) for the system that Python is running on
     """
-    return math.ceil(sys.maxsize.bit_length() / 8) * 8
+    return sizeof(c_void_p) * 8
 
 
 class SizeUnit(Enum):
