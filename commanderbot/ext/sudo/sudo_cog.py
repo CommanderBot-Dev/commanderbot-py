@@ -31,7 +31,6 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         self.process.cpu_percent()
 
     @group(name="sudo", brief="Commands for bot maintainers")
-    @checks.guild_only()
     @checks.is_owner()
     async def cmd_sudo(self, ctx: Context):
         if not ctx.invoked_subcommand:
