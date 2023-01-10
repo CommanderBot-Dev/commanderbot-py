@@ -1,44 +1,58 @@
 from typing import Optional
 
-from discord import Member
-from discord.ext.commands import Bot, Cog, Context, command, has_permissions
+from discord import Interaction, InteractionMessage, Member, Permissions
+from discord.app_commands import command, default_permissions, describe, guild_only
+from discord.app_commands.checks import bot_has_permissions
+from discord.ext.commands import Bot, Cog
 
-from commanderbot.lib import checks
+from commanderbot.lib.allowed_mentions import AllowedMentions
 
 
 class KickCog(Cog, name="commanderbot.ext.kick"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 
-    @command(name="kick")
-    @checks.guild_only()
-    @has_permissions(kick_members=True)
+    @command(name="kick", description="Kick a user from the server")
+    @describe(
+        user="The user to kick",
+        reason="The reason for the kick (This will also be sent as a DM to the user)",
+    )
+    @guild_only()
+    @default_permissions(kick_members=True)
+    @bot_has_permissions(kick_members=True)
     async def cmd_kick(
-        self,
-        ctx: Context,
-        user: Member,
-        *,
-        reason: Optional[str] = None,
+        self, interaction: Interaction, user: Member, reason: Optional[str]
     ):
-        # make sure we aren't trying to kick the bot itself
-        if user == self.bot.user:
-            await ctx.message.reply("I don't think you want to do that...")
+        # Make sure we aren't trying to kick the bot itself or users with elevated permissions
+        if user == self.bot.user or user.guild_permissions & Permissions.elevated():
+            await interaction.response.send_message(
+                "I don't think you want to do that...", ephemeral=True
+            )
             return
 
-        # attempt to DM if a reason was included
-        # we do this before kicking in case this is the only mutual server
+        # Send the kick response and retrieve it so we can reference it later
+        kick_msg: str = f"Kicked {user.mention}"
+        kick_reason_msg: str = f"for:\n> {reason}"
+        await interaction.response.send_message(
+            f"{kick_msg} {kick_reason_msg}" if reason else kick_msg,
+            allowed_mentions=AllowedMentions.none(),
+        )
+        response: InteractionMessage = await interaction.original_response()
+
+        # Attempt to DM if a reason was included
+        # We do this before kicking in case this is the only mutual server
         if reason:
             try:
                 await user.send(
-                    content=f"You were kicked from **{ctx.guild}** for:\n>>> {reason}",
+                    content=f"You were kicked from **{interaction.guild}** for:\n> {reason}",
                 )
-                await ctx.message.add_reaction("✉️")
+                await response.add_reaction("✉️")
             except:
                 pass
 
-        # actually kick the user
+        # Actually kick the user
         try:
-            await user.kick(reason=reason)
-            await ctx.message.add_reaction("👢")
+            await user.kick(reason=reason if reason else "None provided")
+            await response.add_reaction("👢")
         except:
-            await ctx.message.add_reaction("🔥")
+            await response.add_reaction("🔥")
