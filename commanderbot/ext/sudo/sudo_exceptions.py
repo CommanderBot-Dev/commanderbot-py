@@ -21,7 +21,9 @@ class SyncError(SudoException):
 
 class SyncUnknownGuild(SudoException):
     def __init__(self, guild: Optional[Object]):
-        super().__init__(f"**Unknown guild:**\nGuild ID: `{guild.id if guild else '❓'}`")
+        super().__init__(
+            f"**Unknown guild:**\nGuild ID: `{guild.id if guild else '❓'}`"
+        )
 
 
 class UnknownCog(SudoException):
