@@ -12,7 +12,7 @@ class KickCog(Cog, name="commanderbot.ext.kick"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 
-    @command(name="kick", description="Kick a user from the server")
+    @command(name="kick", description="Kick a user from this server")
     @describe(
         user="The user to kick",
         reason="The reason for the kick (This will also be sent as a DM to the user)",
