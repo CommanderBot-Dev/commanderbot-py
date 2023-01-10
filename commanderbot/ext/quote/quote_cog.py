@@ -95,7 +95,7 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
         for url in urls_to_quote:
             await ctx.send(url)
 
-    @command(name="quote")
+    @command(name="quote", brief="Quote a message")
     async def cmd_quote(self, ctx: Context, message: Message):
         await self.do_quote(
             ctx,
@@ -104,7 +104,7 @@ class QuoteCog(Cog, name="commanderbot.ext.quote"):
             allowed_mentions=AllowedMentions.none(),
         )
 
-    @command(name="quotem")
+    @command(name="quotem", brief="Quote a message and mention the author")
     async def cmd_quotem(self, ctx: Context, message: Message):
         await self.do_quote(
             ctx,
