@@ -23,10 +23,17 @@ class KickCog(Cog, name="commanderbot.ext.kick"):
     async def cmd_kick(
         self, interaction: Interaction, user: Member, reason: Optional[str]
     ):
-        # Make sure we aren't trying to kick the bot itself or users with elevated permissions
-        if user == self.bot.user or user.guild_permissions & Permissions.elevated():
+        # Make sure we aren't trying to kick the bot itself
+        if user == self.bot.user:
             await interaction.response.send_message(
-                "I don't think you want to do that...", ephemeral=True
+                "😳 I don't think you want to do that...", ephemeral=True
+            )
+            return
+
+        # Make sure we aren't trying to kick users with elevated permissions
+        if user.guild_permissions & Permissions.elevated():
+            await interaction.response.send_message(
+                "😠 You can't kick users with elevated permissions", ephemeral=True
             )
             return
 
