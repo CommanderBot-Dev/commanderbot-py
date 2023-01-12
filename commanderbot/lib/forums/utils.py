@@ -1,6 +1,6 @@
-from typing import List, Optional
+from typing import Optional
 
-from discord import ForumChannel, ForumTag, Thread
+from discord import ForumChannel, ForumTag
 
 from commanderbot.lib.types import ForumTagID
 from commanderbot.lib.utils.utils import is_int
@@ -8,12 +8,11 @@ from commanderbot.lib.utils.utils import is_int
 __all__ = (
     "format_tag",
     "try_get_tag",
-    "tags_from_ids",
-    "has_tag",
+    "require_tag",
 )
 
 
-def format_tag(tag: ForumTag):
+def format_tag(tag: ForumTag) -> str:
     if tag.emoji:
         return f"{tag.emoji} {tag.name}"
     else:
@@ -21,21 +20,21 @@ def format_tag(tag: ForumTag):
 
 
 def try_get_tag(
-    channel: ForumChannel, tag_str: str, *, insensitive=False
+    channel: ForumChannel, tag_str: str, *, case_sensitive=True
 ) -> Optional[ForumTag]:
     """
     Returns a `ForumTag` if it exists in [channel]
     """
     for tag in channel.available_tags:
-        if tag.name.lower() == tag_str.lower() if insensitive else tag.name == tag_str:
+        if case_sensitive and tag.name == tag_str:
+            return tag
+        elif tag.name.lower() == tag_str.lower():
             return tag
         elif is_int(tag_str) and tag.id == int(tag_str):
             return tag
 
 
-def tags_from_ids(channel: ForumChannel, *ids: ForumTagID) -> List[ForumTag]:
-    return [i for i in channel.available_tags if i in ids]
-
-
-def has_tag(channel: ForumChannel, id: ForumTagID) -> bool:
-    return bool(channel.get_tag(id))
+def require_tag(channel: ForumChannel, id: ForumTagID) -> ForumTag:
+    if tag := channel.get_tag(id):
+        return tag
+    raise KeyError(f"<#{channel}> does not have a tag with the ID `{id}`")
