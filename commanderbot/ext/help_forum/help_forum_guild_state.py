@@ -1,27 +1,26 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, cast
+from typing import Optional, Union
 
 from discord import (
     AllowedMentions,
     Embed,
     ForumChannel,
     ForumTag,
-    HTTPException,
     Interaction,
     Message,
-    Object,
     PartialEmoji,
-    RawReactionActionEvent,
-    RawThreadUpdateEvent,
+    PartialMessage,
     Thread,
 )
 
+from commanderbot.ext.help_forum.help_forum_exceptions import (
+    UnableToResolveUnregistered,
+)
 from commanderbot.ext.help_forum.help_forum_store import HelpForum, HelpForumStore
-from commanderbot.lib import CogGuildState
+from commanderbot.lib import AllowedMentions, CogGuildState
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_buttons
-from commanderbot.lib.forums import format_tag, has_tag
-from commanderbot.lib.types import ForumTagID
+from commanderbot.lib.forums import format_tag, require_tag
 
 
 class ThreadState(Enum):
@@ -49,174 +48,123 @@ class HelpForumGuildState(CogGuildState):
         forum: HelpForum,
         state: ThreadState,
     ):
-        # Get the state tag to apply
-        new_state_tag: ForumTagID = -1
+        # Require that the tags exist
+        valid_unresolved_tag: ForumTag = require_tag(channel, forum.unresolved_tag_id)
+        valid_resolved_tag: ForumTag = require_tag(channel, forum.resolved_tag_id)
+
+        # Create a new tag list from the first 4 tags that aren't a state tag
+        tags: list[ForumTag] = []
+        applied_tag_gen = (
+            t for t in thread.applied_tags if t.id not in forum.thread_state_tags
+        )
+        for tag in applied_tag_gen:
+            if len(tags) == 4:
+                break
+            tags.append(tag)
+
+        # Add the new state tag
         match state:
             case ThreadState.UNRESOLVED:
-                new_state_tag = forum.unresolved_tag_id
+                tags = [*tags, valid_unresolved_tag]
             case ThreadState.RESOLVED:
-                new_state_tag = forum.resolved_tag_id
+                tags = [valid_resolved_tag, *tags]
 
-        # Check if the forum channel has the requested state tag
-        thread_has_tag: bool = has_tag(channel, new_state_tag)
-
-        # Create a new tag list by first removing the current state tags, then
-        # prepend the new state tag if it exists
-        tags = [
-            Object(id=i.id)
-            for i in thread.applied_tags
-            if i.id not in forum.thread_state_tags
-        ]
-        if thread_has_tag:
-            tags.insert(0, Object(id=new_state_tag))
-        del tags[5:]
-
-        # Create edit reason
-        reason: str = ""
-        if thread_has_tag:
-            reason = f"Added the '{state.value}' tag"
-        else:
-            reason = f"Tried to add the '{state.value}' tag, but it doesn't exist (ID={new_state_tag})"
-
-        # Edit the thread. The cast is needed because `applied_tags` in
-        # `Thread.edit()` doesn't take snowflakes unlike `Thread.add_tags()`.
-        # Resolving will archive the thread too.
         await thread.edit(
-            applied_tags=cast(List[ForumTag], tags),
+            applied_tags=tags,
             archived=(state == ThreadState.RESOLVED),
-            reason=reason,
+            reason=f"Added the {state.value} tag",
         )
 
-    async def on_thread_create(self, thread: Thread):
-        """
-        Called whenever a thread is created.
+    async def _get_help_forum(self, forum: ForumChannel) -> Optional[HelpForum]:
+        return await self.store.get_help_forum(self.guild, forum)
 
-        This event pins the first message and sets the thread state to 'Unresolved'.
+    async def on_thread_create(self, forum: ForumChannel, thread: Thread):
+        """
+        Whenever a thread is created, pin the first message and set the state to unresolved
         """
 
-        # Ignore updates to threads outside of forum channels
-        channel = thread.parent
-        if not isinstance(channel, ForumChannel):
+        # Get help forum data
+        forum_data = await self._get_help_forum(forum)
+        if not forum_data:
             return
 
-        # Check if the forum channel was registered as a help forum
-        if forum := await self.store.get_help_forum(self.guild, channel):
-            # Pin first message
-            try:
-                await thread.get_partial_message(thread.id).pin()
-            except HTTPException:
-                pass
+        # Pin first message
+        await thread.get_partial_message(thread.id).pin()
 
-            # Change the thread state to 'Unresolved'
+        # Change the thread state to 'unresolved'
+        await self._change_thread_state(
+            forum, thread, forum_data, ThreadState.UNRESOLVED
+        )
+
+        # Increment threads created
+        await self.store.increment_threads_created(forum_data)
+
+    async def on_unresolve(self, forum: ForumChannel, thread: Thread):
+        """
+        If `forum` is a help forum, set the thread state to unresolved
+        """
+
+        # Get help forum data
+        forum_data = await self._get_help_forum(forum)
+        if not forum_data:
+            return
+
+        # Change the thread state to 'unresolved'
+        await self._change_thread_state(
+            forum, thread, forum_data, ThreadState.UNRESOLVED
+        )
+
+    async def on_resolve(
+        self,
+        forum: ForumChannel,
+        thread: Thread,
+        message: Union[Message, PartialMessage],
+        emoji: PartialEmoji,
+    ):
+        """
+        If `forum` is a help forum, set the thread state to resolved if `emoji` matches the resolved emoji
+        """
+
+        # Get help forum data
+        forum_data = await self._get_help_forum(forum)
+        if not forum_data:
+            return
+
+        if emoji == forum_data.partial_resolved_emoji:
+            await message.add_reaction(forum_data.partial_resolved_emoji)
+
+            # Change the thread state to 'resolved'
             await self._change_thread_state(
-                channel, thread, forum, ThreadState.UNRESOLVED
+                forum, thread, forum_data, ThreadState.RESOLVED
             )
 
-            # Increment total threads
-            await self.store.increment_threads_created(forum)
+            # Increment resolutions
+            await self.store.increment_resolutions(forum_data)
 
-    async def on_raw_thread_update(self, payload: RawThreadUpdateEvent):
+    async def on_resolve_command(
+        self, interaction: Interaction, forum: ForumChannel, thread: Thread
+    ):
         """
-        Called whenever a thread is updated reguardless of if they're in the cache or not.
-
-        This event sets the thread state to 'Unresolved' if the thread is coming back
-        into the cache. This seems to happen when a thread is unarchived.
-        """
-
-        # Ignore updates to threads that are in the cache
-        if payload.thread:
-            return
-
-        # Ignore updates to threads outside of forum channels
-        thread = await self.bot.fetch_channel(payload.thread_id)
-        assert isinstance(thread, Thread)
-        channel = thread.parent
-        if not isinstance(channel, ForumChannel):
-            return
-
-        # Check if the forum channel was registered as a help forum
-        if forum := await self.store.get_help_forum(self.guild, channel):
-            # Change the thread state to 'Unresolved'
-            await self._change_thread_state(
-                channel, thread, forum, ThreadState.UNRESOLVED
-            )
-
-    async def on_message(self, message: Message):
-        """
-        Called whenever a message is sent.
-
-        This event sets the thread state to 'Resolved' if a message is sent in a thread
-        that only contains the resolved emoji. This will ignore messages that started
-        the thread.
+        If `forum` is a help forum, set the thread state to resolved when `/resolve` is ran in `thread`
         """
 
-        # Ignore messages being sent outside of forum channels
-        thread = message.channel
-        assert isinstance(thread, Thread)
-        channel = thread.parent
-        if not isinstance(channel, ForumChannel):
-            return
+        # Get help forum data
+        forum_data = await self._get_help_forum(forum)
+        if not forum_data:
+            raise UnableToResolveUnregistered(forum.id)
 
-        # Ignore thread starter messages
-        if message.id == thread.id:
-            return
+        # Send resolved message
+        emoji: PartialEmoji = forum_data.partial_resolved_emoji
+        await interaction.response.send_message(
+            f"{emoji} {interaction.user.mention} resolved this thread",
+            allowed_mentions=AllowedMentions.none(),
+        )
 
-        # Check if the forum channel was registered as a help forum
-        if forum := await self.store.get_help_forum(self.guild, channel):
-            # Check if the message contains only the resolved emoji
-            if message.content == forum.resolved_emoji:
-                # Make the bot add the resolved emoji to the message the user reacted
-                # to as a visual indication that it was successful
-                await message.add_reaction(forum.resolved_emoji)
+        # Change the thread state to 'resolved'
+        await self._change_thread_state(forum, thread, forum_data, ThreadState.RESOLVED)
 
-                # Change the thread state to 'Resolved'
-                await self._change_thread_state(
-                    channel, thread, forum, ThreadState.RESOLVED
-                )
-
-                # Increment resolved threads
-                await self.store.increment_resolutions(forum)
-
-    async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
-        """
-        Called whenever a reaction is added to a message reguardless of if they're in the
-        cache or not.
-
-        This event sets the thread state to 'Resolved' when the user reacts to a message
-        in a thread using the resolved emoji. This will ignore messages that started the
-        thread.
-        """
-
-        # Ignore reactions being added outside of forum channels
-        thread = await self.bot.fetch_channel(payload.channel_id)
-        if not isinstance(thread, Thread):
-            return
-
-        channel = thread.parent
-        if not isinstance(channel, ForumChannel):
-            return
-
-        # Ignore thread starter messages
-        if payload.message_id == thread.id:
-            return
-
-        # Check if the forum channel was registered as a help forum
-        if forum := await self.store.get_help_forum(self.guild, channel):
-            # Check if the reaction was the resolved emoji
-            resolved_emoji = PartialEmoji.from_str(forum.resolved_emoji)
-            if payload.emoji == resolved_emoji:
-                # Make the bot add the resolved emoji to the message the user reacted
-                # to as a visual indication that it was successful
-                message = thread.get_partial_message(payload.message_id)
-                await message.add_reaction(resolved_emoji)
-
-                # Change the thread state to 'Resolved'
-                await self._change_thread_state(
-                    channel, thread, forum, ThreadState.RESOLVED
-                )
-
-                # Increment resolved threads
-                await self.store.increment_resolutions(forum)
+        # Increment resolutions
+        await self.store.increment_resolutions(forum_data)
 
     async def register_forum_channel(
         self,
@@ -241,7 +189,7 @@ class HelpForumGuildState(CogGuildState):
         # Try to get the forum channel
         forum = await self.store.require_help_forum(self.guild, channel)
 
-        # If the forum does exist, send a message to show other users that a response is espected
+        # If the forum does exist, send a message to show other users that a response is expected
         await interaction.response.send_message(
             f"Waiting for a response from {interaction.user.mention}...",
             allowed_mentions=AllowedMentions.none(),
@@ -260,9 +208,7 @@ class HelpForumGuildState(CogGuildState):
                     content=f"Deregistered <#{forum.channel_id}> as a help forum"
                 )
             case _:
-                await interaction.edit_original_response(
-                    content=f"Did not deregister <#{forum.channel_id}> as a help forum"
-                )
+                await interaction.delete_original_response()
 
     async def details(self, interaction: Interaction, channel: ForumChannel):
         # Get data from the help forum if it was registered
@@ -284,7 +230,7 @@ class HelpForumGuildState(CogGuildState):
             "Resolved Tag": formatted_resolved_tag,
             "Threads Created": f"`{forum.threads_created}`",
             "Resolutions": f"`{forum.resolutions}`",
-            "Auto-archive Duration": f"`{channel.default_auto_archive_duration}`",
+            "Ratio": f"`{':'.join(map(str, forum.ratio))}`",
         }
 
         # Create embed and add fields

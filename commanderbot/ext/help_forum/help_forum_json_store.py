@@ -5,7 +5,7 @@ from discord import ForumChannel, ForumTag, Guild
 
 from commanderbot.ext.help_forum.help_forum_data import HelpForumData
 from commanderbot.ext.help_forum.help_forum_store import HelpForum
-from commanderbot.lib import CogStore, JsonFileDatabaseAdapter, LogOptions
+from commanderbot.lib import CogStore, JsonFileDatabaseAdapter
 
 
 # @implements HelpForumStore
@@ -93,17 +93,3 @@ class HelpForumJsonStore(CogStore):
         help_forum, new_tag = await cache.modify_resolved_tag(guild, channel, tag)
         await self.db.dirty()
         return (help_forum, new_tag)
-
-    # @implements HelpForumStore
-    async def get_log_options(self, guild: Guild) -> Optional[LogOptions]:
-        cache = await self.db.get_cache()
-        return await cache.get_log_options(guild)
-
-    # @implements HelpForumStore
-    async def set_log_options(
-        self, guild: Guild, log_options: Optional[LogOptions]
-    ) -> Optional[LogOptions]:
-        cache = await self.db.get_cache()
-        old_log_options = await cache.set_log_options(guild, log_options)
-        await self.db.dirty()
-        return old_log_options

@@ -1,9 +1,15 @@
+import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, DefaultDict, Dict, Optional, Tuple, Type, TypeVar
 
-from discord import ForumChannel, ForumTag, Guild
+from discord import ForumChannel, ForumTag, Guild, PartialEmoji
 
+from commanderbot.ext.help_forum.help_forum_exceptions import (
+    ForumChannelAlreadyRegistered,
+    ForumChannelNotRegistered,
+    HelpForumInvalidTag,
+)
 from commanderbot.ext.help_forum.help_forum_store import HelpForum
 from commanderbot.lib import (
     ChannelID,
@@ -11,36 +17,11 @@ from commanderbot.lib import (
     FromDataMixin,
     GuildID,
     JsonSerializable,
-    LogOptions,
-    ResponsiveException,
 )
 from commanderbot.lib.forums import try_get_tag
 from commanderbot.lib.utils.utils import dict_without_ellipsis, dict_without_falsies
 
 ST = TypeVar("ST")
-
-
-class HelpForumException(ResponsiveException):
-    pass
-
-
-class ForumChannelAlreadyRegistered(HelpForumException):
-    def __init__(self, channel_id: ChannelID):
-        self.channel_id = channel_id
-        super().__init__(f"🤷 <#{self.channel_id}> is already registered")
-
-
-class ForumChannelNotRegistered(HelpForumException):
-    def __init__(self, channel_id: ChannelID):
-        self.channel_id = channel_id
-        super().__init__(f"🤷 <#{self.channel_id}> is not registered")
-
-
-class HelpForumInvalidTag(HelpForumException):
-    def __init__(self, channel: ChannelID, tag: str):
-        self.channel_id = channel
-        self.tag = tag
-        super().__init__(f"😬 Tag `{self.tag}` does not exist in <#{self.channel_id}>")
 
 
 @dataclass
@@ -77,26 +58,36 @@ class HelpForumForumData(JsonSerializable, FromDataMixin):
         }
 
     @property
+    def partial_resolved_emoji(self) -> PartialEmoji:
+        return PartialEmoji.from_str(self.resolved_emoji)
+
+    @property
     def thread_state_tags(self) -> tuple[ForumTagID, ForumTagID]:
         return (self.unresolved_tag_id, self.resolved_tag_id)
+
+    @property
+    def ratio(self) -> tuple[int, int]:
+        if self.threads_created == 0 or self.resolutions == 0:
+            return (self.threads_created, self.resolutions)
+
+        gcd: int = math.gcd(self.threads_created, self.resolutions)
+        return (self.threads_created // gcd, self.resolutions // gcd)
 
 
 @dataclass
 class HelpForumGuildData(JsonSerializable, FromDataMixin):
-    log_options: Optional[LogOptions] = None
     help_forums: Dict[ChannelID, HelpForumForumData] = field(default_factory=dict)
 
     # @overrides FromDataMixin
     @classmethod
     def try_from_data(cls: Type[ST], data: Any) -> Optional[ST]:
         if isinstance(data, dict):
-            log_options = LogOptions.from_field_optional(data, "log")
             help_forums = {}
-            for raw_channel_id, raw_forum_data in data.get("forums", {}).items():
+            for raw_channel_id, raw_forum_data in data.get("help_forums", {}).items():
                 channel_id = int(raw_channel_id)
                 help_forums[channel_id] = HelpForumForumData.from_data(raw_forum_data)
 
-            return cls(log_options=log_options, help_forums=help_forums)
+            return cls(help_forums=help_forums)
 
     # @implements JsonSerializable
     def to_json(self) -> Any:
@@ -110,8 +101,7 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
 
         # Omit empty fields
         data = dict_without_ellipsis(
-            log=self.log_options or ...,
-            forums=trimmed_help_forums or ...,
+            help_forums=trimmed_help_forums or ...,
         )
 
         return data
@@ -120,7 +110,7 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
         return channel.id in self.help_forums.keys()
 
     def _require_tag(self, channel: ForumChannel, tag: str) -> ForumTag:
-        if found_tag := try_get_tag(channel, tag, insensitive=True):
+        if found_tag := try_get_tag(channel, tag, case_sensitive=False):
             return found_tag
         raise HelpForumInvalidTag(channel.id, tag)
 
@@ -199,18 +189,6 @@ class HelpForumGuildData(JsonSerializable, FromDataMixin):
         forum.resolved_tag_id = valid_tag.id
         return (forum, valid_tag)
 
-    def get_log_options(self) -> Optional[LogOptions]:
-        # Get the log options for this guild
-        return self.log_options
-
-    def set_log_options(
-        self, log_options: Optional[LogOptions]
-    ) -> Optional[LogOptions]:
-        # Set the log options for this guild
-        old = self.log_options
-        self.log_options = log_options
-        return old
-
 
 def _guilds_defaultdict_factory() -> DefaultDict[GuildID, HelpForumGuildData]:
     return defaultdict(lambda: HelpForumGuildData())
@@ -242,7 +220,7 @@ class HelpForumData(JsonSerializable, FromDataMixin):
             for guild_id, guild_data in self.guilds.items()
         }
 
-        # Omit empty guild
+        # Omit empty guilds
         trimmed_guilds = dict_without_falsies(guilds)
 
         # Omit empty fields
@@ -306,13 +284,3 @@ class HelpForumData(JsonSerializable, FromDataMixin):
         self, guild: Guild, channel: ForumChannel, tag: str
     ) -> Tuple[HelpForum, ForumTag]:
         return self.guilds[guild.id].modify_resolved_tag(channel, tag)
-
-    # @implements HelpForumStore
-    async def get_log_options(self, guild: Guild) -> Optional[LogOptions]:
-        return self.guilds[guild.id].get_log_options()
-
-    # @implements HelpForumStore
-    async def set_log_options(
-        self, guild: Guild, log_options: Optional[LogOptions]
-    ) -> Optional[LogOptions]:
-        return self.guilds[guild.id].set_log_options(log_options)

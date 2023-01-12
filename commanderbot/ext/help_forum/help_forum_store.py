@@ -1,8 +1,8 @@
 from typing import Optional, Protocol, Tuple
 
-from discord import ForumChannel, ForumTag, Guild
+from discord import ForumChannel, ForumTag, Guild, PartialEmoji
 
-from commanderbot.lib import ChannelID, ForumTagID, LogOptions
+from commanderbot.lib import ChannelID, ForumTagID
 
 
 class HelpForum(Protocol):
@@ -14,7 +14,15 @@ class HelpForum(Protocol):
     resolutions: int
 
     @property
+    def partial_resolved_emoji(self) -> PartialEmoji:
+        ...
+
+    @property
     def thread_state_tags(self) -> tuple[ForumTagID, ForumTagID]:
+        ...
+
+    @property
+    def ratio(self) -> tuple[int, int]:
         ...
 
 
@@ -67,12 +75,4 @@ class HelpForumStore(Protocol):
     async def modify_resolved_tag(
         self, guild: Guild, channel: ForumChannel, tag: str
     ) -> Tuple[HelpForum, ForumTag]:
-        ...
-
-    async def get_log_options(self, guild: Guild) -> Optional[LogOptions]:
-        ...
-
-    async def set_log_options(
-        self, guild: Guild, log_options: Optional[LogOptions]
-    ) -> Optional[LogOptions]:
         ...
