@@ -1,17 +1,9 @@
 import asyncio
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 
 import discord
-from discord import (
-    ButtonStyle,
-    Interaction,
-    Member,
-    Message,
-    Reaction,
-    User,
-    WebhookMessage,
-)
+from discord import ButtonStyle, Interaction, Member, Message, Reaction, WebhookMessage
 from discord.ext.commands import Bot, Context
 from discord.ui import Button, View, button
 
@@ -108,7 +100,7 @@ class ConfirmView(View):
         await self._on_confirm(button)
         # Defer the interaction (Mostly to prevent exceptions)
         await interaction.response.defer()
-        
+
     @button(label="No", style=ButtonStyle.red)
     async def no_callback(self, interaction: Interaction, button: Button):
         self.result = ConfirmationResult.NO
