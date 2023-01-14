@@ -8,13 +8,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- `help_forum`:
+  - A cog that acts as a wrapper around a forum channel
+  - Forum threads can have two states: unresolved and resolved
+  - Threads can be resolved using `/resolve` or with a configurable emoji
+- `sudo`:
+  - Added a way to sync slash commands globally or to a specific guild
+  - Added a way to export a cog's database
+  - Added a way to display info about the bot
+  - Added a way to shutdown the bot
 - Added a config option for `mccq` to allow certain users to run the reload command
 - Added a link button under `jira` issue embeds
 
 ### Changed
 
 - Adjusted the format of the presence status set by `mccq`
-- Querying `jira` issues using a URL as the argument will now ignore the base URL stored in the `jira` cog and instead get it from the argument
+- `jira`:
+  - Querying `jira` issues using a URL as the argument will now ignore the base URL stored in the `jira` cog and instead get it from the argument
+  - Fixed an issue where the embed's status colors weren't being applied
+- `quote`: Added descriptions to the commands
+- The error handler now supports slash command errors
+- `kick`: ported to slash commands
+- `status`: ported to slash commands
+- `ping`: ported to slash commands
 
 ## [0.19.0] - 2022-08-27
 
