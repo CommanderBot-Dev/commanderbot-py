@@ -18,9 +18,9 @@ from commanderbot.ext.help_forum.help_forum_exceptions import (
     UnableToResolveUnregistered,
 )
 from commanderbot.ext.help_forum.help_forum_store import HelpForum, HelpForumStore
-from commanderbot.lib import AllowedMentions, CogGuildState
+from commanderbot.lib import AllowedMentions, CogGuildState, ForumTagID
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_buttons
-from commanderbot.lib.forums import format_tag, require_tag
+from commanderbot.lib.forums import format_tag, require_tag_id, thread_has_tag_id
 
 
 class ThreadState(Enum):
@@ -43,21 +43,27 @@ class HelpForumGuildState(CogGuildState):
 
     async def _change_thread_state(
         self,
-        channel: ForumChannel,
+        forum: ForumChannel,
         thread: Thread,
-        forum: HelpForum,
+        forum_data: HelpForum,
         state: ThreadState,
     ):
-        # Require that the tags exist
-        valid_unresolved_tag: ForumTag = require_tag(channel, forum.unresolved_tag_id)
-        valid_resolved_tag: ForumTag = require_tag(channel, forum.resolved_tag_id)
+        # Require the tags to exist
+        unresolved_tag_id: ForumTagID = forum_data.unresolved_tag_id
+        resolved_tag_id: ForumTagID = forum_data.resolved_tag_id
+
+        valid_unresolved_tag: ForumTag = require_tag_id(forum, unresolved_tag_id)
+        valid_resolved_tag: ForumTag = require_tag_id(forum, resolved_tag_id)
 
         # Create a new tag list from the first 4 tags that aren't a state tag
         tags: list[ForumTag] = []
-        applied_tag_gen = (
-            t for t in thread.applied_tags if t.id not in forum.thread_state_tags
+
+        applied_tags_gen = (
+            t
+            for t in sorted(thread.applied_tags, key=lambda x: x.id)
+            if t.id not in forum_data.thread_state_tags
         )
-        for tag in applied_tag_gen:
+        for tag in applied_tags_gen:
             if len(tags) == 4:
                 break
             tags.append(tag)
@@ -69,10 +75,11 @@ class HelpForumGuildState(CogGuildState):
             case ThreadState.RESOLVED:
                 tags = [valid_resolved_tag, *tags]
 
+        # Edit thread to change tags and state
         await thread.edit(
             applied_tags=tags,
             archived=(state == ThreadState.RESOLVED),
-            reason=f"Added the {state.value} tag",
+            reason=f"{state.value} the thread",
         )
 
     async def _get_help_forum(self, forum: ForumChannel) -> Optional[HelpForum]:
@@ -87,6 +94,24 @@ class HelpForumGuildState(CogGuildState):
         forum_data = await self._get_help_forum(forum)
         if not forum_data:
             return
+
+        # Ignore newly created threads if it has the resolved tag
+        # This is a QoL feature for server moderators so they can create threads that will be pinned
+        if thread_has_tag_id(thread, forum_data.resolved_tag_id):
+            return
+
+        # Send a message with an embed that tells users how to resolve their thread
+        resolved_emoji: str = forum_data.resolved_emoji
+        description: list[str] = [
+            f"• When your question has been answered, please resolve your thread.",
+            f"• You can resolve your thread by using `/resolve`, reacting to a message with {resolved_emoji}, or sending {resolved_emoji} as a message.",
+        ]
+        resolve_embed: Embed = Embed(
+            title="Thanks for asking your question",
+            description="\n".join(description),
+            color=0x00ACED,
+        )
+        await thread.send(embed=resolve_embed)
 
         # Pin first message
         await thread.get_partial_message(thread.id).pin()
@@ -169,25 +194,25 @@ class HelpForumGuildState(CogGuildState):
     async def register_forum_channel(
         self,
         interaction: Interaction,
-        channel: ForumChannel,
+        forum: ForumChannel,
         resolved_emoji: str,
         unresolved_tag: str,
         resolved_tag: str,
     ):
-        forum = await self.store.register_forum_channel(
-            self.guild, channel, resolved_emoji, unresolved_tag, resolved_tag
+        forum_data = await self.store.register_forum_channel(
+            self.guild, forum, resolved_emoji, unresolved_tag, resolved_tag
         )
         await interaction.response.send_message(
-            f"Registered <#{forum.channel_id}> as a help forum"
+            f"Registered <#{forum_data.channel_id}> as a help forum"
         )
 
     async def deregister_forum_channel(
         self,
         interaction: Interaction,
-        channel: ForumChannel,
+        forum: ForumChannel,
     ):
         # Try to get the forum channel
-        forum = await self.store.require_help_forum(self.guild, channel)
+        forum_data = await self.store.require_help_forum(self.guild, forum)
 
         # If the forum does exist, send a message to show other users that a response is expected
         await interaction.response.send_message(
@@ -197,46 +222,48 @@ class HelpForumGuildState(CogGuildState):
 
         # Send a confirmation dialogue to the user
         result = await confirm_with_buttons(
-            interaction, f"Do you want to deregister <#{forum.channel_id}>?", timeout=10
+            interaction,
+            f"Do you want to deregister <#{forum_data.channel_id}>?",
+            timeout=10,
         )
 
         # Handle confirmation dialog result
         match result:
             case ConfirmationResult.YES:
-                await self.store.deregister_forum_channel(self.guild, channel)
+                await self.store.deregister_forum_channel(self.guild, forum)
                 await interaction.edit_original_response(
-                    content=f"Deregistered <#{forum.channel_id}> as a help forum"
+                    content=f"Deregistered <#{forum_data.channel_id}> as a help forum"
                 )
             case _:
                 await interaction.delete_original_response()
 
-    async def details(self, interaction: Interaction, channel: ForumChannel):
+    async def details(self, interaction: Interaction, forum: ForumChannel):
         # Get data from the help forum if it was registered
-        forum = await self.store.require_help_forum(self.guild, channel)
-        unresolved_tag = channel.get_tag(forum.unresolved_tag_id)
-        resolved_tag = channel.get_tag(forum.resolved_tag_id)
+        forum_data = await self.store.require_help_forum(self.guild, forum)
+        unresolved_tag = forum.get_tag(forum_data.unresolved_tag_id)
+        resolved_tag = forum.get_tag(forum_data.resolved_tag_id)
 
         formatted_unresolved_tag = (
-            f"`{format_tag(unresolved_tag)}`" if unresolved_tag else "**No tag set!**"
+            f"{format_tag(unresolved_tag)}" if unresolved_tag else "**No tag set!**"
         )
         formatted_resolved_tag = (
-            f"`{format_tag(resolved_tag)}`" if resolved_tag else "**No tag set!**"
+            f"{format_tag(resolved_tag)}" if resolved_tag else "**No tag set!**"
         )
 
         # Create embed fields
         fields: dict = {
-            "Resolved Emoji": forum.resolved_emoji,
+            "Resolved Emoji": forum_data.resolved_emoji,
             "Unresolved Tag": formatted_unresolved_tag,
             "Resolved Tag": formatted_resolved_tag,
-            "Threads Created": f"`{forum.threads_created}`",
-            "Resolutions": f"`{forum.resolutions}`",
-            "Ratio": f"`{':'.join(map(str, forum.ratio))}`",
+            "Threads Created": f"`{forum_data.threads_created}`",
+            "Resolutions": f"`{forum_data.resolutions}`",
+            "Ratio": f"`{':'.join(map(str, forum_data.ratio))}`",
         }
 
         # Create embed and add fields
         embed: Embed = Embed(
-            title=f"💬 {channel.name}",
-            url=channel.jump_url,
+            title=f"💬 {forum.name}",
+            url=forum.jump_url,
             color=0x00ACED,
         )
         for k, v in fields.items():
@@ -245,27 +272,29 @@ class HelpForumGuildState(CogGuildState):
         await interaction.response.send_message(embed=embed)
 
     async def modify_resolved_emoji(
-        self, interaction: Interaction, channel: ForumChannel, emoji: str
+        self, interaction: Interaction, forum: ForumChannel, emoji: str
     ):
-        forum = await self.store.modify_resolved_emoji(self.guild, channel, emoji)
+        forum_data = await self.store.modify_resolved_emoji(self.guild, forum, emoji)
         await interaction.response.send_message(
-            f"Changed the resolved emoji for <#{forum.channel_id}> to {forum.resolved_emoji}"
+            f"Changed the resolved emoji for <#{forum_data.channel_id}> to {forum_data.resolved_emoji}"
         )
 
     async def modify_unresolved_tag(
-        self, interaction: Interaction, channel: ForumChannel, tag: str
+        self, interaction: Interaction, forum: ForumChannel, tag: str
     ):
-        forum, new_tag = await self.store.modify_unresolved_tag(
-            self.guild, channel, tag
+        forum_data, new_tag = await self.store.modify_unresolved_tag(
+            self.guild, forum, tag
         )
         await interaction.response.send_message(
-            f"Changed unresolved tag for <#{forum.channel_id}> to `{format_tag(new_tag)}`"
+            f"Changed unresolved tag for <#{forum_data.channel_id}> to {format_tag(new_tag)}"
         )
 
     async def modify_resolved_tag(
-        self, interaction: Interaction, channel: ForumChannel, tag: str
+        self, interaction: Interaction, forum: ForumChannel, tag: str
     ):
-        forum, new_tag = await self.store.modify_resolved_tag(self.guild, channel, tag)
+        forum_data, new_tag = await self.store.modify_resolved_tag(
+            self.guild, forum, tag
+        )
         await interaction.response.send_message(
-            f"Changed resolved tag for <#{forum.channel_id}> to `{format_tag(new_tag)}`"
+            f"Changed resolved tag for <#{forum_data.channel_id}> to {format_tag(new_tag)}"
         )

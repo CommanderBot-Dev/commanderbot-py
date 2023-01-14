@@ -121,7 +121,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
         if not isinstance(forum, ForumChannel):
             return
 
-        emoji = PartialEmoji.from_str(message.clean_content)
+        emoji = PartialEmoji.from_str(message.content)
         await self.state[forum.guild].on_resolve(forum, thread, message, emoji)
 
     @Cog.listener()
@@ -191,7 +191,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
         name="register", description="Register a forum channel as a help forum"
     )
     @describe(
-        channel="The forum channel to register",
+        forum="The forum channel to register",
         resolved_emoji="The emoji that's used for resolving threads",
         unresolved_tag="The tag for unresolved threads",
         resolved_tag="The tag for resolved threads",
@@ -199,71 +199,66 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
     async def cmd_forum_register(
         self,
         interaction: Interaction,
-        channel: ForumChannel,
+        forum: ForumChannel,
         resolved_emoji: Transform[str, EmojiTransformer],
         unresolved_tag: str,
         resolved_tag: str,
     ):
         assert isinstance(interaction.guild, Guild)
         await self.state[interaction.guild].register_forum_channel(
-            interaction, channel, resolved_emoji, unresolved_tag, resolved_tag
+            interaction, forum, resolved_emoji, unresolved_tag, resolved_tag
         )
 
     @cmd_forum.command(
-        name="deregister", description="Deregister a forum channel as a help forum"
+        name="deregister",
+        description="Deregister a forum channel from being a help forum",
     )
-    @describe(channel="The forum channel to register")
-    async def cmd_forum_deregister(
-        self, interaction: Interaction, channel: ForumChannel
-    ):
+    @describe(forum="The help forum to deregister")
+    async def cmd_forum_deregister(self, interaction: Interaction, forum: ForumChannel):
         assert isinstance(interaction.guild, Guild)
-        await self.state[interaction.guild].deregister_forum_channel(
-            interaction, channel
-        )
+        await self.state[interaction.guild].deregister_forum_channel(interaction, forum)
 
-    @cmd_forum.command(name="details", description="Show the details of a forum")
-    @describe(channel="The channel to show details about")
-    async def cmd_forum_details(self, interaction: Interaction, channel: ForumChannel):
+    @cmd_forum.command(name="details", description="Show the details of a help forum")
+    @describe(forum="The help forum to show details about")
+    async def cmd_forum_details(self, interaction: Interaction, forum: ForumChannel):
         assert isinstance(interaction.guild, Guild)
-        await self.state[interaction.guild].details(interaction, channel)
+        await self.state[interaction.guild].details(interaction, forum)
 
     # @@ forum modify
 
     @cmd_forum_modify.command(
         name="resolved-emoji", description="Modify the resolved emoji for a help forum"
     )
-    @describe(channel="The channel to modify", emoji="The new emoji")
+    @describe(forum="The help forum to modify", emoji="The new emoji")
     async def cmd_forum_modify_resolved_emoji(
         self,
         interaction: Interaction,
-        channel: ForumChannel,
+        forum: ForumChannel,
         emoji: Transform[str, EmojiTransformer],
     ):
         assert isinstance(interaction.guild, Guild)
         await self.state[interaction.guild].modify_resolved_emoji(
-            interaction, channel, emoji
+            interaction, forum, emoji
         )
 
     @cmd_forum_modify.command(
         name="unresolved-tag", description="Modify the unresolved tag for a help forum"
     )
-    @describe(channel="The channel to modify", tag="ID or name of the new tag")
+    @describe(forum="The help forum to modify", tag="ID or name of the new tag")
     async def cmd_forum_modify_unresolved_tag(
-        self, interaction: Interaction, channel: ForumChannel, tag: str
+        self, interaction: Interaction, forum: ForumChannel, tag: str
     ):
         assert isinstance(interaction.guild, Guild)
         await self.state[interaction.guild].modify_unresolved_tag(
-            interaction, channel, tag
+            interaction, forum, tag
         )
 
     @cmd_forum_modify.command(
         name="resolved-tag", description="Modify the resolved tag for a help forum"
     )
-    @describe(channel="The channel to modify", tag="ID or name of the new tag")
+    @describe(forum="The help forum to modify", tag="ID or name of the new tag")
     async def cmd_forum_modify_resolved_tag(
-        self, interaction: Interaction, channel: ForumChannel, tag: str
+        self, interaction: Interaction, forum: ForumChannel, tag: str
     ):
         assert isinstance(interaction.guild, Guild)
-        await self.state[interaction.guild].modify_resolved_tag(
-            interaction, channel, tag
-        )
+        await self.state[interaction.guild].modify_resolved_tag(interaction, forum, tag)

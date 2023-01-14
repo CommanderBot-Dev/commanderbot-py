@@ -31,20 +31,18 @@ class HelpForumStore(Protocol):
     Abstracts the data storage and persistence of the help forum cog
     """
 
-    async def require_help_forum(
-        self, guild: Guild, channel: ForumChannel
-    ) -> HelpForum:
+    async def require_help_forum(self, guild: Guild, forum: ForumChannel) -> HelpForum:
         ...
 
     async def get_help_forum(
-        self, guild: Guild, channel: ForumChannel
+        self, guild: Guild, forum: ForumChannel
     ) -> Optional[HelpForum]:
         ...
 
     async def register_forum_channel(
         self,
         guild: Guild,
-        channel: ForumChannel,
+        forum: ForumChannel,
         resolved_emoji: str,
         unresolved_tag: str,
         resolved_tag: str,
@@ -52,7 +50,7 @@ class HelpForumStore(Protocol):
         ...
 
     async def deregister_forum_channel(
-        self, guild: Guild, channel: ForumChannel
+        self, guild: Guild, forum: ForumChannel
     ) -> HelpForum:
         ...
 
@@ -63,16 +61,16 @@ class HelpForumStore(Protocol):
         ...
 
     async def modify_resolved_emoji(
-        self, guild: Guild, channel: ForumChannel, emoji: str
+        self, guild: Guild, forum: ForumChannel, emoji: str
     ) -> HelpForum:
         ...
 
     async def modify_unresolved_tag(
-        self, guild: Guild, channel: ForumChannel, tag: str
+        self, guild: Guild, forum: ForumChannel, tag: str
     ) -> Tuple[HelpForum, ForumTag]:
         ...
 
     async def modify_resolved_tag(
-        self, guild: Guild, channel: ForumChannel, tag: str
+        self, guild: Guild, forum: ForumChannel, tag: str
     ) -> Tuple[HelpForum, ForumTag]:
         ...
