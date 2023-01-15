@@ -1,21 +1,25 @@
+import asyncio
 import io
 import json
 import os
 import re
 import traceback
+from ctypes import c_void_p, sizeof
 from datetime import datetime, timezone
-from ctypes import sizeof, c_void_p
 from enum import Enum
 from typing import (
     Any,
     AsyncIterable,
     Callable,
+    Coroutine,
+    Generator,
     List,
     Mapping,
     Optional,
     Set,
     Tuple,
     TypeVar,
+    Union,
     cast,
 )
 
@@ -73,6 +77,20 @@ def dict_without_falsies(d: Optional[Mapping[str, Any]] = None, **kwargs):
 
 async def async_expand(it: AsyncIterable[T]) -> List[T]:
     return [value async for value in it]
+
+
+async def async_schedule(
+    *coroutines: Union[Coroutine[Any, Any, Any], Generator[Any, Any, Any]]
+):
+    """
+    Schedules a variable number of `Coroutine`s to run.
+
+    Basically just a wrapper around an `asyncio.TaskGroup`.
+    If an exception is raised, the `asyncio.TaskGroup` and `Coroutine`s will stop running.
+    """
+    async with asyncio.TaskGroup() as tg:
+        for co in coroutines:
+            tg.create_task(co)
 
 
 def sanitize_stacktrace(error: Exception) -> str:
