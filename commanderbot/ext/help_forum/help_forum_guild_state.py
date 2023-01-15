@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Union
@@ -21,6 +22,7 @@ from commanderbot.ext.help_forum.help_forum_store import HelpForum, HelpForumSto
 from commanderbot.lib import AllowedMentions, CogGuildState, ForumTagID
 from commanderbot.lib.dialogs import ConfirmationResult, confirm_with_buttons
 from commanderbot.lib.forums import format_tag, require_tag_id, thread_has_tag_id
+from commanderbot.lib.utils import async_schedule
 
 
 class ThreadState(Enum):
@@ -100,29 +102,39 @@ class HelpForumGuildState(CogGuildState):
         if thread_has_tag_id(thread, forum_data.resolved_tag_id):
             return
 
+        # Schedule the thread creation functions
+        # Since `_setup_thread` has a longish delay and the rest of the functions don't depend
+        # on it, we schedule all all of them instead of sequentially awaiting them
+        await async_schedule(
+            self._setup_thread(thread, forum_data),
+            self._change_thread_state(
+                forum, thread, forum_data, ThreadState.UNRESOLVED
+            ),
+            self.store.increment_threads_created(forum_data),
+        )
+
+    async def _setup_thread(self, thread: Thread, forum_data: HelpForum):
+        # Delay setup so the thread is hopefully created on Discord's end
+        await asyncio.sleep(0.3)
+
         # Send a message with an embed that tells users how to resolve their thread
         resolved_emoji: str = forum_data.resolved_emoji
-        description: list[str] = [
-            f"• When your question has been answered, please resolve your thread.",
-            f"• You can resolve your thread by using `/resolve`, reacting to a message with {resolved_emoji}, or sending {resolved_emoji} as a message.",
-        ]
-        resolve_embed: Embed = Embed(
+        description: str = f"""
+        • When your question has been answered, please resolve your thread.
+        • You can resolve your thread by using `/resolve`, reacting to a message with {resolved_emoji}, or sending {resolved_emoji} as a message.
+        """
+        resolve_embed = Embed(
             title="Thanks for asking your question",
-            description="\n".join(description),
+            description=description,
             color=0x00ACED,
         )
+
         await thread.send(embed=resolve_embed)
 
-        # Pin first message
-        await thread.get_partial_message(thread.id).pin()
-
-        # Change the thread state to 'unresolved'
-        await self._change_thread_state(
-            forum, thread, forum_data, ThreadState.UNRESOLVED
-        )
-
-        # Increment threads created
-        await self.store.increment_threads_created(forum_data)
+        try:
+            await thread.get_partial_message(thread.id).pin()
+        except:
+            pass
 
     async def on_unresolve(self, forum: ForumChannel, thread: Thread):
         """
