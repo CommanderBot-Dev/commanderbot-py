@@ -15,6 +15,7 @@ from discord import (
     Thread,
 )
 
+from commanderbot.core.utils import check_commander_bot
 from commanderbot.ext.help_forum.help_forum_exceptions import (
     UnableToResolveUnregistered,
 )
@@ -115,22 +116,29 @@ class HelpForumGuildState(CogGuildState):
 
     async def _setup_thread(self, thread: Thread, forum_data: HelpForum):
         # Delay setup so the thread is hopefully created on Discord's end
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.5)
+
+        # Get `/resolve` command mention if it exists
+        resolve_cmd: str = "`/resolve`"
+        cb = check_commander_bot(self.bot)
+        if cb and (cmd := cb.app_command_tree.get_app_command("resolve")):
+            resolve_cmd = cmd.mention
 
         # Send a message with an embed that tells users how to resolve their thread
         resolved_emoji: str = forum_data.resolved_emoji
-        description: str = f"""
-        • When your question has been answered, please resolve your thread.
-        • You can resolve your thread by using `/resolve`, reacting to a message with {resolved_emoji}, or sending {resolved_emoji} as a message.
-        """
         resolve_embed = Embed(
             title="Thanks for asking your question",
-            description=description,
+            description="\n".join(
+                (
+                    f"• When your question has been answered, please resolve your thread.",
+                    f"• You can resolve your thread by using {resolve_cmd}, reacting to a message with {resolved_emoji}, or sending {resolved_emoji} as a message.",
+                )
+            ),
             color=0x00ACED,
         )
-
         await thread.send(embed=resolve_embed)
 
+        # Pin the starter message
         try:
             await thread.get_partial_message(thread.id).pin()
         except:
