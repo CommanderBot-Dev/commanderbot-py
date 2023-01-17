@@ -7,7 +7,7 @@ from discord import AppInfo, Embed, HTTPException, Object
 from discord.app_commands import AppCommand
 from discord.ext.commands import Bot, Cog, Context, group
 
-from commanderbot.ext.sudo.sudo_data import SyncType, CogUsesStore
+from commanderbot.ext.sudo.sudo_data import CogUsesStore, SyncType
 from commanderbot.ext.sudo.sudo_exceptions import (
     CogHasNoStore,
     SyncError,
@@ -167,7 +167,7 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
 
         synced_commands: list[AppCommand] = await self.bot.tree.sync()
 
-        assert(self.bot.user)
+        assert self.bot.user
         await ctx.message.add_reaction("✅")
         await ctx.message.remove_reaction("⏲️", self.bot.user)
 
@@ -257,7 +257,7 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
             )
             raise SyncError(guild, ex.text)
         finally:
-            assert(self.bot.user)
+            assert self.bot.user
             await ctx.message.remove_reaction("⏲️", self.bot.user)
 
         # Send message with sync results and print it in the log too

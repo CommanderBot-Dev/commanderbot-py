@@ -197,7 +197,7 @@ async def send_message_or_file(
         )
 
 
-def is_int(value: str):
+def is_int(value: Any):
     """
     Returns `True` if `value` can be casted to an int
     """
@@ -208,7 +208,7 @@ def is_int(value: str):
         return False
 
 
-def is_float(value: str):
+def is_float(value: Any):
     """
     Returns `True` if `value` can be casted to a float
     """

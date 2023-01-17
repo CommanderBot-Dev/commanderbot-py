@@ -10,6 +10,12 @@ def check_commander_bot(bot: Bot) -> Optional[CommanderBotBase]:
         return bot
 
 
+def require_commander_bot(bot: Bot) -> CommanderBotBase:
+    if isinstance(bot, CommanderBotBase):
+        return bot
+    raise TypeError("Bot is not a subclass of CommanderBotBase")
+
+
 async def add_configured_cog(bot: Bot, ext_name: str, cog_class: Type[Cog]):
     cog = None
     if cb := check_commander_bot(bot):

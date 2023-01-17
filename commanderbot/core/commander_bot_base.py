@@ -5,6 +5,7 @@ from typing import Any, Callable, Coroutine, Dict, Optional, TypeAlias
 from discord.interactions import Interaction
 from discord.ext.commands import Bot, Context
 
+from commanderbot.core.command_tree import CachingCommandTree
 from commanderbot.lib.event_data import EventData
 
 EventErrorHandler: TypeAlias = Callable[
@@ -34,6 +35,11 @@ class CommanderBotBase(ABC, Bot):
     @property
     @abstractmethod
     def uptime(self) -> timedelta:
+        ...
+
+    @property
+    @abstractmethod
+    def app_command_tree(self) -> CachingCommandTree:
         ...
 
     @abstractmethod

@@ -1,18 +1,19 @@
 import sys
 from datetime import datetime, timedelta
 from logging import Logger, getLogger
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
-from discord.interactions import Interaction
 from discord.ext.commands import Context
+from discord.interactions import Interaction
 
+from commanderbot.core.command_tree import CachingCommandTree
 from commanderbot.core.commander_bot_base import CommanderBotBase
 from commanderbot.core.configured_extension import ConfiguredExtension
 from commanderbot.core.error_handling import (
+    AppCommandErrorHandler,
     CommandErrorHandler,
     ErrorHandling,
     EventErrorHandler,
-    AppCommandErrorHandler
 )
 from commanderbot.lib import AllowedMentions, EventData, Intents
 from commanderbot.lib.utils.utils import utcnow_aware
@@ -31,6 +32,7 @@ class CommanderBot(CommanderBotBase):
         kwargs.update(
             intents=intents or Intents.default(),
             allowed_mentions=allowed_mentions or AllowedMentions.not_everyone(),
+            tree_cls=CachingCommandTree,
         )
 
         # Initialize discord.py Bot base.
@@ -104,6 +106,12 @@ class CommanderBot(CommanderBotBase):
             return utcnow_aware() - self.connected_since
 
     # @implements CommanderBotBase
+    @property
+    def app_command_tree(self) -> CachingCommandTree:
+        # A hack to get the actual app command tree type for type checkers
+        return cast(CachingCommandTree, self.tree)
+
+    # @implements CommanderBotBase
     def get_extension_options(self, ext_name: str) -> Optional[Dict[str, Any]]:
         if configured_extension := self.configured_extensions.get(ext_name):
             return configured_extension.options
@@ -124,6 +132,7 @@ class CommanderBot(CommanderBotBase):
     async def setup_hook(self):
         if self._extensions_data:
             await self._configure_extensions(self._extensions_data)
+            await self.app_command_tree.build_cache(guilds=self.guilds)
         else:
             self.log.warning("No extensions configured.")
 
