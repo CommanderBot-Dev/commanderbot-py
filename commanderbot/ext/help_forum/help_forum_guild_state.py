@@ -201,7 +201,7 @@ class HelpForumGuildState(CogGuildState):
         # Send resolved message
         emoji: PartialEmoji = forum_data.partial_resolved_emoji
         await interaction.response.send_message(
-            f"{emoji} {interaction.user.mention} resolved this thread",
+            f"{emoji} {interaction.user.mention} resolved the thread",
             allowed_mentions=AllowedMentions.none(),
         )
 
