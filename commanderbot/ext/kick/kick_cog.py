@@ -2,7 +2,7 @@ from typing import Optional
 
 from discord import Interaction, InteractionMessage, Member, Permissions
 from discord.app_commands import command, default_permissions, describe, guild_only
-from discord.app_commands.checks import bot_has_permissions
+from discord.app_commands.checks import bot_has_permissions, has_permissions
 from discord.ext.commands import Bot, Cog
 
 from commanderbot.lib.allowed_mentions import AllowedMentions
@@ -23,8 +23,8 @@ class KickCog(Cog, name="commanderbot.ext.kick"):
     async def cmd_kick(
         self, interaction: Interaction, user: Member, reason: Optional[str]
     ):
-        # Make sure we aren't trying to kick the bot itself
-        if user == self.bot.user:
+        # Make sure we aren't trying to kick the bot or the user running the command
+        if user == self.bot.user or user == interaction.user:
             await interaction.response.send_message(
                 "😳 I don't think you want to do that...", ephemeral=True
             )
