@@ -121,7 +121,7 @@ class HelpForumGuildState(CogGuildState):
         # Get `/resolve` command mention if it exists
         resolve_cmd: str = "`/resolve`"
         cb = check_commander_bot(self.bot)
-        if cb and (cmd := cb.app_command_tree.get_app_command("resolve")):
+        if cb and (cmd := cb.command_tree.get_app_command("resolve")):
             resolve_cmd = cmd.mention
 
         # Send a message with an embed that tells users how to resolve their thread

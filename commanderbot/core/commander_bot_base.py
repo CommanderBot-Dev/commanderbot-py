@@ -39,7 +39,7 @@ class CommanderBotBase(ABC, Bot):
 
     @property
     @abstractmethod
-    def app_command_tree(self) -> CachingCommandTree:
+    def command_tree(self) -> CachingCommandTree:
         ...
 
     @abstractmethod

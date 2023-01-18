@@ -107,7 +107,7 @@ class CommanderBot(CommanderBotBase):
 
     # @implements CommanderBotBase
     @property
-    def app_command_tree(self) -> CachingCommandTree:
+    def command_tree(self) -> CachingCommandTree:
         # A hack to get the actual app command tree type for type checkers
         return cast(CachingCommandTree, self.tree)
 
@@ -132,7 +132,7 @@ class CommanderBot(CommanderBotBase):
     async def setup_hook(self):
         if self._extensions_data:
             await self._configure_extensions(self._extensions_data)
-            await self.app_command_tree.build_cache(guilds=self.guilds)
+            await self.command_tree.build_cache(guilds=self.guilds)
         else:
             self.log.warning("No extensions configured.")
 
