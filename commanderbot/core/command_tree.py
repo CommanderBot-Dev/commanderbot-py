@@ -192,6 +192,8 @@ class CachingCommandTree(CommandTree):
             commands = await super().sync(guild=guild)
             self._log.info(f"Finished syncing {len(commands)} {sync_msg}.")
         except Exception as ex:
+            # Temporarily handle exception then re-raise it
+            # This is only so we can print the warning to the log
             self._log.warn(f"Unable to sync {sync_msg}. Reason: {ex}")
             raise ex
 
