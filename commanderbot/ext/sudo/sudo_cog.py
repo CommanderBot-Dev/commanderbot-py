@@ -1,16 +1,16 @@
 import platform
-from logging import Logger, getLogger
 from typing import Optional
 
 import psutil
-from discord import AppInfo, Embed, HTTPException, Object
+from discord import AppInfo, Embed, Object
 from discord.app_commands import AppCommand
 from discord.ext.commands import Bot, Cog, Context, group
 
 from commanderbot.ext.sudo.sudo_data import CogUsesStore, SyncType
 from commanderbot.ext.sudo.sudo_exceptions import (
     CogHasNoStore,
-    SyncError,
+    GlobalSyncError,
+    GuildSyncError,
     SyncUnknownGuild,
     UnknownCog,
     UnsupportedStoreExport,
@@ -24,7 +24,6 @@ from commanderbot.lib.utils import SizeUnit, bytes_to, pointer_size, str_to_file
 class SudoCog(Cog, name="commanderbot.ext.sudo"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
-        self.log: Logger = getLogger(self.qualified_name)
 
         # Grab the current process and get its CPU usage to throw away the initial 0% usage.
         self.process: psutil.Process = psutil.Process()
@@ -162,16 +161,21 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
 
     @cmd_sudo_sync.command(name="global", brief="Sync global app commands")
     async def cmd_sudo_sync_global(self, ctx: Context):
-        self.log.info("Started syncing app commands globally...")
         await ctx.message.add_reaction("⏲️")
 
-        synced_commands: list[AppCommand] = await self.bot.tree.sync()
+        # Try to sync app commands
+        synced_commands: list[AppCommand] = []
+        try:
+            synced_commands = await self.bot.tree.sync()
+            await ctx.message.add_reaction("✅")
+        except Exception as ex:
+            await ctx.message.add_reaction("🔥")
+            raise GlobalSyncError(str(ex))
+        finally:
+            assert self.bot.user
+            await ctx.message.remove_reaction("⏲️", self.bot.user)
 
-        assert self.bot.user
-        await ctx.message.add_reaction("✅")
-        await ctx.message.remove_reaction("⏲️", self.bot.user)
-
-        self.log.info(f"Synced {len(synced_commands)} app commands globally")
+        # Send message with sync results
         await ctx.reply(
             f"Synced `{len(synced_commands)}` app commands globally",
             mention_author=False,
@@ -226,7 +230,6 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
     async def _sync_guild_app_commands(
         self, ctx: Context, guild: Object, sync_type: SyncType = SyncType.SYNC_ONLY
     ):
-        self.log.info("Started syncing app commands to a guild...")
         await ctx.message.add_reaction("⏲️")
 
         # Create message used for saying if we're syncing with the current guild or with a guild ID
@@ -249,19 +252,14 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
                     synced_commands = await self.bot.tree.sync(guild=guild)
 
             await ctx.message.add_reaction("✅")
-        except HTTPException as ex:
+        except Exception as ex:
             await ctx.message.add_reaction("🔥")
-
-            self.log.warn(
-                f"Unable to sync app commands with guild {guild.id}: {ex.text}"
-            )
-            raise SyncError(guild, ex.text)
+            raise GuildSyncError(guild, str(ex))
         finally:
             assert self.bot.user
             await ctx.message.remove_reaction("⏲️", self.bot.user)
 
-        # Send message with sync results and print it in the log too
-        self.log.info(f"Synced {len(synced_commands)} app commands to guild {guild.id}")
+        # Send message with sync results
         await ctx.reply(
             f"Synced `{len(synced_commands)}` app commands to {syncing_to_msg}",
             mention_author=False,
