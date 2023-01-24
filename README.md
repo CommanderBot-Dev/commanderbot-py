@@ -7,8 +7,8 @@ A collection of utilities and extensions for discord.py bots.
 
 ## Requirements
 
-- Python 3.10+
-- discord.py 2.0+
+- Python 3.11+
+- discord.py 2.1+
 
 ## Running your bot
 
@@ -18,9 +18,9 @@ You will need the following:
 
 1. Your own [Discord Application](https://discordapp.com/developers/applications) with a bot token.
 2. A [configuration file](#configuring-your-bot) for the bot.
-3. A Python 3.10+ environment.
+3. A Python 3.11+ environment.
    - It is recommended to use a [virtual environment](https://docs.python.org/3/tutorial/venv.html) for this.
-   - You can use [pyenv](https://github.com/pyenv/pyenv) to build and run Python 3.10.
+   - You can use [pyenv](https://github.com/pyenv/pyenv) to build and run Python 3.11.
 4. If you have [poetry](https://python-poetry.org/), you can `poetry install` instead of using `pip`. (Just make sure that dev dependencies are also installed.) Otherwise, you may use `pip`:
    - Run `pip install commanderbot` to install the bot core package.
 
