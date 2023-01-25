@@ -126,17 +126,17 @@ class HelpForumGuildState(CogGuildState):
 
         # Send a message with an embed that tells users how to resolve their thread
         resolved_emoji: str = forum_data.resolved_emoji
-        resolve_embed = Embed(
+        embed = Embed(
             title="Thanks for asking your question",
             description="\n".join(
                 (
-                    f"• When your question has been answered, please resolve your thread.",
-                    f"• You can resolve your thread by using {resolve_cmd}, reacting to a message with {resolved_emoji}, or sending {resolved_emoji} as a message.",
+                    f"• When your question has been answered, please resolve your post.",
+                    f"• You can resolve your post by using {resolve_cmd}, reacting to a message with {resolved_emoji}, or sending {resolved_emoji} as a message.",
                 )
             ),
             color=0x00ACED,
         )
-        await thread.send(embed=resolve_embed)
+        await thread.send(embed=embed)
 
         # Pin the starter message
         try:
@@ -275,7 +275,7 @@ class HelpForumGuildState(CogGuildState):
             "Resolved Emoji": forum_data.resolved_emoji,
             "Unresolved Tag": formatted_unresolved_tag,
             "Resolved Tag": formatted_resolved_tag,
-            "Threads Created": f"`{forum_data.threads_created}`",
+            "Posts Created": f"`{forum_data.threads_created}`",
             "Resolutions": f"`{forum_data.resolutions}`",
             "Ratio": f"`{':'.join(map(str, forum_data.ratio))}`",
         }

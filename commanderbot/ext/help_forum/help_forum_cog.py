@@ -163,7 +163,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
 
     # @@ User facing commands
 
-    @command(name="resolve", description="Resolves a thread in a help forum")
+    @command(name="resolve", description="Resolve a post in a help forum")
     @guild_only
     async def cmd_resolve(self, interaction: Interaction):
         # Make sure this command was ran from a thread
@@ -171,14 +171,14 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
         if not isinstance(thread, Thread):
             raise InvalidResolveLocation
 
-        # Make sure this thread isn't pinned
-        if thread.flags.pinned:
-            raise UnableToResolvePinned
-
         # Make sure this thread is in a forum channel
         forum = thread.parent
         if not isinstance(forum, ForumChannel):
             raise InvalidResolveLocation
+
+        # Make sure this thread isn't pinned
+        if thread.flags.pinned:
+            raise UnableToResolvePinned
 
         assert isinstance(interaction.guild, Guild)
         await self.state[interaction.guild].on_resolve_command(
@@ -192,9 +192,9 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
     )
     @describe(
         forum="The forum channel to register",
-        resolved_emoji="The emoji that's used for resolving threads",
-        unresolved_tag="The tag for unresolved threads",
-        resolved_tag="The tag for resolved threads",
+        resolved_emoji="The emoji that's used for resolving posts",
+        unresolved_tag="The tag for unresolved posts",
+        resolved_tag="The tag for resolved posts",
     )
     async def cmd_forum_register(
         self,
