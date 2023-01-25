@@ -9,7 +9,7 @@ from commanderbot.lib.responsive_exception import ResponsiveException
 __all__ = ("EmojiTransformer",)
 
 
-CUSTOM_EMOJI_PATTERN = re.compile(r"\<\:\w+\:\d+\>")
+CUSTOM_EMOJI_PATTERN = re.compile(r"\<a?\:\w+\:\d+\>")
 
 
 class TransformerException(ResponsiveException, AppCommandError):

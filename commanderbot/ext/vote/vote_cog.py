@@ -7,7 +7,7 @@ from discord import Message
 from discord.ext.commands import Bot, Cog, Context, command
 
 DEFAULT_VOTE_EMOJIS = ("👍", "👎")
-CUSTOM_EMOJI_PATTERN = re.compile(r"\<\:\w+\:\d+\>")
+CUSTOM_EMOJI_PATTERN = re.compile(r"\<a?\:\w+\:\d+\>")
 LEFTOVERS_PATTERN = re.compile("🇦|🇧|🇨|🇩|🇪|🇫|🇬|🇭|🇮|🇯|🇰|🇱|🇲|🇳|🇴|🇵|🇶|🇷|🇸|🇹|🇺|🇻|🇼|🇽|🇾|🇿")
 
 
