@@ -40,5 +40,5 @@ class UnableToResolveUnregistered(HelpForumException):
     def __init__(self, channel: ChannelID):
         self.channel_id = channel
         super().__init__(
-            f"😬 Unable to resolve this post because <#{self.channel_id}> is not registered as a help forum"
+            f"😬 Unable to resolve this forum post because <#{self.channel_id}> is not registered as a help forum"
         )
