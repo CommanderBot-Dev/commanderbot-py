@@ -33,7 +33,7 @@ class InvalidResolveLocation(HelpForumException):
 
 class UnableToResolvePinned(HelpForumException):
     def __init__(self):
-        super().__init__("😠 You can't resolve pinned posts")
+        super().__init__("😠 You can't resolve pinned forum posts")
 
 
 class UnableToResolveUnregistered(HelpForumException):
