@@ -275,7 +275,7 @@ class HelpForumGuildState(CogGuildState):
             "Resolved Emoji": forum_data.resolved_emoji,
             "Unresolved Tag": formatted_unresolved_tag,
             "Resolved Tag": formatted_resolved_tag,
-            "Posts Created": f"`{forum_data.threads_created}`",
+            "Posts": f"`{forum_data.threads_created}`",
             "Resolutions": f"`{forum_data.resolutions}`",
             "Ratio": f"`{':'.join(map(str, forum_data.ratio))}`",
         }
