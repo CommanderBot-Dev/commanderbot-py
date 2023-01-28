@@ -32,6 +32,8 @@ from discord import (
     TextChannel,
     Thread,
     User,
+    Client,
+    AppInfo,
 )
 from discord.abc import Messageable
 from discord.ext.commands import Bot, Context
@@ -46,6 +48,17 @@ T = TypeVar("T")
 
 def is_bot(bot: Bot, user: Any) -> bool:
     return user == bot.user or getattr(user, "bot")
+
+
+def is_owner(client: Client, user: Union[User, Member]) -> bool:
+    info: Optional[AppInfo] = client.application
+    if not info:
+        return False
+
+    if info.team:
+        return user.id in [i.id for i in info.team.members]
+    else:
+        return user == info.owner
 
 
 def member_roles_from(member: User | Member, role_ids: Set[RoleID]) -> Set[RoleID]:
