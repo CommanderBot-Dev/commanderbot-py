@@ -40,6 +40,7 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         # Get app info
         app: AppInfo = await self.bot.application_info()
 
+        owner: str = app.team.name if app.team else f"{app.owner.mention} ({app.owner})"
         has_app_commands: str = "✅" if app.flags.app_commands_badge else "❌"
         message_content_enabled: str = "❌"
         if app.flags.gateway_message_content:
@@ -91,7 +92,7 @@ class SudoCog(Cog, name="commanderbot.ext.sudo"):
         )
 
         fields = {
-            "Owner": f"{app.owner.mention} ({app.owner})",
+            "Owner": owner,
             "Flags": f"`{app.flags.value}`",
             "Message Content": message_content_enabled,
             "Guild Members": guild_members_enabled,
