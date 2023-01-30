@@ -8,7 +8,6 @@ from typing import Any, Optional, cast
 import yaml
 from discord import (
     AllowedMentions,
-    Color,
     Member,
     RawMessageDeleteEvent,
     RawMessageUpdateEvent,
@@ -27,6 +26,7 @@ from commanderbot.ext.automod.automod_rule import AutomodRule
 from commanderbot.ext.automod.automod_store import AutomodStore
 from commanderbot.lib import (
     CogGuildState,
+    Color,
     GuildContext,
     LogOptions,
     ResponsiveException,

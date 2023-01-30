@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from typing import Callable, Optional, Tuple
 
-from discord import Client, Color, Message, TextChannel, Thread
+from discord import Client, Message, TextChannel, Thread
 
 from commanderbot.lib.allowed_mentions import AllowedMentions
+from commanderbot.lib.color import Color
 from commanderbot.lib.from_data_mixin import FromDataMixin
 from commanderbot.lib.responsive_exception import ResponsiveException
 from commanderbot.lib.types import ChannelID
 from commanderbot.lib.utils import (
-    color_from_field_optional,
     sanitize_stacktrace,
     send_message_or_file,
 )
@@ -49,7 +49,7 @@ class LogOptions(FromDataMixin):
         if isinstance(data, int):
             return cls(channel=data)
         elif isinstance(data, dict):
-            color = color_from_field_optional(data, "color")
+            color = Color.from_field_optional(data, "color")
             allowed_mentions = AllowedMentions.from_field_optional(
                 data, "allowed_mentions"
             )

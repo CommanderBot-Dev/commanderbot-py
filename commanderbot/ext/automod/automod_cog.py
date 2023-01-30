@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Optional, cast
 
 from discord import (
-    Color,
     Guild,
     Member,
     Message,
@@ -28,6 +27,7 @@ from commanderbot.ext.automod.automod_state import AutomodState
 from commanderbot.ext.automod.automod_store import AutomodStore
 from commanderbot.lib import (
     CogGuildStateManager,
+    Color,
     GuildContext,
     InMemoryDatabaseOptions,
     JsonFileDatabaseAdapter,

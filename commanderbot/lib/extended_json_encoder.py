@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Set
 from discord import Color
 
 from commanderbot.lib.json_serializable import JsonSerializable
-from commanderbot.lib.utils import color_to_hex, datetime_to_str, timedelta_to_dict
+from commanderbot.lib.utils import datetime_to_str, timedelta_to_dict
 
 
 class ExtendedJsonEncoder(json.JSONEncoder):
@@ -14,11 +14,12 @@ class ExtendedJsonEncoder(json.JSONEncoder):
     Extended JSON encoder with frequently-used logic built-in.
 
     Converts the following additional objects, in order of precedence:
-    1. A subclass of `JsonSerializable` is converted using `.to_data()`
+    1. A subclass of `JsonSerializable` is converted using `.to_json()`
     2. A `set` is converted into a list
     3. A `datatime.datetime` is converted into a string using `.isoformat()`
-    4. A `dataclasses.dataclass` is converted using `dataclasses.asdict()`
-    5. A `discord.Color` is converted into hex format `#FFFFFF`
+    4. A `datatime.timedelta` is converted into an object using `timedelta_to_dict()`
+    5. A `dataclasses.dataclass` is converted using `dataclasses.asdict()`
+    6. A `discord.Color` is converted into hex format `#FFFFFF`
     """
 
     def default(self, obj: Any) -> Any:
@@ -54,4 +55,5 @@ class ExtendedJsonEncoder(json.JSONEncoder):
         return obj.__dict__
 
     def convert_color(self, obj: Color) -> Any:
-        return color_to_hex(obj)
+        # Takes a `discord.Color` so this works with `commanderbot.lib.color` too
+        return str(obj)

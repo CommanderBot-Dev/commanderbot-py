@@ -1,13 +1,18 @@
 from dataclasses import dataclass
 from typing import Dict, Optional, Type, TypeVar
 
-from discord import Color
 from discord.abc import Messageable
 
 from commanderbot.ext.automod.automod_action import AutomodAction, AutomodActionBase
 from commanderbot.ext.automod.automod_event import AutomodEvent
-from commanderbot.lib import AllowedMentions, ChannelID, JsonObject, ValueFormatter
-from commanderbot.lib.utils import color_from_field_optional, message_to_file
+from commanderbot.lib import (
+    AllowedMentions,
+    ChannelID,
+    Color,
+    JsonObject,
+    ValueFormatter,
+)
+from commanderbot.lib.utils import message_to_file
 
 ST = TypeVar("ST")
 
@@ -47,7 +52,7 @@ class LogMessage(AutomodActionBase):
 
     @classmethod
     def from_data(cls: Type[ST], data: JsonObject) -> ST:
-        color = color_from_field_optional(data, "color")
+        color = Color.from_field_optional(data, "color")
         allowed_mentions = AllowedMentions.from_field_optional(data, "allowed_mentions")
         return cls(
             description=data.get("description"),
