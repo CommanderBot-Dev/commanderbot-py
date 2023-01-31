@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Set
 
-from discord import Color
+import discord
 
 from commanderbot.lib.json_serializable import JsonSerializable
 from commanderbot.lib.utils import datetime_to_str, timedelta_to_dict
@@ -33,7 +33,7 @@ class ExtendedJsonEncoder(json.JSONEncoder):
             return self.convert_timedelta(obj)
         if dataclasses.is_dataclass(obj):
             return self.convert_dataclass(obj)
-        if isinstance(obj, Color):
+        if isinstance(obj, discord.Color):
             return self.convert_color(obj)
         return super().default(obj)
 
@@ -54,6 +54,6 @@ class ExtendedJsonEncoder(json.JSONEncoder):
         # dataclass at a time.
         return obj.__dict__
 
-    def convert_color(self, obj: Color) -> Any:
+    def convert_color(self, obj: discord.Color) -> Any:
         # Takes a `discord.Color` so this works with `commanderbot.lib.color` too
         return str(obj)
