@@ -8,10 +8,7 @@ from commanderbot.lib.color import Color
 from commanderbot.lib.from_data_mixin import FromDataMixin
 from commanderbot.lib.responsive_exception import ResponsiveException
 from commanderbot.lib.types import ChannelID
-from commanderbot.lib.utils import (
-    sanitize_stacktrace,
-    send_message_or_file,
-)
+from commanderbot.lib.utils import sanitize_stacktrace, send_message_or_file
 
 __all__ = ("LogOptions",)
 
