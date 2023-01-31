@@ -1,15 +1,28 @@
 import inspect
-from typing import Dict, Optional, Self
+from typing import Dict, Optional, Self, Union
 
-from discord import Colour
+import discord
 
 from commanderbot.lib.from_data_mixin import FromDataMixin
 
 __all__ = ("Color",)
 
 
-class Color(Colour, FromDataMixin):
-    """Extends `discord.Colour` to simplify deserialization."""
+class Color(discord.Color, FromDataMixin):
+    """Extends `discord.Color` to simplify deserialization."""
+
+    # @overrides discord.Color
+    def __repr__(self) -> str:
+        return f"0x{self.value:X}"
+
+    # @overrides discord.Color
+    @classmethod
+    def from_str(cls, value: str) -> Self:
+        # The classmethod, `discord.Color.from_str()`, always returns a
+        # `discord.Color` reguardless of what `cls` is. So we need to
+        # construct our `cls` using a temporary `discord.Color`.
+        temp: discord.Color = super().from_str(value)
+        return cls(temp.value)
 
     # @overrides FromDataMixin
     @classmethod
@@ -48,9 +61,11 @@ class Color(Colour, FromDataMixin):
         return str(self)
 
     @classmethod
+    def white(cls) -> Self:
+        """A factory method that returns a :class:`Color` with a value of ``0xffffff``."""
+        return cls(0xFFFFFF)
+
+    @classmethod
     def mcc_blue(cls) -> Self:
         """A factory method that returns a :class:`Color` with a value of ``0x00aced``."""
         return cls(0x00ACED)
-
-   
-
