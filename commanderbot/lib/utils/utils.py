@@ -25,6 +25,8 @@ from typing import (
 
 from discord import (
     AllowedMentions,
+    AppInfo,
+    Client,
     File,
     Interaction,
     Member,
@@ -32,8 +34,6 @@ from discord import (
     TextChannel,
     Thread,
     User,
-    Client,
-    AppInfo,
 )
 from discord.abc import Messageable
 from discord.ext.commands import Bot, Context
@@ -41,7 +41,6 @@ from discord.ext.commands import Bot, Context
 from commanderbot.lib.types import RoleID
 
 CHARACTER_CAP = 1900
-
 
 T = TypeVar("T")
 
@@ -167,9 +166,9 @@ def message_to_file(message: Message, filename: Optional[str] = None) -> File:
     return file
 
 
-def str_to_file(contents: str, filename: str) -> File:
-    fp = io.BytesIO(contents.encode())
-    return File(fp=fp, filename=filename)
+def str_to_file(contents: str, file_name: str) -> File:
+    fp = cast(Any, io.StringIO(contents))
+    return File(fp=fp, filename=file_name)
 
 
 async def send_message_or_file(
@@ -183,6 +182,7 @@ async def send_message_or_file(
 ) -> Message:
     """
     Send `content` as a message if it fits, otherwise attach it as a file.
+
     Arguments
     ---------
     destination
@@ -192,8 +192,8 @@ async def send_message_or_file(
     callback
         A callback to determine the alternate message content, file content, and file
         name in case a file needs to be uploaded instead. Note that the alternate
-        message content should be guaranteed to fit withint he message cap.
-    cap
+        message content should be guaranteed to fit within the message cap.
+    character_cap
         The message character cap to check against, if different than the default.
     """
     if len(content) < character_cap:

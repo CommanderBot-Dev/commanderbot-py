@@ -1,5 +1,5 @@
 import inspect
-from typing import Dict, Optional, Self, Union
+from typing import Dict, Optional, Self
 
 import discord
 
