@@ -35,4 +35,5 @@ def command_name(interaction: Interaction) -> Optional[str]:
     """
     Returns the fully qualified command name.
     """
-    return interaction.command.qualified_name if interaction.command else None
+    if interaction.command:
+        return interaction.command.qualified_name
