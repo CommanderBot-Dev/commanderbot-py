@@ -5,7 +5,7 @@ from discord import Interaction
 from discord.app_commands import AppCommandError, Choice, Transformer
 from emoji import is_emoji
 
-from commanderbot.lib import Color, ResponsiveException
+from commanderbot.lib import MAX_AUTOCOMPLETE_CHOICES, Color, ResponsiveException
 
 __all__ = (
     "EmojiTransformer",
@@ -60,8 +60,9 @@ class ColorTransformer(Transformer):
         self, interaction: Interaction, value: str
     ) -> List[Choice[str]]:
         colors: list[Choice] = []
-        for name, color in Color.presets(color_filter=value).items():
-            if len(colors) == 25:
+        for (i, (name, color)) in enumerate(Color.presets(color_filter=value).items()):
+            if i == MAX_AUTOCOMPLETE_CHOICES:
                 break
             colors.append(Choice(name=name, value=color.to_hex()))
+
         return colors
