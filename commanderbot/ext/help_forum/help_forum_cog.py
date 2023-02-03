@@ -164,7 +164,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
     # @@ User facing commands
 
     @command(name="resolve", description="Resolve a post in a help forum")
-    @guild_only
+    @guild_only()
     async def cmd_resolve(self, interaction: Interaction):
         # Make sure this command was ran from a thread
         thread = interaction.channel
