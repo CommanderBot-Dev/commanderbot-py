@@ -1,7 +1,13 @@
 from typing import Optional, Union, cast
 
-from discord import Guild, Interaction, Message, TextChannel, Thread, User, app_commands
-from discord.app_commands import Transform
+from discord import Guild, Interaction, Message, TextChannel, Thread, User
+from discord.app_commands import (
+    Group,
+    Transform,
+    command,
+    default_permissions,
+    guild_only,
+)
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog, Context, GroupCog
 
@@ -48,8 +54,8 @@ def _make_store(bot: Bot, cog: Cog, options: StacktracerOptions) -> StacktracerS
     raise UnsupportedDatabaseOptions(db_options)
 
 
-@app_commands.guild_only()
-@app_commands.default_permissions(administrator=True)
+@guild_only()
+@default_permissions(administrator=True)
 class StacktracerCog(
     GroupCog,
     name="commanderbot.ext.stacktracer",
@@ -126,6 +132,7 @@ class StacktracerCog(
         name="stacktracer",
         brief="Manage error logging",
     )
+    @commands.guild_only()
     @command_checks.is_guild_admin_or_bot_owner()
     async def cmd_stacktracer(self, ctx: Context):
         if not ctx.invoked_subcommand:
@@ -139,7 +146,7 @@ class StacktracerCog(
         raise TestCommandErrors
 
     # App commands
-    @app_commands.command(
+    @command(
         name="test", description="Test the error logging configuration for app commands"
     )
     async def cmd_stacktracer_test_app(self, interaction: Interaction):
@@ -149,9 +156,7 @@ class StacktracerCog(
     # @@ stacktracer global
 
     # Groups
-    cmd_global = app_commands.Group(
-        name="global", description="Manage global error logging"
-    )
+    cmd_global = Group(name="global", description="Manage global error logging")
 
     # App commands
     @cmd_global.command(
@@ -196,9 +201,7 @@ class StacktracerCog(
     # @@ stacktracer guild
 
     # Groups
-    cmd_guild = app_commands.Group(
-        name="guild", description="Manage error logging for this guild"
-    )
+    cmd_guild = Group(name="guild", description="Manage error logging for this guild")
 
     # App commands
     @cmd_guild.command(

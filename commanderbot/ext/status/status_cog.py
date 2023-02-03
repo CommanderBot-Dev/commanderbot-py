@@ -1,4 +1,5 @@
-from discord import app_commands, Interaction, Embed
+from discord import Embed, Interaction
+from discord.app_commands import command
 from discord.ext.commands import Bot, Cog
 
 from commanderbot.ext.status.status_details import StatusDetails
@@ -8,7 +9,7 @@ class StatusCog(Cog, name="commanderbot.ext.status"):
     def __init__(self, bot: Bot):
         self.bot: Bot = bot
 
-    @app_commands.command(name="status", description="Shows the status of the bot")
+    @command(name="status", description="Shows the status of the bot")
     async def cmd_status(self, interaction: Interaction):
         status_details = StatusDetails(self.bot)
 
