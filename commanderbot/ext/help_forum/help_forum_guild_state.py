@@ -15,7 +15,7 @@ from discord import (
     Thread,
 )
 
-from commanderbot.core.utils import check_commander_bot
+from commanderbot.core.utils import get_app_command
 from commanderbot.ext.help_forum.help_forum_exceptions import (
     UnableToResolveUnregistered,
 )
@@ -120,9 +120,14 @@ class HelpForumGuildState(CogGuildState):
 
         # Get `/resolve` command mention if it exists
         resolve_cmd: str = "`/resolve`"
-        cb = check_commander_bot(self.bot)
-        if cb and (cmd := cb.command_tree.get_app_command("resolve")):
+        if cmd := get_app_command(self.bot, "resolve"):
             resolve_cmd = cmd.mention
+
+        # Pin the starter message
+        try:
+            await thread.get_partial_message(thread.id).pin()
+        except:
+            pass
 
         # Send a message with an embed that tells users how to resolve their thread
         resolved_emoji: str = forum_data.resolved_emoji
@@ -137,12 +142,6 @@ class HelpForumGuildState(CogGuildState):
             color=0x00ACED,
         )
         await thread.send(embed=embed)
-
-        # Pin the starter message
-        try:
-            await thread.get_partial_message(thread.id).pin()
-        except:
-            pass
 
     async def on_unresolve(self, forum: ForumChannel, thread: Thread):
         """
