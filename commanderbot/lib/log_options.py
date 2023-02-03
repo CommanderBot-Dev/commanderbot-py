@@ -163,7 +163,12 @@ class LogOptions(FromDataMixin):
             alt_title, alt_description, file_content, file_name = file_callback()
             file = str_to_file(file_content, file_name)
             return await log_channel.send(
-                f"> **{self._prepend_emoji(alt_title)}**\n> {alt_description}",
+                "\n".join(
+                    [
+                        f"> **{self._prepend_emoji(alt_title)}**",
+                        f"> {alt_description}" if alt_description else "",
+                    ]
+                ),
                 file=file,
                 allowed_mentions=allowed_mentions,
             )
