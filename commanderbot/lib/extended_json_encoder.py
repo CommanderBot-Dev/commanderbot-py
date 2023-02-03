@@ -55,5 +55,5 @@ class ExtendedJsonEncoder(json.JSONEncoder):
         return obj.__dict__
 
     def convert_color(self, obj: discord.Color) -> Any:
-        # Takes a `discord.Color` so this works with `commanderbot.lib.color` too
+        # Takes a `discord.Color` so this works with `commanderbot.lib.color` too.
         return str(obj)
