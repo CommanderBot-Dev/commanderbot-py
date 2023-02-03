@@ -1,11 +1,17 @@
-from typing import Optional, cast
+from typing import Optional, Union, cast
 
-from discord import Interaction, Color, Message, TextChannel, Thread, User
+from discord import Guild, Interaction, Message, TextChannel, Thread, User, app_commands
+from discord.app_commands import Transform
 from discord.ext import commands
-from discord.ext.commands import Bot, Cog, Context
+from discord.ext.commands import Bot, Cog, Context, GroupCog
 
 from commanderbot.core.commander_bot_base import CommanderBotBase
 from commanderbot.ext.stacktracer.stacktracer_data import StacktracerData
+from commanderbot.ext.stacktracer.stacktracer_exceptions import (
+    TestAppCommandErrors,
+    TestCommandErrors,
+    TestEventErrors,
+)
 from commanderbot.ext.stacktracer.stacktracer_guild_state import StacktracerGuildState
 from commanderbot.ext.stacktracer.stacktracer_json_store import StacktracerJsonStore
 from commanderbot.ext.stacktracer.stacktracer_options import StacktracerOptions
@@ -13,14 +19,16 @@ from commanderbot.ext.stacktracer.stacktracer_state import StacktracerState
 from commanderbot.ext.stacktracer.stacktracer_store import StacktracerStore
 from commanderbot.lib import (
     CogGuildStateManager,
+    Color,
     EventData,
-    GuildContext,
     InMemoryDatabaseOptions,
     JsonFileDatabaseAdapter,
     JsonFileDatabaseOptions,
     UnsupportedDatabaseOptions,
-    checks,
 )
+from commanderbot.lib import checks as command_checks
+from commanderbot.lib.interactions import ColorTransformer, EmojiTransformer
+from commanderbot.lib.interactions import checks as app_command_checks
 
 
 def _make_store(bot: Bot, cog: Cog, options: StacktracerOptions) -> StacktracerStore:
@@ -40,7 +48,14 @@ def _make_store(bot: Bot, cog: Cog, options: StacktracerOptions) -> StacktracerS
     raise UnsupportedDatabaseOptions(db_options)
 
 
-class StacktracerCog(Cog, name="commanderbot.ext.stacktracer"):
+@app_commands.guild_only()
+@app_commands.default_permissions(administrator=True)
+class StacktracerCog(
+    GroupCog,
+    name="commanderbot.ext.stacktracer",
+    group_name="stacktracer",
+    description="Manage error logging globally and across guilds",
+):
     """
     Prints errors and stacktraces to a channel for staff to see.
 
@@ -100,120 +115,125 @@ class StacktracerCog(Cog, name="commanderbot.ext.stacktracer"):
         expected = f"{self.bot.command_prefix}stacktracer test"
         author = cast(User, message.author)
         if (message.content == expected) and await self.bot.is_owner(author):
-            raise Exception("Testing the error logging configuration for events.")
+            raise TestEventErrors
 
     # @@ COMMANDS
 
-    # @@ stacktracer
+    # @@ stacktracer test
 
+    # Commands
     @commands.group(
         name="stacktracer",
-        brief="Manage error logging globally and across guilds.",
+        brief="Manage error logging",
     )
-    @checks.is_guild_admin_or_bot_owner()
-    async def cmd_stacktracer(self, ctx: GuildContext):
+    @command_checks.is_guild_admin_or_bot_owner()
+    async def cmd_stacktracer(self, ctx: Context):
         if not ctx.invoked_subcommand:
             await ctx.send_help(self.cmd_stacktracer)
 
     @cmd_stacktracer.command(
         name="test",
-        brief="Test the error logging configuration for commands.",
+        brief="Test the error logging configuration for commands",
     )
-    async def cmd_stacktracer_test(self, ctx: GuildContext):
-        raise Exception("Testing the error logging configuration for commands.")
+    async def cmd_stacktracer_test(self, ctx: Context):
+        raise TestCommandErrors
+
+    # App commands
+    @app_commands.command(
+        name="test", description="Test the error logging configuration for app commands"
+    )
+    async def cmd_stacktracer_test_app(self, interaction: Interaction):
+        await interaction.response.send_message("Raising an exception...")
+        raise TestAppCommandErrors
 
     # @@ stacktracer global
 
-    @cmd_stacktracer.group(
-        name="global",
-        brief="Manage global error logging.",
+    # Groups
+    cmd_global = app_commands.Group(
+        name="global", description="Manage global error logging"
     )
-    @checks.is_owner()
-    async def cmd_stacktracer_global(self, ctx: Context):
-        if not ctx.invoked_subcommand:
-            if ctx.subcommand_passed:
-                await ctx.send_help(self.cmd_stacktracer_global)
-            else:
-                await self.state.show_global_log_options(ctx)
 
-    @cmd_stacktracer_global.command(
-        name="show",
-        brief="Show the global error logging configuration.",
+    # App commands
+    @cmd_global.command(
+        name="show", description="Show the global error logging configuration"
     )
-    async def cmd_stacktracer_global_show(self, ctx: Context):
-        await self.state.show_global_log_options(ctx)
+    @app_command_checks.is_owner()
+    async def cmd_stacktracer_global_show(self, interaction: Interaction):
+        await self.state.show_global_log_options(interaction)
 
-    @cmd_stacktracer_global.command(
+    @cmd_global.command(
         name="set",
-        brief="Set the global error logging configuration.",
+        description="Set the global error logging configuration",
     )
+    @app_command_checks.is_owner()
     async def cmd_stacktracer_global_set(
         self,
-        ctx: Context,
-        channel: TextChannel | Thread,
+        interaction: Interaction,
+        channel: Union[TextChannel, Thread],
         stacktrace: Optional[bool],
-        emoji: Optional[str],
-        color: Optional[Color],
+        emoji: Optional[Transform[str, EmojiTransformer]],
+        color: Optional[Transform[Color, ColorTransformer]],
     ):
         await self.state.set_global_log_options(
-            ctx,
+            interaction,
             channel=channel,
             stacktrace=stacktrace,
             emoji=emoji,
             color=color,
         )
 
-    @cmd_stacktracer_global.command(
+    @cmd_global.command(
         name="remove",
-        brief="Remove the global error logging configuration.",
+        description="Remove the global error logging configuration",
     )
-    async def cmd_stacktracer_global_remove(self, ctx: Context):
-        await self.state.remove_global_log_options(ctx)
+    @app_command_checks.is_owner()
+    async def cmd_stacktracer_global_remove(
+        self,
+        interaction: Interaction,
+    ):
+        await self.state.remove_global_log_options(interaction)
 
     # @@ stacktracer guild
 
-    @cmd_stacktracer.group(
-        name="guild",
-        brief="Manage error logging for this guild.",
+    # Groups
+    cmd_guild = app_commands.Group(
+        name="guild", description="Manage error logging for this guild"
     )
-    @checks.guild_only()
-    async def cmd_stacktracer_guild(self, ctx: GuildContext):
-        if not ctx.invoked_subcommand:
-            if ctx.subcommand_passed:
-                await ctx.send_help(self.cmd_stacktracer_guild)
-            else:
-                await self.state[ctx.guild].show_guild_log_options(ctx)
 
-    @cmd_stacktracer_guild.command(
+    # App commands
+    @cmd_guild.command(
         name="show",
-        brief="Show the error logging configuration for this guild.",
+        description="Show the error logging configuration for this guild",
     )
-    async def cmd_stacktracer_guild_show(self, ctx: GuildContext):
-        await self.state[ctx.guild].show_guild_log_options(ctx)
+    async def cmd_stacktracer_guild_show(self, interaction: Interaction):
+        assert isinstance(interaction.guild, Guild)
+        await self.state[interaction.guild].show_guild_log_options(interaction)
 
-    @cmd_stacktracer_guild.command(
+    @cmd_guild.command(
         name="set",
-        brief="Set the error logging configuration for this guild.",
+        description="Set the error logging configuration for this guild",
     )
     async def cmd_stacktracer_guild_set(
         self,
-        ctx: GuildContext,
-        channel: TextChannel | Thread,
+        interaction: Interaction,
+        channel: Union[TextChannel, Thread],
         stacktrace: Optional[bool],
-        emoji: Optional[str],
-        color: Optional[Color],
+        emoji: Optional[Transform[str, EmojiTransformer]],
+        color: Optional[Transform[Color, ColorTransformer]],
     ):
-        await self.state[ctx.guild].set_guild_log_options(
-            ctx,
+        assert isinstance(interaction.guild, Guild)
+        await self.state[interaction.guild].set_guild_log_options(
+            interaction,
             channel=channel,
             stacktrace=stacktrace,
             emoji=emoji,
             color=color,
         )
 
-    @cmd_stacktracer_guild.command(
+    @cmd_guild.command(
         name="remove",
-        brief="Remove the error logging configuration for this guild.",
+        description="Remove the error logging configuration for this guild",
     )
-    async def cmd_stacktracer_guild_remove(self, ctx: GuildContext):
-        await self.state[ctx.guild].remove_guild_log_options(ctx)
+    async def cmd_stacktracer_guild_remove(self, interaction: Interaction):
+        assert isinstance(interaction.guild, Guild)
+        await self.state[interaction.guild].remove_guild_log_options(interaction)

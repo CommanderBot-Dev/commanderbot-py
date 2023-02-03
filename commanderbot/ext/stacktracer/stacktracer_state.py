@@ -1,17 +1,14 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
-from discord import Interaction, Color, TextChannel, Thread
+from discord import Interaction, TextChannel, Thread
 from discord.ext.commands import Context
 
+from commanderbot.core.utils import get_app_command
+from commanderbot.ext.stacktracer.stacktracer_exceptions import LoggingNotConfigured
 from commanderbot.ext.stacktracer.stacktracer_guild_state import StacktracerGuildState
 from commanderbot.ext.stacktracer.stacktracer_store import StacktracerStore
-from commanderbot.lib import (
-    AllowedMentions,
-    EventData,
-    GuildPartitionedCogState,
-    LogOptions,
-)
+from commanderbot.lib import Color, EventData, GuildPartitionedCogState, LogOptions
 from commanderbot.lib.interactions import command_name
 from commanderbot.lib.utils import format_context_cause
 
@@ -23,6 +20,16 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
     """
 
     store: StacktracerStore
+
+    def _format_command(self, command: Union[Context, Interaction]) -> str:
+        if isinstance(command, Context) and (cmd := command.command):
+            return f"`{command.prefix}{cmd}`"
+        elif isinstance(command, Interaction):
+            if cmd := get_app_command(self.bot, command):
+                return cmd.mention
+            elif cmd := command_name(command):
+                return f"`/{cmd}`"
+        return "`Unknown Command`"
 
     async def handle_event_error(
         self, error: Exception, event_data: EventData, handled: bool
@@ -36,18 +43,27 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
         # Attempt to print the error to the log channel, if any.
         if log_options := await self.store.get_global_log_options():
             try:
-                header = "Encountered an unhandled event error:"
-                lines = [
-                    header,
-                    log_options.formate_error_codeblock(error),
-                    "Caused by the following event:",
-                    event_data.format_codeblock(),
-                ]
-                content = "\n".join(lines)
-                await log_options.send(
+                title = "Encountered an unhandled event error"
+                description = "\n".join(
+                    [
+                        log_options.formate_error_codeblock(error),
+                        "Caused by the following event:",
+                        event_data.format_codeblock(),
+                    ]
+                )
+                alt_description = (
+                    "While handling an event, the attached error occurred:"
+                )
+                await log_options.send_embed(
                     self.bot,
-                    content,
-                    file_callback=lambda: (header, content, "error.txt"),
+                    title=title,
+                    description=description,
+                    file_callback=lambda: (
+                        title,
+                        alt_description,
+                        description,
+                        "error.txt",
+                    ),
                 )
                 # Stop the error from being printed to console.
                 return True
@@ -74,19 +90,26 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
         # Attempt to print the error to the log channel, if any.
         if log_options:
             try:
+                title = "Encountered an unhandled command error"
+                command = self._format_command(ctx)
                 cause = format_context_cause(ctx)
-                header = f"Encountered an unhandled command error, caused by {cause}:"
-                lines = [
-                    header,
-                    log_options.formate_error_codeblock(error),
-                    f"Caused by the following command:",
-                    f"```{ctx.command}```",
-                ]
-                content = "\n".join(lines)
-                await log_options.send(
+                description = "\n".join(
+                    [
+                        f"While executing {command} for {cause}, the following error occurred:",
+                        log_options.formate_error_codeblock(error),
+                    ]
+                )
+                alt_description = f"While executing {command} for {cause}, the attached error occurred:"
+                await log_options.send_embed(
                     self.bot,
-                    content,
-                    file_callback=lambda: (header, content, "error.txt"),
+                    title=title,
+                    description=description,
+                    file_callback=lambda: (
+                        title,
+                        alt_description,
+                        description,
+                        "error.txt",
+                    ),
                 )
                 # Stop the error from being printed to console.
                 return True
@@ -113,21 +136,26 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
         # Attempt to print the error to the log channel, if any.
         if log_options:
             try:
+                title = "Encountered an unhandled app command error"
+                command = self._format_command(interaction)
                 cause = format_context_cause(interaction)
-                header = (
-                    f"Encountered an unhandled app command error, caused by {cause}:"
+                description = "\n".join(
+                    [
+                        f"While executing {command} for {cause}, the following error occurred:",
+                        log_options.formate_error_codeblock(error),
+                    ]
                 )
-                lines = [
-                    header,
-                    log_options.formate_error_codeblock(error),
-                    f"Caused by the following app command:",
-                    f"```{command_name(interaction)}```",
-                ]
-                content = "\n".join(lines)
-                await log_options.send(
+                alt_description = f"While executing {command} for {cause}, the attached error occurred:"
+                await log_options.send_embed(
                     self.bot,
-                    content,
-                    file_callback=lambda: (header, content, "error.txt"),
+                    title=title,
+                    description=description,
+                    file_callback=lambda: (
+                        title,
+                        alt_description,
+                        description,
+                        "error.txt",
+                    ),
                 )
                 # Stop the error from being printed to console.
                 return True
@@ -137,27 +165,20 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
                     f"Failed to log app command error to channel with ID {log_options.channel}"
                 )
 
-    async def reply(self, ctx: Context, content: str):
-        """Wraps `Context.reply()` with some extension-default boilerplate."""
-        await ctx.message.reply(
-            content,
-            allowed_mentions=AllowedMentions.none(),
-        )
-
-    async def show_global_log_options(self, ctx: Context):
+    async def show_global_log_options(self, interaction: Interaction):
         log_options = await self.store.get_global_log_options()
         if log_options:
-            await self.reply(
-                ctx,
-                f"Global error logging is configured: " + log_options.format(self.bot),
+            await interaction.response.send_message(
+                f"Global error logging is configured: {log_options.format_channel_name(self.bot)}\n"
+                + log_options.format_settings()
             )
         else:
-            await self.reply(ctx, f"Global error logging is not configured.")
+            raise LoggingNotConfigured
 
     async def set_global_log_options(
         self,
-        ctx: Context,
-        channel: TextChannel | Thread,
+        interaction: Interaction,
+        channel: Union[TextChannel, Thread],
         stacktrace: Optional[bool],
         emoji: Optional[str],
         color: Optional[Color],
@@ -170,27 +191,27 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
         )
         old_log_options = await self.store.set_global_log_options(new_log_options)
         if old_log_options:
-            await self.reply(
-                ctx,
-                "Updated the global error logging configuration from: "
-                + old_log_options.format(self.bot)
-                + f"\nto: "
-                + new_log_options.format(self.bot),
+            await interaction.response.send_message(
+                f"Updated the global error logging configuration from: {old_log_options.format_channel_name(self.bot)}\n"
+                + f"{old_log_options.format_settings()}\n"
+                + f"to: {new_log_options.format_channel_name(self.bot)}\n"
+                + new_log_options.format_settings()
             )
         else:
-            await self.reply(
-                ctx,
-                "Set the global error logging configuration: "
-                + new_log_options.format(self.bot),
+            await interaction.response.send_message(
+                f"Set the global error logging configuration: {new_log_options.format_channel_name(self.bot)}\n"
+                + new_log_options.format_settings()
             )
 
-    async def remove_global_log_options(self, ctx: Context):
+    async def remove_global_log_options(
+        self,
+        interaction: Interaction,
+    ):
         old_log_options = await self.store.set_global_log_options(None)
         if old_log_options:
-            await self.reply(
-                ctx,
-                f"Removed the global error logging configuration: "
-                + old_log_options.format(self.bot),
+            await interaction.response.send_message(
+                f"Removed the global error logging configuration: {old_log_options.format_channel_name(self.bot)}\n"
+                + old_log_options.format_settings()
             )
         else:
-            await self.reply(ctx, f"Global error logging is not configured.")
+            raise LoggingNotConfigured

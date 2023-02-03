@@ -1,10 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
-from discord import Color, TextChannel, Thread
+from discord import Interaction, TextChannel, Thread
 
+from commanderbot.ext.stacktracer.stacktracer_exceptions import (
+    GuildLoggingNotConfigured,
+)
 from commanderbot.ext.stacktracer.stacktracer_store import StacktracerStore
-from commanderbot.lib import AllowedMentions, CogGuildState, GuildContext, LogOptions
+from commanderbot.lib import CogGuildState, Color, LogOptions
 
 
 @dataclass
@@ -20,28 +23,20 @@ class StacktracerGuildState(CogGuildState):
 
     store: StacktracerStore
 
-    async def reply(self, ctx: GuildContext, content: str):
-        """Wraps `Context.reply()` with some extension-default boilerplate."""
-        await ctx.message.reply(
-            content,
-            allowed_mentions=AllowedMentions.none(),
-        )
-
-    async def show_guild_log_options(self, ctx: GuildContext):
+    async def show_guild_log_options(self, interaction: Interaction):
         log_options = await self.store.get_guild_log_options(self.guild)
         if log_options:
-            await self.reply(
-                ctx,
-                f"Error logging is configured for this guild: "
-                + log_options.format(self.bot),
+            await interaction.response.send_message(
+                f"Error logging is configured for this guild: {log_options.format_channel_name(self.bot)}\n"
+                + log_options.format_settings()
             )
         else:
-            await self.reply(ctx, f"No error logging is configured for this guild.")
+            raise GuildLoggingNotConfigured
 
     async def set_guild_log_options(
         self,
-        ctx: GuildContext,
-        channel: TextChannel | Thread,
+        interaction: Interaction,
+        channel: Union[TextChannel, Thread],
         stacktrace: Optional[bool],
         emoji: Optional[str],
         color: Optional[Color],
@@ -56,27 +51,24 @@ class StacktracerGuildState(CogGuildState):
             self.guild, new_log_options
         )
         if old_log_options:
-            await self.reply(
-                ctx,
-                "Updated the error logging configuration for this guild from: "
-                + old_log_options.format(self.bot)
-                + f"\nto: "
-                + new_log_options.format(self.bot),
+            await interaction.response.send_message(
+                f"Updated the error logging configuration for this guild from: {old_log_options.format_channel_name(self.bot)}\n"
+                + f"{old_log_options.format_settings()}\n"
+                + f"to: {new_log_options.format_channel_name(self.bot)}\n"
+                + new_log_options.format_settings()
             )
         else:
-            await self.reply(
-                ctx,
-                "Set the error logging configuration for this guild: "
-                + new_log_options.format(self.bot),
+            await interaction.response.send_message(
+                f"Set the error logging configuration for this guild: {new_log_options.format_channel_name(self.bot)}\n"
+                + new_log_options.format_settings()
             )
 
-    async def remove_guild_log_options(self, ctx: GuildContext):
+    async def remove_guild_log_options(self, interaction: Interaction):
         old_log_options = await self.store.set_guild_log_options(self.guild, None)
         if old_log_options:
-            await self.reply(
-                ctx,
-                f"Removed the error logging configuration for this guild: "
-                + old_log_options.format(self.bot),
+            await interaction.response.send_message(
+                f"Removed the error logging configuration for this guild: {old_log_options.format_channel_name(self.bot)}\n"
+                + old_log_options.format_settings()
             )
         else:
-            await self.reply(ctx, f"No error logging is configured for this guild.")
+            raise GuildLoggingNotConfigured
