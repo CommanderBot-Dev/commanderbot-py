@@ -46,7 +46,7 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
                 title = "Encountered an unhandled event error"
                 description = "\n".join(
                     [
-                        log_options.formate_error_codeblock(error),
+                        log_options.format_error_codeblock(error),
                         "Caused by the following event:",
                         event_data.format_codeblock(),
                     ]
@@ -96,7 +96,7 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
                 description = "\n".join(
                     [
                         f"While executing {command} for {cause}, the following error occurred:",
-                        log_options.formate_error_codeblock(error),
+                        log_options.format_error_codeblock(error),
                     ]
                 )
                 alt_description = f"While executing {command} for {cause}, the attached error occurred:"
@@ -142,7 +142,7 @@ class StacktracerState(GuildPartitionedCogState[StacktracerGuildState]):
                 description = "\n".join(
                     [
                         f"While executing {command} for {cause}, the following error occurred:",
-                        log_options.formate_error_codeblock(error),
+                        log_options.format_error_codeblock(error),
                     ]
                 )
                 alt_description = f"While executing {command} for {cause}, the attached error occurred:"

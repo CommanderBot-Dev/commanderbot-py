@@ -80,7 +80,7 @@ class AutomodGuildState(CogGuildState):
         # Attempt to print the error to the log channel, if any.
         if log_options := await self._get_log_options_for_rule(rule):
             try:
-                error_codeblock = log_options.formate_error_codeblock(error)
+                error_codeblock = log_options.format_error_codeblock(error)
                 await log_options.send(
                     self.bot,
                     f"{error_message}\n{error_codeblock}",

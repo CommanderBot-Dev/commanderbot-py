@@ -188,11 +188,11 @@ class LogOptions(FromDataMixin):
             return f"Invalid channel `{channel}`"
         return f"Unknown channel `{self.channel}`"
 
-    def formate_error_codeblock(self, error: Exception) -> str:
-        error_content = self._formate_error_content(error)
+    def format_error_codeblock(self, error: Exception) -> str:
+        error_content = self._format_error_content(error)
         return f"```python\n{error_content}\n```"
 
-    def _formate_error_content(self, error: Exception) -> str:
+    def _format_error_content(self, error: Exception) -> str:
         if self.stacktrace:
             return sanitize_stacktrace(error)
         return str(error)
