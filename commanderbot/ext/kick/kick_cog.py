@@ -2,7 +2,7 @@ from typing import Optional
 
 from discord import Interaction, InteractionMessage, Member, Permissions
 from discord.app_commands import command, default_permissions, describe, guild_only
-from discord.app_commands.checks import bot_has_permissions, has_permissions
+from discord.app_commands.checks import bot_has_permissions
 from discord.ext.commands import Bot, Cog
 
 from commanderbot.lib.allowed_mentions import AllowedMentions
