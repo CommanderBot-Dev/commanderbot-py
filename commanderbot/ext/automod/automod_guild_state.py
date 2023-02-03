@@ -69,7 +69,7 @@ class AutomodGuildState(CogGuildState):
         return await self.store.get_default_log_options(self.guild)
 
     async def _handle_rule_error(self, rule: AutomodRule, error: Exception):
-        error_message = f"Rule `{rule.name}` caused an error:"
+        error_message = f"Rule `{rule.name}` caused an error"
 
         # Re-raise the error so that it can be printed to the console.
         try:
@@ -81,10 +81,16 @@ class AutomodGuildState(CogGuildState):
         if log_options := await self._get_log_options_for_rule(rule):
             try:
                 error_codeblock = log_options.format_error_codeblock(error)
-                await log_options.send(
+                await log_options.send_embed(
                     self.bot,
-                    f"{error_message}\n{error_codeblock}",
-                    file_callback=lambda: (error_message, error_codeblock, "error.txt"),
+                    title=error_message,
+                    description=error_codeblock,
+                    file_callback=lambda: (
+                        error_message,
+                        "",
+                        error_codeblock,
+                        "error.txt",
+                    ),
                 )
             except:
                 # If something went wrong here, print another exception to the console.
