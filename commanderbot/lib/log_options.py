@@ -120,7 +120,7 @@ class LogOptions(FromDataMixin):
         except Exception as error:
             formatted_content = self._prepend_emoji(
                 f"Failed to log a message with length `{len(formatted_content)}`"
-                + f" due to:\n```{error}```"
+                + f" due to:\n```python\n{error}\n```"
             )
             await log_channel.send(formatted_content)
             raise
@@ -173,9 +173,9 @@ class LogOptions(FromDataMixin):
         except Exception as error:
             logging_error_embed = Embed(
                 title=self._format_embed_title(
-                    f"Failed to log a {len(description)} character message"
+                    f"Failed to log a `{len(description)}` character message"
                 ),
-                description=f"```{error}```",
+                description=f"```python\n{error}\n```",
                 color=self.color or Color.mcc_blue(),
             )
             await log_channel.send(embed=logging_error_embed)
@@ -198,4 +198,4 @@ class LogOptions(FromDataMixin):
         return str(error)
 
     def format_settings(self) -> str:
-        return f"```{repr(self)}```"
+        return f"```python\n{repr(self)}\n```"
