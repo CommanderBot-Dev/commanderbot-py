@@ -6,6 +6,7 @@ from discord.app_commands import (
     Transform,
     command,
     default_permissions,
+    describe,
     guild_only,
 )
 from discord.ext import commands
@@ -169,6 +170,12 @@ class StacktracerCog(
         name="set",
         description="Set the global error logging configuration",
     )
+    @describe(
+        channel="The channel to log errors to",
+        stacktrace="Whether errors should include the stacktrace",
+        emoji="The emoji used for global errors",
+        color="The color used for global errors",
+    )
     @checks.is_owner()
     async def cmd_stacktracer_global_set(
         self,
@@ -214,6 +221,12 @@ class StacktracerCog(
     @cmd_guild.command(
         name="set",
         description="Set the error logging configuration for this guild",
+    )
+    @describe(
+        channel="The channel to log errors to",
+        stacktrace="Whether errors should include the stacktrace",
+        emoji="The emoji used for guild errors",
+        color="The color used for guild errors",
     )
     async def cmd_stacktracer_guild_set(
         self,
