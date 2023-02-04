@@ -9,6 +9,7 @@ from discord import (
     RawThreadUpdateEvent,
     Thread,
 )
+from discord.enums import MessageType
 from discord.app_commands import Group, Transform, command, describe, guild_only
 from discord.ext.commands import Bot, Cog
 
@@ -103,10 +104,6 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
 
     @Cog.listener()
     async def on_message(self, message: Message):
-        # Make sure this message was not sent by the bot
-        if is_bot(self.bot, message.author):
-            return
-
         # Make sure this message was sent in a thread
         thread = message.channel
         if not isinstance(thread, Thread):
@@ -121,8 +118,13 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
         if not isinstance(forum, ForumChannel):
             return
 
-        emoji = PartialEmoji.from_str(message.content)
-        await self.state[forum.guild].on_resolve(forum, thread, message, emoji)
+        # Try resolving the thread
+        if not is_bot(self.bot, message.author):
+            emoji = PartialEmoji.from_str(message.content)
+            await self.state[forum.guild].on_resolve(forum, thread, message, emoji)
+        # Try deleting the message if it was a pin message sent by the bot
+        elif message.type == MessageType.pins_add:
+            await self.state[forum.guild].on_bot_pin_starter_message(forum, thread, message)
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):

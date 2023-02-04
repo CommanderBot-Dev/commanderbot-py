@@ -143,6 +143,21 @@ class HelpForumGuildState(CogGuildState):
         )
         await thread.send(embed=embed)
 
+    async def on_bot_pin_starter_message(
+        self, forum: ForumChannel, thread: Thread, message: Message
+    ):
+        """
+        If `forum` is a help forum and `message` is referencing the thread starter
+        message, then delete `message`
+        """
+        # Return early if the forum isn't registered
+        if not await self._get_help_forum(forum):
+            return
+
+        # Delete the pin message if it's about pinning the starter message
+        if (ref := message.reference) and ref.message_id == thread.id:
+            await message.delete(delay=0.5)
+
     async def on_unresolve(self, forum: ForumChannel, thread: Thread):
         """
         If `forum` is a help forum, set the thread state to unresolved
