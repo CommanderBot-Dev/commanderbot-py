@@ -18,8 +18,8 @@ from commanderbot.lib import (
     SQLiteDatabaseAdapter,
     SQLiteDatabaseOptions,
     UnsupportedDatabaseOptions,
-    checks,
 )
+from commanderbot.lib.commands import checks
 
 
 def make_help_chat_store(bot: Bot, cog: Cog, options: HelpChatOptions) -> HelpChatStore:

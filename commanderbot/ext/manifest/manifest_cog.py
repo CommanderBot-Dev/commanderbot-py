@@ -16,7 +16,7 @@ from commanderbot.ext.manifest.manifest_data import (
     add_dependency,
 )
 from commanderbot.ext.manifest.manifest_exceptions import InvalidPackType
-from commanderbot.lib import checks
+from commanderbot.lib.commands import checks
 from commanderbot.lib.utils.datetimes import datetime_to_int
 from commanderbot.lib.utils.utils import str_to_file, utcnow_aware
 

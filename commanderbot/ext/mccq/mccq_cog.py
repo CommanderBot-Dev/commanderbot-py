@@ -8,7 +8,7 @@ from discord.ext.commands import Bot, Cog, Context, check, command
 from mccq.query_manager import QueryManager
 from mccq.version_database import VersionDatabase
 
-from commanderbot.lib import checks
+from commanderbot.lib.commands import checks
 
 
 def member_is_elevated():

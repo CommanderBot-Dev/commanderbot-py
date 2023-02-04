@@ -18,8 +18,8 @@ from commanderbot.lib import (
     JsonFileDatabaseOptions,
     TextMessage,
     UnsupportedDatabaseOptions,
-    checks,
 )
+from commanderbot.lib.commands import checks
 from commanderbot.lib.utils import is_bot
 
 

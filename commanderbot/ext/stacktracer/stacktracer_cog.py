@@ -32,9 +32,8 @@ from commanderbot.lib import (
     JsonFileDatabaseOptions,
     UnsupportedDatabaseOptions,
 )
-from commanderbot.lib import checks as command_checks
-from commanderbot.lib.interactions import ColorTransformer, EmojiTransformer
-from commanderbot.lib.interactions import checks as app_command_checks
+from commanderbot.lib.commands import checks as command_checks
+from commanderbot.lib.interactions import ColorTransformer, EmojiTransformer, checks
 
 
 def _make_store(bot: Bot, cog: Cog, options: StacktracerOptions) -> StacktracerStore:
@@ -162,7 +161,7 @@ class StacktracerCog(
     @cmd_global.command(
         name="show", description="Show the global error logging configuration"
     )
-    @app_command_checks.is_owner()
+    @checks.is_owner()
     async def cmd_stacktracer_global_show(self, interaction: Interaction):
         await self.state.show_global_log_options(interaction)
 
@@ -170,7 +169,7 @@ class StacktracerCog(
         name="set",
         description="Set the global error logging configuration",
     )
-    @app_command_checks.is_owner()
+    @checks.is_owner()
     async def cmd_stacktracer_global_set(
         self,
         interaction: Interaction,
@@ -191,7 +190,7 @@ class StacktracerCog(
         name="remove",
         description="Remove the global error logging configuration",
     )
-    @app_command_checks.is_owner()
+    @checks.is_owner()
     async def cmd_stacktracer_global_remove(
         self,
         interaction: Interaction,

@@ -16,8 +16,8 @@ from commanderbot.lib import (
     JsonFileDatabaseAdapter,
     JsonFileDatabaseOptions,
     UnsupportedDatabaseOptions,
-    checks,
 )
+from commanderbot.lib.commands import checks
 
 
 def make_invite_store(bot: Bot, cog: Cog, options: InviteOptions) -> InviteStore:

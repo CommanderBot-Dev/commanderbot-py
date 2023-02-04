@@ -6,7 +6,8 @@ from discord.abc import Messageable
 from discord.ext.commands import Bot, Cog, Context, group
 from discord.ext.commands.converter import ColourConverter
 
-from commanderbot.lib import MessageableChannel, checks
+from commanderbot.lib import MessageableChannel
+from commanderbot.lib.commands import checks
 
 HEADING_PREFIX = "👉"
 

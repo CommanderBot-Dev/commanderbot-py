@@ -35,9 +35,8 @@ from commanderbot.lib import (
     TextMessage,
     TextReaction,
     UnsupportedDatabaseOptions,
-    checks,
 )
-from commanderbot.lib.commands import ColorConverter
+from commanderbot.lib.commands import ColorConverter, checks
 from commanderbot.lib.utils import is_bot, parse_json_path, parse_json_path_op
 
 
