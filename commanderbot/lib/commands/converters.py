@@ -2,21 +2,23 @@ import difflib
 import re
 from typing import List, Tuple
 
-from discord import Role
-from discord.ext.commands import BadArgument, RoleConverter, RoleNotFound
+import discord
+from discord.ext import commands
+from discord.ext.commands import Context
 
-from commanderbot.lib.types import GuildContext
+from commanderbot.lib import Color, GuildContext
 
 __all__ = (
     "CannotDisambiguateRole",
     "LenientRoleConverter",
+    "ColorConverter",
 )
 
 
-class CannotDisambiguateRole(BadArgument):
+class CannotDisambiguateRole(commands.BadArgument):
     """Exception raised when multiple roles match the argument."""
 
-    def __init__(self, argument: str, roles: List[Role]):
+    def __init__(self, argument: str, roles: List[discord.Role]):
         self.argument: str = argument
         count_roles = len(roles)
         role_mentions = " ".join(f"{role.mention}" for role in roles)
@@ -26,21 +28,21 @@ class CannotDisambiguateRole(BadArgument):
         )
 
 
-class LenientRoleConverter(RoleConverter):
+class LenientRoleConverter(commands.RoleConverter):
     """
     Extends `RoleConverter` to do one final look-up using a partial name match.
 
     Raises `CannotDisambiguateRole` if multiple roles are matched.
     """
 
-    async def convert(self, ctx: GuildContext, argument: str) -> Role:
+    async def convert(self, ctx: GuildContext, argument: str) -> discord.Role:
         # Attempt to look-up the role as usual.
         try:
             if role := await super().convert(ctx, argument):
                 if role.id != ctx.guild.default_role.id:
-                    raise RoleNotFound(argument)
+                    raise commands.RoleNotFound(argument)
                 return role
-        except RoleNotFound:
+        except commands.RoleNotFound:
             pass
 
         # If nothing was found, use a more lenient approach...
@@ -68,24 +70,24 @@ class LenientRoleConverter(RoleConverter):
             raise CannotDisambiguateRole(argument, matches)
 
         # If still nothing was found, raise.
-        raise RoleNotFound(argument)
+        raise commands.RoleNotFound(argument)
 
     def filter_roles(
         self, ctx: GuildContext, argument: str, pattern: re.Pattern
-    ) -> List[Role]:
+    ) -> List[discord.Role]:
         roles = list(ctx.guild.roles)
         roles.remove(ctx.guild.default_role)
         return [role for role in roles if self.match_role(ctx, argument, pattern, role)]
 
     def match_role(
-        self, ctx: GuildContext, argument: str, pattern: re.Pattern, role: Role
+        self, ctx: GuildContext, argument: str, pattern: re.Pattern, role: discord.Role
     ) -> bool:
         match = pattern.search(role.name)
         return match is not None
 
     def rate_matches(
-        self, argument: str, matches: List[Role]
-    ) -> List[Tuple[float, Role]]:
+        self, argument: str, matches: List[discord.Role]
+    ) -> List[Tuple[float, discord.Role]]:
         return sorted(
             [
                 (difflib.SequenceMatcher(None, argument, role.name).ratio(), role)
@@ -93,3 +95,12 @@ class LenientRoleConverter(RoleConverter):
             ],
             reverse=True,
         )
+
+
+class ColorConverter(commands.ColorConverter):
+    """Extends `commands.ColorConverter`."""
+
+    # @overrides commands.ColorConverter
+    async def convert(self, ctx: Context, argument: str) -> Color:
+        temp: discord.Color = await super().convert(ctx, argument)
+        return Color(temp.value)
