@@ -16,11 +16,11 @@ from commanderbot.lib import (
     InMemoryDatabaseOptions,
     JsonFileDatabaseAdapter,
     JsonFileDatabaseOptions,
-    LenientRoleConverter,
     MemberContext,
     UnsupportedDatabaseOptions,
     checks,
 )
+from commanderbot.lib.commands import LenientRoleConverter
 
 
 def make_roles_store(bot: Bot, cog: Cog, options: RolesOptions) -> RolesStore:

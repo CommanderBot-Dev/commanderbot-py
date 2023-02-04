@@ -27,7 +27,6 @@ from commanderbot.ext.automod.automod_state import AutomodState
 from commanderbot.ext.automod.automod_store import AutomodStore
 from commanderbot.lib import (
     CogGuildStateManager,
-    Color,
     GuildContext,
     InMemoryDatabaseOptions,
     JsonFileDatabaseAdapter,
@@ -38,6 +37,7 @@ from commanderbot.lib import (
     UnsupportedDatabaseOptions,
     checks,
 )
+from commanderbot.lib.commands import ColorConverter
 from commanderbot.lib.utils import is_bot, parse_json_path, parse_json_path_op
 
 
@@ -401,7 +401,7 @@ class AutomodCog(Cog, name="commanderbot.ext.automod"):
         channel: TextChannel,
         stacktrace: Optional[bool],
         emoji: Optional[str],
-        color: Optional[Color],
+        color: Optional[ColorConverter],
     ):
         await self.state[ctx.guild].set_default_log_options(
             ctx,
