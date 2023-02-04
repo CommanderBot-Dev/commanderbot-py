@@ -8,6 +8,8 @@ from emoji import is_emoji
 from commanderbot.lib import MAX_AUTOCOMPLETE_CHOICES, Color, ResponsiveException
 
 __all__ = (
+    "InvalidEmoji",
+    "InvalidColor",
     "EmojiTransformer",
     "ColorTransformer",
 )
