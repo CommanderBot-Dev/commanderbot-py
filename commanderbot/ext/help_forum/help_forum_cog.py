@@ -124,7 +124,9 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
             await self.state[forum.guild].on_resolve(forum, thread, message, emoji)
         # Try deleting the message if it was a pin message sent by the bot
         elif message.type == MessageType.pins_add:
-            await self.state[forum.guild].on_bot_pin_starter_message(forum, thread, message)
+            await self.state[forum.guild].on_bot_pin_starter_message(
+                forum, thread, message
+            )
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
@@ -157,7 +159,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
         name="forum",
         description="Manage help forums",
         guild_only=True,
-        default_permissions=Permissions(manage_channels=True),
+        default_permissions=Permissions(administrator=True),
     )
     cmd_forum_modify = Group(
         name="modify", description="Modify help forums", parent=cmd_forum
@@ -183,6 +185,7 @@ class HelpForumCog(Cog, name="commanderbot.ext.help_forum"):
             raise UnableToResolvePinned
 
         assert isinstance(interaction.guild, Guild)
+        await interaction.response.defer()
         await self.state[interaction.guild].on_resolve_command(
             interaction, forum, thread
         )
