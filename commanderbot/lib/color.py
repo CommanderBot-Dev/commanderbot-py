@@ -62,10 +62,16 @@ class Color(discord.Color, FromDataMixin):
 
     @classmethod
     def white(cls) -> Self:
-        """A factory method that returns a :class:`Color` with a value of ``0xffffff``."""
+        """A factory method that returns a :class:`Color` with a value of ``0xFFFFFF``.
+
+        .. color:: #FFFFFF
+        """
         return cls(0xFFFFFF)
 
     @classmethod
     def mcc_blue(cls) -> Self:
-        """A factory method that returns a :class:`Color` with a value of ``0x00aced``."""
+        """A factory method that returns a :class:`Color` with a value of ``0x00ACED``.
+
+        .. color:: #00ACED
+        """
         return cls(0x00ACED)
