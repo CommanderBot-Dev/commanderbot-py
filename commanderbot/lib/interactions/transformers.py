@@ -1,5 +1,5 @@
 import re
-from typing import List, cast
+from typing import List
 
 from discord import Interaction
 from discord.app_commands import AppCommandError, Choice, Transformer
